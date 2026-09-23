@@ -1,0 +1,91 @@
+---
+title: M3 · Scaffold
+summary: A monorepo with the API and the app, Postgres in Docker, one check script for both, and every guardrail from Part 1 in place before the first feature.
+order: 4
+kind: milestone
+code: 'L1 · M3'
+tier: 2
+time: 2 hours
+competencies: [operate, build, security]
+---
+
+## Goal
+
+A repository that runs, checks and guards itself, with no features yet. Every feature after this starts from a safe, consistent base.
+
+## The layout
+
+```text
+pocket-ledger/
+├── AGENTS.md  CLAUDE.md  WORKFLOW.md
+├── docker-compose.yml        # Postgres for local development
+├── api/                      # FastAPI (uv project)
+│   ├── app/{routes,services,repositories,models}/
+│   ├── migrations/           # Alembic
+│   └── tests/
+├── app/                      # Flutter
+├── design/  docs/
+├── scripts/check.sh          # checks BOTH api and app
+└── .claude/{settings.json,hooks/,skills/}
+```
+
+Keeping both halves in one repository (a *monorepo*) means one agent can see the contract, the API and the app together, and one check script covers everything.
+
+## Step 1: scaffold with the agent
+
+This is mechanical setup, so the middle model at medium effort is right.
+
+<Prompt title="Fresh session">
+Scaffold Pocket Ledger as a monorepo, following the ADRs in docs/decisions and the layout below. Don't build any features.
+
+1. docker-compose.yml with PostgreSQL 16, a named volume, and credentials read from a .env file (add .env to .gitignore, and commit a .env.example).
+2. api/: a uv project with FastAPI, SQLAlchemy 2, Alembic, pydantic-settings, pytest and ruff. Folders app/routes, app/services, app/repositories, app/models. A GET /health endpoint and one test for it. Alembic configured to read the database URL from settings.
+3. app/: flutter create with the organisation name com.example, and the default counter app removed. One passing widget test.
+4. scripts/check.sh that runs ruff format --check, ruff check and pytest in api/, then dart format --set-exit-if-changed, flutter analyze and flutter test in app/.
+
+Test-first where it applies. Run scripts/check.sh at the end and show me the output.
+</Prompt>
+
+<Expect>
+
+`docker compose up -d` starts Postgres; `uv run uvicorn app.main:app` in `api/` serves `/health`; `flutter run` shows a blank app; and `scripts/check.sh` passes for both halves.
+
+</Expect>
+
+## Step 2: guardrails and rules
+
+Bring in your kit from Part 1:
+
+1. `.claude/settings.json` from the guardrail settings, and `.claude/hooks/require-green.sh`. Also deny reads of `api/.env`.
+2. `WORKFLOW.md` from the template: default **Beta**, override **GA for anything touching authentication or deleting data**.
+3. Write `AGENTS.md` with the agent's help:
+
+<Prompt>
+Draft AGENTS.md for this repo. Include only what you couldn't infer from the code: the check command, how to start Postgres and the API, how to run one API test, the test-first rule, "never report something as working without running it", the layering rule (routes never contain SQL or business rules; only repositories touch the database), "amounts are integer paise", "read docs/decisions before changing anything load-bearing", and "the API must match docs/api/openapi.yaml exactly". Keep it under 30 lines.
+</Prompt>
+
+Then make `CLAUDE.md` the one-line `@AGENTS.md`, and commit.
+
+## Step 3: prove the guardrails work
+
+Before any feature, confirm three things:
+
+1. Break a test, then ask the agent to "wrap up". The require-green hook must block it.
+2. Ask it to print `api/.env`. The deny rule must refuse.
+3. Ask it to add a quick SQL query inside a route handler. It should refuse, or flag that this breaks AGENTS.md's layering rule. If it just does it, your rule isn't clear enough yet: rewrite it and try again.
+
+<IfNot label="When it goes wrong">
+
+- **Alembic can't connect:** the database URL in settings must use the same host, port and credentials as docker-compose. With the API running on your Mac, the host is `localhost`.
+- **`flutter analyze` fails on the fresh project:** run `dart format .` once, then fix what's left. The scaffold should start green.
+- **check.sh is slow:** fine for now. In Part 4 you'll learn to run only the part that changed.
+
+</IfNot>
+
+<Checklist id="l1-m3" label="Done when" title="M3 is done when…" items={[
+  "Postgres, the API's /health endpoint and the empty app all run locally.",
+  "`scripts/check.sh` checks both halves and passes.",
+  "The require-green hook, the deny rules and the layering rule have each been proven to work.",
+  "AGENTS.md is under 30 lines, and every line passes the 'couldn't infer it' test.",
+  "Everything is committed."
+]} />

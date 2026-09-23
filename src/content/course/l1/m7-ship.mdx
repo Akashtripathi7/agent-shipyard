@@ -1,0 +1,76 @@
+---
+title: M7 · Ship it
+summary: Deploy the API and database to a managed host, run migrations safely, build the app against production, and verify the real thing end to end.
+order: 8
+kind: milestone
+code: 'L1 · M7'
+tier: 2
+time: 2 hours
+competencies: [operate, security, verify]
+---
+
+## Goal
+
+The API and database running on a managed host, the app built against it, and one full end-to-end check on the real deployment.
+
+## Deploying is a script, not an agent's improvisation
+
+Recall lesson 1.2: deploys must be repeatable and reversible, so they're scripts, started by you or by CI. The agent's job here is to **write** the deployment setup and help you debug it, not to click around a hosting dashboard on your behalf.
+
+## Step 1: choose and record the host
+
+Pick a managed host that runs a Python web service and offers managed PostgreSQL, such as Render or Railway. Hosting offers and prices change often, so ask your agent to check current options, then write a short ADR: which host, why, what it costs at your expected usage, and how you'd move away if you needed to.
+
+## Step 2: production-ready settings
+
+<Prompt title="Fresh session">
+Prepare the API for production on [your host]. Read docs/decisions first. I need: a production start command (a proper server, not the development reloader), migrations run automatically before each new version starts, all settings from environment variables (database URL, token signing secret, allowed origins), a health check the host can call, and structured logs that never include passwords, tokens or request bodies on auth routes. Write the host's config file if it uses one. Don't deploy anything yourself: tell me the exact steps and environment variables to set.
+</Prompt>
+
+Generate the token signing secret yourself, on your machine, and paste it only into the host's environment settings:
+
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+Never put it in the repo, in chat or in AGENTS.md.
+
+## Step 3: deploy and verify production
+
+Follow the steps it gave you. When the host reports the service is live:
+
+```bash
+curl -s https://<your-api-host>/health
+```
+
+Then build the app against production and install it on a real phone:
+
+```bash
+cd app && flutter build apk --dart-define=API_BASE_URL=https://<your-api-host>
+```
+
+Finally, `/clear` and ask for a production verification:
+
+<Prompt>
+Verify the production deployment at https://your-api-host against the acceptance criteria of specs 0001 and 0002, using real HTTPS requests with two freshly created test users. Include the ownership 404 checks. Record the evidence in docs/reviews/production-verify.md. Don't change any code.
+</Prompt>
+
+## Step 4: prove you can undo a release
+
+A deploy you can't undo isn't finished. Make a harmless change (the text of the `/health` response), deploy it, then **roll back** to the previous version using your host's rollback feature. Write the exact rollback steps into a short `docs/RUNBOOK.md`. Part 5 builds on this.
+
+<IfNot label="When it goes wrong">
+
+- **The service starts, then crashes:** read the host's logs first. The usual causes are a missing environment variable or migrations failing against the fresh database.
+- **The app works on the emulator but not on the phone:** the phone needs the public HTTPS URL, and the API's allowed origins or security settings may need updating.
+
+</IfNot>
+
+<Checklist id="l1-m7" label="Done when" title="M7 is done when…" items={[
+  "An ADR records the host choice, its cost and the exit route.",
+  "The production health check responds, and migrations ran automatically.",
+  "The signing secret exists only in the host's environment settings.",
+  "Production verification evidence is in `docs/reviews/`, including the ownership checks.",
+  "The app, built with the production URL, works on a real phone.",
+  "You've rolled back one release, and the steps are in `docs/RUNBOOK.md`."
+]} />

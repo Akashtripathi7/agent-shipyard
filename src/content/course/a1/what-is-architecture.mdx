@@ -1,0 +1,87 @@
+---
+title: What architecture is
+summary: Architecture is the set of decisions that are expensive to change. Learn to see any system as components, boundaries and data flow, measured against the qualities it must have.
+order: 1
+kind: arch
+code: 'A1.1'
+tier: 2
+time: 60 min
+competencies: [architecture]
+---
+
+<Analogy>
+  <p>Building a house. You can repaint a room in an afternoon, but moving a load-bearing wall means scaffolding, engineers and weeks of work. Architecture is the load-bearing walls: the few decisions that everything else rests on, and that are painful to change later.</p>
+</Analogy>
+
+## Why this track exists
+
+When agents write most of the code, your job moves up a level. An agent can write a perfect function inside a badly shaped system, and the system will still fail. Neither the Loop nor the Crew school teaches you how to shape the system. This track does, one block at a time, each timed just before the project that needs it.
+
+## Three things to see in any system
+
+Every system, from a to-do app to a bank, can be described with three ideas.
+
+1. **Components:** the separately running or separately owned parts. A phone app, an API, a database, a payment provider.
+2. **Boundaries:** the lines between components, especially **trust boundaries**, where data crosses from something you don't control (a user's phone) to something you do (your server). Anything crossing a trust boundary must be checked.
+3. **Data flow:** what moves between components, in what format, and who's allowed to change it.
+
+<Figure caption="Pocket Ledger in one picture. The phone is on the untrusted side of the boundary, so the API must check everything it receives. The database holds the truth; the payment provider is someone else's system you depend on.">
+  <SystemSketch />
+</Figure>
+
+## Qualities: what 'good' means for this system
+
+Two systems with identical features can need completely different architectures, because they need different **qualities**. Engineers call these *non-functional requirements*: not what the system does, but how well.
+
+| Quality | The question it asks | Example target |
+|---|---|---|
+| **Performance** | How fast? | The monthly total loads in under 300 ms |
+| **Scalability** | How much load can it grow to? | 10,000 users without redesign |
+| **Availability** | How often can it be down? | 99.5% uptime (about 3.6 hours a month) |
+| **Security** | Who can see or change what? | Users only ever see their own expenses |
+| **Maintainability** | How easy is it to change? | A new category takes under an hour |
+| **Cost** | What does it cost to run? | Under ₹2,000 a month at launch |
+| **Operability** | Can you tell what it's doing? | Every error is logged with a request ID |
+
+You can't maximise all of them. Making a system faster often makes it more complex; making it cheaper often makes it less available. **Architecture is choosing which qualities matter most for this product, then shaping the system around them.** That's why "what's the best architecture?" has no answer on its own. The real question is: best for *which* qualities?
+
+## Architecture is decisions
+
+The most useful definition: **architecture is the set of decisions that are expensive to change.** Your database, whether you have one service or several, how users authenticate, where money is calculated. Choosing a button colour isn't architecture; choosing where money is calculated is.
+
+This definition tells you where to spend your attention. Cheap-to-change decisions can be made quickly, even by an agent on its own. Expensive-to-change ones deserve thought, alternatives and a written record. You'll learn to write that record in lesson A1.4.
+
+<Exercise id="a1-1" title="Map a system you know" time="35 min" predict="How many components will the app you work on have, and where's its main trust boundary?">
+
+1. Pick an app you work on (your company's Flutter app is ideal). On paper, draw its **components** as boxes.
+2. Draw the **data flow** as labelled arrows: what moves, and in what format.
+3. Draw the **trust boundaries** as dashed lines. Circle every arrow that crosses one.
+4. Write the **three qualities** that matter most for that app, with a rough target for each.
+5. Ask your agent to check your picture against the real code: *"Here's my sketch of this system's components and data flow [describe it]. Read the codebase and tell me what I missed or got wrong. Don't change anything."*
+
+</Exercise>
+
+<Expect>
+
+A sketch with 4 to 8 boxes, and at least one component you'd forgotten, usually a third-party service, a background job or a cache. The agent's check is good practice for Part 3, where you'll take over codebases you didn't write.
+
+</Expect>
+
+<Breaks title="Architecture by accident">
+  <BreakPart label="What happens">
+
+  Nobody decides the architecture, so the agent does, one feature at a time. Money is calculated in the app for one screen and in the API for another. Six months later the totals disagree, and nobody knows which is right.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Decide the load-bearing things on purpose, before building: where the truth lives, where rules are enforced, where trust ends. Write them down (lesson A1.4) so every agent follows them.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="a1-1-q" q="Which of these is an architecture decision, by the 'expensive to change' definition?" options={["The colour of the Save button", "Whether monthly totals are calculated in the app or on the server", "The wording of an error message", "The order of fields on a form"]} answer={1}>
+  <p>Where a rule is calculated determines which clients can be trusted, how bugs spread and how you'd change it later: expensive to move once many screens depend on it. The others take minutes to change.</p>
+</Quiz>
+
+<Terms ids={['component', 'trust-boundary', 'nfr', 'architecture']} />

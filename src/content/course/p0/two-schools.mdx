@@ -1,0 +1,89 @@
+---
+title: The two schools, and how this course combines them
+summary: Kun Chen's crew, JS Mastery's loop and obra's Superpowers answer different questions. Together they give you two dials to set for every project.
+order: 3
+kind: lesson
+code: '0.3'
+tier: 1
+time: 45 min
+competencies: [decide, orchestrate]
+---
+
+<Analogy>
+  <p>One school teaches you to cook one dish perfectly every time: prep, cook, taste, plate. The other teaches you to run a kitchen: how many cooks, who does what, how dishes get checked before they leave. A great restaurant needs both, and a great chef knows how much of each a given night needs.</p>
+</Analogy>
+
+## School one: the Crew (Kun Chen)
+
+Kun Chen was a Principal (L8) engineer at Meta, Microsoft and Atlassian, where he led Atlassian's AI coding product, Rovo Dev. He now builds solo and ships dozens of pull requests a day. Not by typing faster: he barely types code at all.
+
+His model is a **manager directing a crew**. He decides what to build and judges whether it's good. Agents do everything in between, in three phases:
+
+1. **Plan.** Turn an idea into a spec detailed enough that an agent can run for hours without him. This is where his effort goes. A vague plan buys five minutes of agent work; a clear one buys hours.
+2. **Implement.** Several agents at once, each in its own worktree, each in its own tmux window.
+3. **Validate.** A pipeline (his tool is called no-mistakes) reviews, tests and fixes every change before anything reaches the shared repository. He measured it: about 63% of agent changes had at least one mistake caught this way.
+
+He's also blunt about delegation mistakes: asking for *actions* instead of *outcomes*, leaving out *why*, and grabbing back control the moment an agent slips instead of asking it to fix its own mistake. You'll practise all three in lesson 1.8.
+
+**The question this school answers:** how do many streams of work run at once, safely?
+
+## School two: the Loop (JS Mastery and Superpowers)
+
+JS Mastery (Adrian Hajdin) published a set of open-source skills that run as one system. Each one is a command you run in your agent:
+
+| Skill | What it does |
+|---|---|
+| `/scope` | Challenges the idea, then keeps a living plan of what to build |
+| `/audit` | Reads a codebase and writes the AGENTS.md that every other skill relies on |
+| `/architect` | Holds the design conversation and writes the decision down as a spec |
+| `/develop` | Builds from the spec, and **stops** when a decision nobody made is needed |
+| `/check verify` | Runs the real app to prove it works against the spec |
+| `/test` | Writes tests for what changed |
+| `/check review` | A **different model** reviews the change |
+| `/document` | Writes the PR description, changelog or postmortem from the real diff |
+| `/sync` | Updates the context files so they match reality |
+| `/debug` | Finds the root cause before fixing anything |
+
+Three ideas carry the whole system:
+
+- **State lives in files, not chat.** The scope, the specs, AGENTS.md and the tests are all on disk, so work survives any session and any agent.
+- **Different changes take different paths.** A new product starts at `/scope`; code you inherited starts at `/audit`; a bug starts at `/debug`.
+- **Checking depth is a dial.** *Prototype* means build only. *Alpha* adds verify. *Beta* adds tests. *GA* adds a second-model review and documentation.
+
+obra's **Superpowers**, the most widely used open skills library for Claude Code, teaches the same loop from another angle: brainstorm the idea, create a worktree, write a plan of 2 to 5 minute tasks, build them test-first, review against the plan, then finish the branch.
+
+**The question this school answers:** how does one piece of work get done well, every time?
+
+## How this course combines them
+
+The two schools don't compete. They're two dials, and every project sets both.
+
+<Figure caption="Depth (from the Loop) is how much checking each change gets. Scale (from the Crew) is how many agents run at once. Each project picks a point, and the bottom-right corner is where teams get hurt.">
+  <TwoDials />
+</Figure>
+
+- **Part 2** teaches the Loop. You'll write your own version of each step as a skill, and compare it with JS Mastery's and Superpowers'.
+- **Parts 4 and 5** teach the Crew and the fleet.
+- **Part 7** teaches you to set both dials for any project, and to measure whether you chose well.
+
+The third pillar, **architecture**, runs alongside them. Neither school teaches you how to design the system itself, and when agents write the code, that design is most of your job.
+
+<Drill id="p0-schools" scenario="You're building a weekend prototype to test whether people want a feature. Nobody else will use the code, and you'll probably throw it away. Where do you set the two dials?" fields={[
+  { label: "Depth: how much checking?", options: ["Prototype", "Alpha", "Beta", "GA"] },
+  { label: "Scale: how many agents?", options: ["One agent", "A few subagents", "A parallel crew"] },
+  { label: "Why? One sentence." }
+]}>
+
+**Expert answer: Prototype depth, one agent.**
+
+The code's job is to answer a question ("do people want this?"), not to last. Every check you add costs time that doesn't help answer it. One agent is enough because there's nothing to parallelise and nothing to coordinate.
+
+**What would change the answer:** the moment real users or real data touch it, move to at least Alpha, so you know it actually works. The most common mistake is keeping prototype depth after a prototype quietly becomes the product.
+
+</Drill>
+
+<Quiz id="schools-q1" q="Which question does JS Mastery's loop mainly answer?" options={["How to run many agents in parallel", "How one feature gets done well, every time", "How to design a distributed system", "How to cut token costs"]} answer={1}>
+  <p>The Loop is about depth: a repeatable path from idea to merged work, with decisions kept in files. Running many agents at once is the Crew's question. Designing the system is architecture, the pillar neither school covers fully.</p>
+</Quiz>
+
+<Terms ids={['feature-loop', 'crew', 'workflow-depth', 'skill']} />

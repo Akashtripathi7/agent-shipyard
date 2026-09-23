@@ -1,0 +1,32 @@
+<svg viewBox="0 0 700 290" role="img" aria-label="Pocket Ledger's data model: a user has many expenses and many categories; each expense belongs to one category.">
+  <defs><marker id="er-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="d-arrow" /></marker></defs>
+  <rect x="20" y="30" width="200" height="150" rx="10" class="d-box" />
+  <rect x="20" y="30" width="200" height="34" rx="10" class="d-acc" />
+  <text x="120" y="52" text-anchor="middle" class="d-t">users</text>
+  <text x="34" y="86" class="d-ts">id · uuid · PK</text>
+  <text x="34" y="106" class="d-ts">email · text · unique</text>
+  <text x="34" y="126" class="d-ts">password_hash · text</text>
+  <text x="34" y="146" class="d-ts">created_at · timestamptz</text>
+  <rect x="260" y="30" width="210" height="230" rx="10" class="d-box" />
+  <rect x="260" y="30" width="210" height="34" rx="10" class="d-acc" />
+  <text x="365" y="52" text-anchor="middle" class="d-t">expenses</text>
+  <text x="274" y="86" class="d-ts">id · uuid · PK</text>
+  <text x="274" y="106" class="d-ts">user_id · FK → users</text>
+  <text x="274" y="126" class="d-ts">category_id · FK → categories</text>
+  <text x="274" y="146" class="d-ts">amount_paise · bigint · &gt; 0</text>
+  <text x="274" y="166" class="d-ts">spent_on · date</text>
+  <text x="274" y="186" class="d-ts">note · text · nullable</text>
+  <text x="274" y="206" class="d-ts">deleted_at · nullable</text>
+  <text x="274" y="230" class="d-tm">INDEX (user_id, spent_on)</text>
+  <rect x="510" y="30" width="170" height="130" rx="10" class="d-box" />
+  <rect x="510" y="30" width="170" height="34" rx="10" class="d-acc" />
+  <text x="595" y="52" text-anchor="middle" class="d-t">categories</text>
+  <text x="524" y="86" class="d-ts">id · uuid · PK</text>
+  <text x="524" y="106" class="d-ts">user_id · FK → users</text>
+  <text x="524" y="126" class="d-ts">name · text</text>
+  <text x="524" y="146" class="d-tm">UNIQUE (user_id, name)</text>
+  <line x1="222" y1="110" x2="256" y2="110" class="d-line" marker-end="url(#er-a)" />
+  <text x="238" y="100" text-anchor="middle" class="d-ts">1 → many</text>
+  <line x1="506" y1="120" x2="474" y2="120" class="d-line" marker-end="url(#er-a)" />
+  <text x="490" y="138" text-anchor="middle" class="d-ts">1 → many</text>
+</svg>

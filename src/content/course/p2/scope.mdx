@@ -1,0 +1,84 @@
+---
+title: Scope, challenge the idea before any code
+summary: Build a /scope skill that pushes back on your idea, cuts version 1 down to size, and keeps a living plan of small slices.
+order: 2
+kind: lesson
+code: '2.2'
+tier: 2
+time: 60 min
+competencies: [brief, decide, build]
+kit: [skill-scope]
+---
+
+<Analogy>
+  <p>A good architect's first meeting. Before drawing anything, they ask who lives in the house, how they spend their days, and what they can do without. Half the value is in the questions that talk you out of the rooms you don't need.</p>
+</Analogy>
+
+## Why scope first
+
+The most expensive mistakes aren't bugs. They're building the wrong thing, or far too much of it. An agent will happily build whatever you ask for, all of it, beautifully. That's the danger: agents make building feel free, so scope creeps without anyone noticing.
+
+The `/scope` step exists to push back. It asks who this is for, what the smallest proof would be, and what version 1 deliberately won't do. JS Mastery calls their version "the challenger"; Superpowers calls its version "brainstorming" and uses Socratic questioning, one question at a time. Both refuse to plan until the idea has survived some questions.
+
+## Slices, not features
+
+The output is `docs/scope/SCOPE.md`, and its most important part is the list of **slices**. A slice is a small vertical piece of the product that a user could notice: "log a habit for today", not "build the database layer". Each slice cuts through every layer it needs (data, logic, interface) and is buildable in one or two sessions.
+
+Why vertical? Because after every slice you have something that works end to end, which you can verify, show someone, and learn from. Horizontal pieces ("all the models first") give you nothing working until the very end.
+
+Each slice carries a status that the other skills update: `planned`, then `specced`, `built` and `verified`.
+
+## The skill
+
+<KitFile id="skill-scope" />
+
+Notice the design choices, each tied to something you've already learned:
+
+- **`` !`cat docs/scope/SCOPE.md` ``** loads the current scope before the model even starts, so the skill always knows the state (lesson 2.1).
+- **"One question at a time"**, because a wall of questions gets skimmed answers.
+- **"The scope stays coarse"**: *what* and *why* only. *How* belongs to `/architect`. Mixing them is how scope documents bloat into specs nobody updates.
+- **It ends by naming the next step**, including the `/clear`.
+
+<Exercise id="scope-1" title="Scope the habit tracker" time="35 min" predict="Which feature you'd assumed was essential will the challenge talk you out of for version 1?">
+
+1. Install the skill in your practice project: copy it to `~/shipyard/habits/.claude/skills/scope/SKILL.md`.
+2. Start a fresh session and run: `/scope a command-line habit tracker: add habits, check in each day, see streaks`
+3. Answer its questions honestly. When it suggests cuts, argue back at least once: defend one feature, and see whether its reasoning holds up.
+4. Read the `SCOPE.md` it writes. Check: are the slices vertical (each something a user notices)? Could each be built in a session or two?
+5. Run `/scope` with no arguments. It should show a short status.
+
+</Exercise>
+
+<Expect>
+
+A SCOPE.md with a clear problem statement, a version 1 with an explicit "not in version 1" list, and 3 to 6 vertical slices, all `planned`. Something like: *add a habit*, *check in today*, *show current streaks*, *list habits*. Reminders, charts and sync should have been pushed out of version 1.
+
+</Expect>
+
+<IfNot>
+
+- **It asked all its questions at once:** that's the model ignoring an instruction. Say "one at a time, please", and consider moving that line higher in the skill.
+- **The slices are horizontal ("set up storage", "build models"):** tell it: "Rewrite the slices so each one is something a user could notice."
+
+</IfNot>
+
+<KitPiece id="skill-scope" />
+
+<Breaks title="The scope that became a spec">
+  <BreakPart label="What happens">
+
+  SCOPE.md grows to include database columns, API routes and button labels for every slice. Nobody updates it when designs change, so within a week it's wrong, and agents read the wrong version.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Keep the scope coarse: problem, users, version 1 boundaries, slices and statuses. Detail goes into one spec per slice, written only when that slice is next.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="scope-q1" q="Which is a well-formed slice?" options={["Create the database tables", "Build the API layer", "A user can check in today's habit and see the streak go up", "Write all the tests"]} answer={2}>
+  <p>It's vertical: it touches storage, logic and output, and when it's done a user can notice something new. The other three are horizontal layers that deliver nothing a user can see until everything else is finished too.</p>
+</Quiz>
+
+<Terms ids={['slice']} />

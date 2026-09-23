@@ -1,0 +1,19 @@
+---
+// New words introduced on this page. Definitions come from src/data/glossary.ts,
+// so the glossary page and every lesson always agree.
+import { glossary } from '../data/glossary';
+import { md } from '../lib/md';
+interface Props { ids: string[] }
+const { ids } = Astro.props;
+const items = ids.map((id) => {
+  const t = glossary.find((g) => g.id === id);
+  if (!t) throw new Error(`Terms: unknown glossary id "${id}"`);
+  return t;
+});
+---
+<section class="block terms">
+  <div class="block-label">New words</div>
+  <dl>
+    {items.map((t) => (<><dt>{t.term}</dt><dd set:html={md(t.def)} /></>))}
+  </dl>
+</section>

@@ -1,0 +1,35 @@
+---
+import { groupedNav } from '../lib/nav';
+import ProgressRing from './ProgressRing.astro';
+interface Props { current?: string }
+const { current } = Astro.props;
+const groups = await groupedNav();
+const currentSection = current?.split('/')[0];
+---
+<nav class="sidebar" id="sidebar" aria-label="Course map">
+  <div class="progress-card">
+    <ProgressRing scope="all" />
+    <div class="label"><b data-progress-count>0 of 0</b>pages complete<br /><a href="/skills/">Your skills map</a></div>
+  </div>
+  {groups.map((g) => (
+    <details class="map-group" open={g.section.id === currentSection || (!current && g.section.id === 'start')}>
+      <summary>
+        <span class="map-label"><span class={`tier-dot t${g.section.tier}`}></span>{g.section.label}</span>
+        <span class="map-title">{g.section.title}</span>
+        <span class="map-count" data-section-count={g.section.id}>0/{g.items.length}</span>
+      </summary>
+      <ol>
+        {g.items.map((it) => (
+          <li>
+            <a class={`map-link kind-${it.kind}`} href={it.href} data-slug={it.slug} aria-current={it.slug === current ? 'page' : undefined}>
+              <span class="code">{it.code ?? '·'}</span>
+              <span>{it.title}</span>
+              <span class="tick" aria-hidden="true">✓</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </details>
+  ))}
+</nav>
+<div class="scrim" id="scrim" hidden></div>

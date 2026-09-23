@@ -1,0 +1,71 @@
+---
+import Base from '../layouts/Base.astro';
+import { sources, sourceGroups } from '../data/sources';
+---
+
+<Base
+  title="Sources"
+  description="What this course is built on, who each idea belongs to, and how strong the evidence behind each number actually is."
+  active="sources"
+>
+  <main id="main" class="ref">
+    <header class="ref-head">
+      <p class="eyebrow">Sources</p>
+      <h1>Where all of this comes from</h1>
+      <p class="lede">
+        Almost nothing in this course is original. The workflow ideas belong to the people below; what this course adds
+        is the order, the exercises, the failure stories and the architecture running alongside. Every figure a lesson
+        quotes comes from one of these, and where the evidence is one person's experience rather than a study, it says so.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Read the numbers carefully.</strong> A measured trial and a practitioner's tally of their own
+          repositories are both useful, and they are not the same kind of claim. The notes below mark which is which,
+          because a course that quotes anecdotes as if they were studies teaches you the wrong habit.
+        </p>
+      </div>
+    </header>
+
+    {sourceGroups.map((g) => (
+      <section class="group">
+        <h2>{g}</h2>
+        <ul class="list">
+          {sources.filter((s) => s.group === g).map((s) => (
+            <li>
+              <a class="title" href={s.href} rel="noreferrer">{s.title}</a>
+              <span class="who">{s.who}</span>
+              <p class="what">{s.what}</p>
+              {s.note && <p class="note-line">{s.note}</p>}
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+
+    <section class="group">
+      <h2>Corrections</h2>
+      <p class="what wide">
+        If something here is wrong, out of date, or credits the wrong person, that is a bug in the course and worth
+        fixing. Tools change monthly and this page was last checked in September 2026.
+      </p>
+    </section>
+  </main>
+</Base>
+
+<style>
+  .ref { max-width: 1000px; margin: 0 auto; padding: 56px 22px 100px; }
+  .ref-head { max-width: 72ch; }
+  .eyebrow { font: 700 0.76rem var(--font-mono); letter-spacing: 0.13em; text-transform: uppercase; color: var(--accent-strong); margin-bottom: 12px; }
+  h1 { font-size: clamp(2.1rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -0.035em; margin-bottom: 16px; }
+  .lede { font-size: 1.12rem; color: var(--ink-soft); margin-bottom: 22px; }
+  .group { margin-top: 52px; }
+  .group h2 { font-size: clamp(1.4rem, 3vw, 1.85rem); font-weight: 750; letter-spacing: -0.025em; margin-bottom: 18px; }
+  .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; }
+  .list li { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l); padding: 18px 20px; }
+  .title { font: 750 1.1rem var(--font-display); letter-spacing: -0.02em; }
+  .who { display: block; font: 600 0.78rem var(--font-mono); color: var(--ink-faint); margin: 3px 0 10px; }
+  .what { color: var(--ink-soft); margin: 0; }
+  .what.wide { max-width: 68ch; }
+  .note-line { margin: 10px 0 0; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 0.9rem; color: var(--ink-faint); }
+  @media (max-width: 560px) { .ref { padding-top: 36px; } }
+</style>

@@ -1,0 +1,13 @@
+---
+// Filled in client-side from saved progress. `scope` is a section id, or "all".
+interface Props { scope?: string; size?: number }
+const { scope = 'all', size = 48 } = Astro.props;
+const r = 20;
+const c = 2 * Math.PI * r;
+---
+<svg class="ring" viewBox="0 0 48 48" width={size} height={size} data-ring={scope} role="img" aria-label="Progress">
+  <circle cx="24" cy="24" r={r} style="fill:none;stroke:var(--surface-3);stroke-width:5" />
+  <circle cx="24" cy="24" r={r} style={`fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset .4s ease`}
+    stroke-dasharray={c} stroke-dashoffset={c} transform="rotate(-90 24 24)" data-ring-arc />
+  <text x="24" y="28" text-anchor="middle" style="fill:var(--ink);font:700 11px var(--font-mono)" data-ring-text>0%</text>
+</svg>

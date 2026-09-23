@@ -1,0 +1,16 @@
+---
+// A prompt to paste into your agent, with a copy button.
+interface Props { title?: string }
+const { title = 'Say this to your agent' } = Astro.props;
+---
+<figure class="block prompt">
+  <div class="prompt-bar">
+    <div class="block-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m4 17 6-6-6-6M12 19h8"/></svg>
+      Prompt
+    </div>
+    <span class="ptitle">{title}</span>
+    <button class="key key--small" type="button" data-copy-prompt>Copy</button>
+  </div>
+  <div class="prompt-body" data-prompt-text><slot /></div>
+</figure>

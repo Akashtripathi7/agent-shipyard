@@ -1,0 +1,31 @@
+---
+// A decision drill: commit to your answers first, then reveal an expert's reasoning (the slot).
+import { md } from '../lib/md';
+interface Field { label: string; options?: string[]; multi?: boolean }
+interface Props { id: string; scenario: string; fields: Field[] }
+const { id, scenario, fields } = Astro.props;
+---
+<section class="block drill" data-drill={id}>
+  <div class="block-label">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    Decision drill
+  </div>
+  <p class="scenario" set:html={md(scenario)} />
+  {fields.map((f, i) => (
+    <div class="field" data-field={i} data-multi={f.multi ? 'true' : 'false'}>
+      <span class="flabel" set:html={md(f.label)} />
+      {f.options ? (
+        <div class="choices" role="group">
+          {f.options.map((o) => (<button type="button" class="choice" aria-pressed="false" data-choice={o} set:html={md(o)} />))}
+        </div>
+      ) : (
+        <textarea aria-label={f.label} data-note={`drill:${id}:${i}`} placeholder="Write your reasoning. It saves automatically."></textarea>
+      )}
+    </div>
+  ))}
+  <div class="reveal-head" style="background:none;padding:6px 0 0">
+    <span class="rtitle" style="font-weight:500;color:var(--ink-soft);font-size:.92rem">Commit to your answers first. Then compare.</span>
+    <button type="button" class="key key--small key--primary" data-reveal-btn aria-expanded="false" aria-controls={`rv-drill-${id}`}>Reveal expert reasoning</button>
+  </div>
+  <div class="reveal-body" id={`rv-drill-${id}`} hidden style="padding-left:0;padding-right:0"><slot /></div>
+</section>

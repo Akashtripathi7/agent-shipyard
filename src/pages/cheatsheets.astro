@@ -1,0 +1,213 @@
+---
+import Base from '../layouts/Base.astro';
+import { hrefOf } from '../lib/nav';
+
+const paths = [
+  { when: 'New product, empty folder', run: 'scope → architect → develop → verify → review', why: 'Nothing exists yet, so every decision is still open and cheap to make well.' },
+  { when: 'New feature in a live project', run: 'scope (small) → develop → verify → review → sync', why: 'The architecture already exists; the job is fitting in without drifting from it.' },
+  { when: 'Code you did not write', run: 'audit → develop → verify → review', why: 'Learning the conventions is the work. The change itself is usually small.' },
+  { when: 'Something is broken', run: 'debug → develop (targeted) → verify → review', why: 'Diagnosis first. A fix before a diagnosis is a guess with a commit message.' },
+];
+
+const depths = [
+  { name: 'Prototype', gets: 'Build only', use: 'Throwaway spikes, experiments you will delete.' },
+  { name: 'Alpha', gets: '+ verify it runs', use: 'Internal tools, demos with a real user in the room.' },
+  { name: 'Beta', gets: '+ tests', use: 'Anything other people depend on.' },
+  { name: 'GA', gets: '+ second-model review and docs', use: 'Money, personal data, auth, anything you cannot quietly revert.' },
+];
+
+const prompts = [
+  { id: 'scope', title: 'Scope', body: `Challenge this idea before any code. What is genuinely needed for v1, what
+should be explicitly out, and what do I not know yet? Push back where I am
+assuming something. Write the result to PLAN.md with numbered acceptance
+criteria I could test.` },
+  { id: 'review', title: 'Review, in a new session', body: `Review this branch's diff against main. You did not write this code.
+1. Does it do what the spec says, and nothing the spec excluded?
+2. Does it match the contract and this codebase's conventions?
+3. Bugs: wrong logic, unhandled errors, data loss, access control.
+4. Tests: do any of them assert nothing meaningful?
+For each finding: severity, file and line, what breaks, the fix.
+Sort into: fix directly / ask me / park. Invent nothing.` },
+  { id: 'audit', title: 'Audit an inherited repo', body: `Audit this repository into docs/AUDIT.md. Change no code.
+Entry points, one traced request end to end, conventions with quoted
+examples, what I must go through rather than around, fragile areas, and
+what you could not work out. Cite file paths for everything. If two parts
+of the codebase disagree about a convention, show me both.` },
+  { id: 'debug', title: 'Debug without guessing', body: `Do not fix anything yet.
+1. Reproduce it as a failing test, smallest case you can.
+2. Narrow it: where is the data still right, and where is it first wrong?
+3. State the root cause in one sentence. If you cannot, say what you would
+   need to find out and how you would check it.
+4. Only then propose the smallest fix, and what else it could affect.
+If at any point you are guessing, say "I am guessing" and stop.` },
+  { id: 'sync', title: 'Sync the project memory', body: `The change on this branch just landed. Update the project's memory:
+does the contract still match reality, does anything in AGENTS.md now
+contradict the code, is any line in it something you could infer from the
+code, and what decision did we make that is not written down?
+Propose the edits as a diff. Change nothing until I approve.` },
+  { id: 'handover', title: 'Rescue a session going in circles', body: `Stop. Do not attempt another fix.
+Write HANDOFF.md with five sections: goal, what is known to be true (with
+evidence), what has been tried and failed, what is still unknown, and the
+single next step. Then I will start a fresh session from that file.` },
+];
+
+const commands = [
+  { title: 'Sessions and isolation', lines: [
+    ['tmux new -s ledger', 'a session per project'],
+    ['Ctrl+b d', 'detach; the work keeps running'],
+    ['tmux attach -t ledger', 'come back to it'],
+    ['claude --worktree feature-x', 'isolated checkout and branch'],
+    ['git worktree list', 'see every worktree'],
+    ['git worktree remove ../path', 'clean one up'],
+  ] },
+  { title: 'Inside a session', lines: [
+    ['/clear', 'new task, new context'],
+    ['/compact', 'same task, running out of room'],
+    ['/context', 'what is filling the window'],
+    ['/mcp', 'connected servers and their health'],
+    ['/agents', 'where your subagent files live'],
+    ['/tasks', 'background work in this session'],
+  ] },
+];
+---
+
+<Base
+  title="Cheat sheets"
+  description="The loop, the four entry points, the prompts worth keeping, and the commands you will actually reach for."
+  active="cheatsheets"
+>
+  <main id="main" class="ref">
+    <header class="ref-head">
+      <p class="eyebrow">Cheat sheets</p>
+      <h1>The parts you will look up again</h1>
+      <p class="lede">
+        Everything here is taught properly somewhere in the course. This page exists for the second week, when you know
+        what you are doing and just need the wording, the order, or the flag.
+      </p>
+    </header>
+
+    <section class="group">
+      <h2>Which path to run</h2>
+      <p class="group-intro">You rarely run all nine stages. Which ones you run depends on the situation you are in, and there are only four.</p>
+      <div class="tbl-wrap" tabindex="0" role="region" aria-label="Which path to run">
+        <table>
+          <thead><tr><th>Situation</th><th>Path</th><th>Why this one</th></tr></thead>
+          <tbody>
+            {paths.map((p) => (<tr><td class="k">{p.when}</td><td class="mono">{p.run}</td><td>{p.why}</td></tr>))}
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Whichever door you came in by, never skip review. When you are not sure which situation you are in, you are in the audit one.</p>
+    </section>
+
+    <section class="group">
+      <h2>How much checking a change gets</h2>
+      <p class="group-intro">Depth is a decision, not a mood. Pick it when you pick the task, and write the project's default in WORKFLOW.md.</p>
+      <div class="tbl-wrap" tabindex="0" role="region" aria-label="How much checking a change gets">
+        <table>
+          <thead><tr><th>Depth</th><th>What it adds</th><th>Use it for</th></tr></thead>
+          <tbody>
+            {depths.map((d) => (<tr><td class="k">{d.name}</td><td class="mono">{d.gets}</td><td>{d.use}</td></tr>))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>Prompts worth keeping</h2>
+      <p class="group-intro">Copy these, then adapt the wording to your project. The structure is what matters: an outcome, the boundaries, and what counts as proof.</p>
+      <div class="sheets">
+        {prompts.map((p) => (
+          <figure class="sheet">
+            <figcaption>{p.title}<button class="copy" type="button" data-copy={p.id}>Copy</button></figcaption>
+            <pre id={`p-${p.id}`}>{p.body}</pre>
+          </figure>
+        ))}
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>Commands</h2>
+      <div class="cmds">
+        {commands.map((c) => (
+          <div class="cmd-card">
+            <h3>{c.title}</h3>
+            <dl>
+              {c.lines.map(([cmd, what]) => (<div><dt><code>{cmd}</code></dt><dd>{what}</dd></div>))}
+            </dl>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>Guardrails worth having everywhere</h2>
+      <p class="group-intro">Five minutes, once per project. Built in <a href={hrefOf('p1/guardrails')}>Guardrails</a>, and included in your kit.</p>
+      <figure class="sheet">
+        <figcaption>.claude/settings.json<button class="copy" type="button" data-copy="guard">Copy</button></figcaption>
+        <pre id="p-guard">{`"permissions": {
+  "deny": [
+    "Read(./.env)", "Read(./.env.*)",
+    "Bash(rm -rf *)", "Bash(git push --force *)",
+    "Bash(git commit --no-verify *)", "Bash(git push --no-verify *)"
+  ],
+  "ask": ["Bash(git push *)"]
+}`}</pre>
+      </figure>
+    </section>
+  </main>
+</Base>
+
+<style>
+  .ref { max-width: 1060px; margin: 0 auto; padding: 56px 22px 100px; }
+  .ref-head { max-width: 72ch; }
+  .eyebrow { font: 700 0.76rem var(--font-mono); letter-spacing: 0.13em; text-transform: uppercase; color: var(--accent-strong); margin-bottom: 12px; }
+  h1 { font-size: clamp(2.1rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -0.035em; margin-bottom: 16px; }
+  .lede { font-size: 1.12rem; color: var(--ink-soft); }
+  .group { margin-top: 52px; }
+  .group h2 { font-size: clamp(1.4rem, 3vw, 1.85rem); font-weight: 750; letter-spacing: -0.025em; margin-bottom: 10px; }
+  .group-intro { color: var(--ink-soft); max-width: 68ch; margin-bottom: 20px; }
+
+  .tbl-wrap:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-l); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 680px; font-size: 0.94rem; }
+  th { text-align: left; font: 700 0.68rem var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  td { padding: 13px 16px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  tr:last-child td { border-bottom: 0; }
+  td.k { font-weight: 650; color: var(--ink); }
+  td.mono { font-family: var(--font-mono); font-size: 0.85rem; color: var(--ink); }
+
+  .sheets { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
+  .sheet { margin: 0; border: 1px solid var(--line); border-radius: var(--radius-l); overflow: hidden; background: var(--code-bg); }
+  .sheet figcaption {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    font: 600 0.8rem var(--font-mono); color: var(--code-dim);
+    padding: 10px 14px; background: var(--code-bar);
+  }
+  .sheet pre { margin: 0; padding: 14px 16px; font: 400 0.83rem/1.6 var(--font-mono); color: var(--code-ink); background: var(--code-bg); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .copy { font: 600 0.72rem var(--font-mono); color: var(--code-dim); background: transparent; border: 1px solid var(--code-dim); border-radius: 7px; padding: 4px 9px; cursor: pointer; }
+  .copy:hover { color: var(--code-ink); border-color: var(--code-ink); }
+
+  .cmds { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+  .cmd-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l); padding: 18px 20px; }
+  .cmd-card h3 { font: 750 1.05rem var(--font-display); margin-bottom: 12px; }
+  .cmd-card dl { margin: 0; display: grid; gap: 8px; }
+  .cmd-card dl > div { display: grid; grid-template-columns: minmax(120px, auto) 1fr; gap: 12px; align-items: baseline; }
+  .cmd-card dt code { font-size: 0.82rem; }
+  .cmd-card dd { margin: 0; color: var(--ink-soft); font-size: 0.88rem; }
+  @media (max-width: 560px) { .ref { padding-top: 36px; } .cmd-card dl > div { grid-template-columns: 1fr; gap: 2px; } }
+</style>
+
+<script is:inline>
+  document.querySelectorAll('[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var pre = document.getElementById('p-' + btn.getAttribute('data-copy'));
+      if (!pre) return;
+      navigator.clipboard.writeText(pre.textContent || '').then(function () {
+        var old = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(function () { btn.textContent = old; }, 1400);
+      }).catch(function () { btn.textContent = 'Press ⌘C'; });
+    });
+  });
+</script>

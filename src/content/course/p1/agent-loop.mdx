@@ -1,0 +1,139 @@
+---
+title: What an agent actually is
+summary: A model in a loop with tools. Watch the loop happen in your own terminal, and every agent behaviour becomes explainable.
+order: 1
+kind: lesson
+code: '1.1'
+tier: 1
+time: 60 min
+competencies: [operate]
+kit: [loop-log]
+---
+
+<Analogy>
+  <p>A chatbot is a phone helpline: it tells you how to fix the sink, and you do the fixing. An agent is a plumber in your kitchen. It looks at the pipe, decides what to try, picks up the wrench, turns the water on to check, and keeps going until the leak stops or it needs to ask you something.</p>
+</Analogy>
+
+## The loop
+
+An **agent** is a language model running in a loop with tools. The model on its own can only produce text. The program around it, the **harness**, turns that text into real actions. Claude Code is a harness.
+
+Every pass through the loop has the same shape:
+
+1. **Observe.** Read files, run `git status`, look at an error.
+2. **Think.** The model decides the next step from everything it has seen so far.
+3. **Act.** It asks the harness to do one thing: edit a file, run a command. Each request is a **tool call**.
+4. **Check.** The harness returns the result, such as test output, and the model reads it.
+5. **Repeat** until the work is done with evidence, or the agent is stuck and asks you.
+
+One round of deciding and acting is a **turn**. A small bug fix might take eight turns; a feature might take eighty.
+
+<Figure caption="Only 'Think' is the model. Claude Code, the harness, performs every observe, act and check step and feeds the result back in.">
+  <AgentLoop />
+</Figure>
+
+Once you can see this loop, every agent behaviour, good or bad, becomes explainable: it saw something, decided something, did something, and read what happened. When an agent goes wrong, one of those four went wrong. It saw the wrong thing, decided badly, acted clumsily, or never checked. Diagnosing agents is mostly working out which one.
+
+## What the agent can see
+
+Before its first decision, the model already sees quite a lot:
+
+- Claude Code's own system instructions, which explain how to use each tool.
+- Your instruction files (`CLAUDE.md` or `AGENTS.md`; lesson 1.3).
+- The list of tools it may use, and what each does.
+- Your message.
+
+Everything after that is added one turn at a time: each file it reads, each command's output. That growing pile is the **context**, and managing it well is lesson 1.5.
+
+<Exercise id="loop-1" title="Watch your agent's loop happen" time="35 min" predict="Which tools will the agent call, and in what order, when you ask it to fix a failing test?">
+
+1. In your lab folder, create a tiny buggy program and a test for it, then install pytest in a local environment:
+
+   <CodeFile title="calc.py">
+
+   ```python
+   def add(a, b):
+       return a - b
+   ```
+
+   </CodeFile>
+
+   <CodeFile title="test_calc.py">
+
+   ```python
+   from calc import add
+
+   def test_add():
+       assert add(2, 3) == 5
+   ```
+
+   </CodeFile>
+
+   ```bash
+   cd ~/shipyard/lab
+   python3 -m venv .venv && .venv/bin/pip install pytest
+   ```
+
+2. Add a **hook** that writes every tool call the agent makes to a log file. A hook is a command Claude Code runs automatically at a set moment; this one runs after every tool call. Create `.claude/settings.json`:
+
+   <CodeFile title=".claude/settings.json">
+
+   ```json
+   {
+     "hooks": {
+       "PostToolUse": [
+         {
+           "hooks": [
+             {
+               "type": "command",
+               "command": "jq -c '{tool: .tool_name, input: .tool_input}' >> \"$CLAUDE_PROJECT_DIR/.claude/loop.jsonl\""
+             }
+           ]
+         }
+       ]
+     }
+   }
+   ```
+
+   </CodeFile>
+
+   Claude Code passes each hook a JSON description of what just happened. `jq` picks out the tool's name and input and appends one line to `.claude/loop.jsonl`. Hooks load when a session starts, so start Claude Code after saving this.
+
+3. Run `claude` in the folder and type: *"The tests are failing. Find out why and fix it."*
+4. When it's done, open `.claude/loop.jsonl`. Next to each line, write **observe**, **act** or **check**.
+
+</Exercise>
+
+<Expect>
+
+A read of `calc.py` or a test run (observe), an edit that changes `-` to `+` (act), then a test run that passes (check). If you see an edit with **no** test run after it, you've just met the failure below.
+
+</Expect>
+
+<IfNot>
+
+- **The log file is empty or missing:** you started Claude Code before saving the settings. Exit and start it again.
+- **`jq: command not found`:** install it with `brew install jq` (setup page).
+
+</IfNot>
+
+<KitPiece id="loop-log" />
+
+<Breaks title="'Fixed!' without checking">
+  <BreakPart label="What happens">
+
+  The agent edits the code, reasons that the change looks right, and reports done without running anything. On real projects this is the most common silent failure: a confident summary on top of code that never ran.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Make checking part of the job. Jason Ku gives his agents one rule: never report something as working without running it. Lesson 1.3 puts that rule in writing, and lesson 1.6 enforces it with a hook, so the agent can't finish while checks fail.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="loop-q1" q="An agent says it fixed a bug, but the bug is still there. Using the loop, what's the most likely thing that went wrong?" options={["The model is too small for the task", "It skipped the check step: it never ran anything to confirm", "The harness failed to apply the edit", "The context window was full"]} answer={1}>
+  <p>By far the most common cause is a missing check: the agent edited, believed the edit was right, and stopped. The other causes do happen, but you rule them out by looking at the log: was there a test run after the edit? That habit, reading the loop, is how you diagnose agents.</p>
+</Quiz>
+
+<Terms ids={['agent', 'model', 'harness', 'tool-call', 'turn', 'hook']} />

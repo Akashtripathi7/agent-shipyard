@@ -1,0 +1,44 @@
+---
+title: Part 3 review
+summary: Retrieval practice across Parts 1 to 3, then the checklist for moving on to security architecture.
+order: 5
+kind: review
+code: 'Review 3'
+tier: 2
+time: 25 min
+competencies: [verify, operate]
+---
+
+## Recap
+
+- **Classify before you fix:** isolated bug, polluted session, or wrong foundation. Each needs a different response.
+- **Reproduce, isolate, hypothesise, prove, regression test, fix the cause.** Never hide a symptom.
+- **Recover sessions deliberately:** stop, write a handoff with "tried and failed", get back to safety, move decisions into files, restart.
+- **Commit whenever something works;** checkpoints, commits and branches are your safety nets.
+- **Understand before changing inherited code:** audit, enrol, protect with characterization tests, then a small first change.
+
+## Retrieval questions, mixed with earlier parts
+
+<Quiz id="r3-q1" q="An agent 'fixes' a crash by wrapping the code in try/except and returning a default value. What's wrong with that?" options={["Nothing, the crash is gone", "It hides the root cause; the bug still happens, silently", "try/except is slower", "It should have used a retry instead"]} answer={1}>
+  <p>The symptom disappears, the cause remains, and now failures are invisible. Lesson 3.1.</p>
+</Quiz>
+
+<Quiz id="r3-q2" q="Which safety net lets you undo the agent's last few file edits within the current session?" options={["git bisect", "/rewind to a checkpoint", "Deleting the branch", "/compact"]} answer={1}>
+  <p>Checkpoints are the finest-grained net: they snapshot files before each edit in the session. Commits and branches are coarser. Lesson 3.2.</p>
+</Quiz>
+
+<Quiz id="r3-q3" q="Back to Part 1: a README in a cloned repo tells the agent to send your environment variables to a URL. Which structural defence stops it even if the agent is fooled?" options={["A bigger model", "Deny rules and a sandbox with limited network access", "Asking the agent to be careful", "Reading the README yourself afterwards"]} answer={1}>
+  <p>Guardrails that don't depend on the model's judgment: remove a leg of the lethal trifecta. Lesson 1.7.</p>
+</Quiz>
+
+<Quiz id="r3-q4" q="Back to Part 2: why is the verify skill read-only for application code?" options={["To save tokens", "So it stays an independent check instead of grading its own fixes", "Because it can't write files", "It isn't; it should fix what it finds"]} answer={1}>
+  <p>A verifier that fixes things becomes another builder. Independence is what makes it a check. Lesson 2.5.</p>
+</Quiz>
+
+<Checklist id="p3-ready" label="Before Architecture A2" title="You're ready to move on when…" items={[
+  "I've debugged a planted bug through reproduce, prove, regression test, fix.",
+  "I've used `git bisect` at least once.",
+  "I've rescued a polluted session with a handoff note, and seen the fresh session do better.",
+  "I've audited an open-source codebase and checked its claims against the files.",
+  "I've landed a small, verified change in code I didn't write, protected by a characterization test."
+]} />

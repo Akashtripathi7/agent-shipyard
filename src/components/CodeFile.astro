@@ -1,0 +1,9 @@
+---
+// Wrap a fenced code block to give it a file-name bar.
+interface Props { title: string }
+const { title } = Astro.props;
+---
+<div class="codefile">
+  <div class="codefile-bar"><span class="dots"><i></i><i></i><i></i></span>{title}</div>
+  <slot />
+</div>

@@ -1,0 +1,81 @@
+---
+title: Tools and MCP
+summary: What agents can reach beyond your repo, why every tool has a cost, and how to diagnose a tool connection that won't connect.
+order: 4
+kind: lesson
+code: '1.4'
+tier: 1
+time: 60 min
+competencies: [operate, build]
+---
+
+<Analogy>
+  <p>Power tools and wall sockets. A drill is a tool. The socket standard is why any drill works in any house. MCP is that standard for agents: a tool that speaks MCP plugs into any agent that speaks it.</p>
+</Analogy>
+
+## Built-in tools
+
+Out of the box, Claude Code's tools let the agent work inside your project: read and edit files, search, run shell commands, fetch web pages, and start subagents. With the shell alone it can already do a lot, because almost anything has a command line.
+
+## MCP: tools from outside
+
+To reach anything else in a structured way, such as a Figma file, GitHub, a database or a running Flutter app, the agent needs an **MCP server**. **MCP**, the Model Context Protocol, is the standard way a tool describes itself to an agent: its name, what it does, and what inputs it takes. You already have several configured: Figma and GitHub work, while Dart, Chrome DevTools and Firebase were failing when this course was written.
+
+Type `/mcp` inside Claude Code to see every server, whether it connected, and which tools it offers.
+
+## Every tool has a cost
+
+Tools aren't free, in two ways:
+
+1. **Context.** Every tool's description sits in the agent's context, and every result it returns has to be read. Fifteen servers means thousands of tokens of descriptions before you've typed a word, and more chances for the agent to grab the wrong tool.
+2. **Risk.** An MCP server is a program running on your machine or reaching into your accounts. A community server you never read can do anything your user can.
+
+Kun Chen measured the first cost with his AXI project. Command-line tools designed for agents, with short, structured output and clear "nothing found" answers, matched the success rate of MCP-based setups at roughly **half the cost or less**. The lesson isn't "avoid MCP". It's: **choose a few tools, prefer lean output, and read what a tool can do before you connect it.**
+
+| Reach for | When |
+|---|---|
+| The shell | A good command-line tool already exists (`git`, `gh`, `docker`, `flutter`) |
+| An MCP server | The tool gives structured access you can't easily get from a command line: design files, a running app, a live browser |
+| An agent-friendly CLI (the `*-axi` tools) | You call it constantly and its normal output is long and noisy |
+
+<Exercise id="mcp-1" title="Fix the Dart MCP server, then put it to work" time="40 min" predict="What will /mcp say about the Dart server, and what do you think the cause is?">
+
+1. Run `/mcp` and read the error next to `dart`.
+2. Open the official setup guide at [docs.flutter.dev/ai](https://docs.flutter.dev/ai/get-started). Paste the error and the link to your agent with this prompt: *"Explain what causes this error, then propose a fix. Don't change anything until I approve."*
+3. Apply the fix you approved, restart Claude Code, and check `/mcp` again.
+4. In any Flutter project, ask: *"Use the Dart MCP server to run the analyzer and tell me the three most important issues."*
+5. Now ask for the same thing without MCP: *"Run flutter analyze in the terminal and tell me the three most important issues."* Compare the two results in your loop log.
+
+</Exercise>
+
+<Expect>
+
+The Dart server shows as connected. The MCP version returns structured diagnostics; the terminal version is a longer wall of text. Neither is wrong. Notice how much each one costs the agent to read.
+
+</Expect>
+
+<IfNot>
+
+- **Still failing after the fix:** check that the Dart SDK the server uses is the one on your `PATH` (`which dart`, `dart --version`), and that you restarted Claude Code.
+- **You can't tell what the error means:** that's normal. Ask the agent to explain each part before it proposes anything. Understanding the failure is the skill here, not the fix.
+
+</IfNot>
+
+<Breaks title="Fifteen servers, just in case">
+  <BreakPart label="What happens">
+
+  You connect every MCP server that looks useful. Each session starts with thousands of tokens of tool descriptions, the agent reaches for the wrong one, and a community server you never read can run commands on your machine.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Enable servers per project, not globally. Install only from sources you trust, read what a server can do before connecting it, and remove anything you haven't used in a month.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="mcp-q1" q="Your agent keeps calling a tool whose output is 300 lines of mostly irrelevant text. What's the best fix?" options={["Add more MCP servers so it has alternatives", "Switch to a bigger model", "Use a leaner tool, or a script that returns only what's needed", "Tell it in AGENTS.md to read faster"]} answer={2}>
+  <p>Every line of output is context the agent must read, and noise crowds out what matters. A tool, or a small script, that returns just the relevant part is cheaper and more accurate. That's the core idea behind Kun Chen's AXI tools.</p>
+</Quiz>
+
+<Terms ids={['mcp', 'mcp-server']} />

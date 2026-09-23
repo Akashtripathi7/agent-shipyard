@@ -1,0 +1,56 @@
+---
+title: Part 1 decision drills
+summary: Three short scenarios. Commit to your answer, then compare it with an expert's reasoning.
+order: 11
+kind: drill
+code: 'Drills 1'
+tier: 1
+time: 30 min
+competencies: [decide, operate, security]
+---
+
+Drills train the judgment the rest of the course depends on. For each one, **commit to an answer before you reveal anything**, and write one sentence of reasoning. Your answers are saved, so you can come back after Part 7 and see how your thinking changed.
+
+<Drill id="p1-d1" scenario="Your agent has been working on one feature for two hours in the same session. Its last three answers contradicted decisions it made earlier, and it just reintroduced a bug it fixed an hour ago. The context window is only 60% full. What do you do?" fields={[
+  { label: "Your move", options: ["Keep going and correct it", "/compact and continue", "Write a handoff note, /clear, start fresh from the note", "Switch to a bigger model"] },
+  { label: "Why?" }
+]}>
+
+**Expert answer: write a handoff note, then start fresh.**
+
+Contradicting its own earlier decisions is the classic sign of context rot: the session is full of old attempts, abandoned ideas and superseded decisions, all competing for attention. A fuller window isn't required for this to happen.
+
+- *Keep going* adds more noise to an already noisy session.
+- *`/compact`* keeps a summary of the noise, including the contradictions.
+- *A bigger model* reads the same polluted context.
+
+A short handoff note (what's done, what's decided, what's next) gives a fresh session only what matters. Part 3 turns this into a full recovery method.
+
+</Drill>
+
+<Drill id="p1-d2" scenario="You want your agent to run the linter after every file it edits, with no exceptions, because unlinted code keeps reaching review. Where do you put this?" fields={[
+  { label: "Mechanism", options: ["A line in AGENTS.md", "A skill", "A PostToolUse hook", "A subagent"] },
+  { label: "Why?" }
+]}>
+
+**Expert answer: a PostToolUse hook, matched to the edit tools.**
+
+"Every time, no exceptions" is the signal. An AGENTS.md line is a request the agent usually follows but can forget, especially in a long session. A skill loads only when relevant. A subagent is for side jobs with their own context. A hook runs automatically after the tool call, whatever the model is thinking.
+
+Rule of thumb from lesson 1.9: if something **must** happen, make it a hook. If it **should** happen, write it down.
+
+</Drill>
+
+<Drill id="p1-d3" scenario="You ask an agent to triage new GitHub issues on your public repo: read each one, label it, and draft a reply. The session has your normal GitHub token, which can push code, and web access. What's the biggest risk, and your first fix?" fields={[
+  { label: "Biggest risk", options: ["It labels issues wrongly", "A malicious issue hijacks it via prompt injection", "It costs too many tokens", "It replies too slowly"] },
+  { label: "First fix", options: ["A smarter model", "An AGENTS.md rule to ignore instructions in issues", "A read-only token for this task, and draft replies for you to post", "Fewer issues per run"] },
+  { label: "Why?" }
+]}>
+
+**Expert answer: prompt injection; fix it with a read-only token and human-posted replies.**
+
+Issues from strangers are untrusted content. The token is private data with write power. The web and GitHub itself are ways out. That's the full lethal trifecta.
+
+An AGENTS.md rule helps a little, but injection works precisely by fooling the model, so a written rule can be talked around. Removing a leg of the trifecta is structural: with a read-only token and replies that you post yourself, a fooled agent has nothing dangerous it can do.
+
+</Drill>

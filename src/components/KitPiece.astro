@@ -1,0 +1,17 @@
+---
+import { kit } from '../data/kit';
+interface Props { id: string }
+const { id } = Astro.props;
+const piece = kit.find((k) => k.id === id);
+if (!piece) throw new Error(`KitPiece: unknown kit id "${id}"`);
+---
+<aside class="block kit-piece">
+  <span class="icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>
+  </span>
+  <div>
+    <div class="kp-k">Adds to your kit</div>
+    <div class="kp-t">{piece.title} <code>{piece.path}</code></div>
+  </div>
+  <a href={`/kit/#${piece.id}`}>Open in kit</a>
+</aside>

@@ -1,0 +1,88 @@
+---
+title: Architect, decisions written down
+summary: Build an /architect skill that surfaces every load-bearing decision, argues the options with you, and writes a spec with testable acceptance criteria.
+order: 3
+kind: lesson
+code: '2.3'
+tier: 2
+time: 70 min
+competencies: [architecture, brief, decide, build]
+kit: [skill-architect, spec-template]
+---
+
+<Analogy>
+  <p>Blueprints before building. A builder with blueprints makes a thousand small choices without calling you, because the big ones (where the walls go, where the plumbing runs) are already drawn. A builder without blueprints either calls you every hour or quietly guesses.</p>
+</Analogy>
+
+## What this step is for
+
+`/architect` turns one slice from the scope into a **spec**: a file that says exactly what "done" looks like and records every decision the build depends on. It's where Architecture A1 meets the loop.
+
+Its most important job is spotting **load-bearing decisions**: choices that would be expensive to change once code is built on them (lesson A1.1). For the habit tracker's "check in today" slice:
+
+- **Load-bearing:** what "today" means (local time zone or UTC?); whether checking in twice counts twice; the shape of the stored data.
+- **Cheap:** the wording of the confirmation message; the colour of the output.
+
+The skill makes cheap decisions itself and just tells you. For each load-bearing one, it gives you real options with trade-offs and a recommendation, then **waits for you to choose**. That's the part that makes you the architect rather than a spectator.
+
+## Acceptance criteria: the contract
+
+The heart of a spec is its **acceptance criteria**: numbered, testable statements of what must be true. The given / when / then form keeps them concrete:
+
+> 3. **Given** a habit "read" with a 4-day streak ending yesterday, **when** I run `habits check read`, **then** it prints `read: 5 day streak` and the streak is saved.
+
+Each criterion becomes a test in `/develop` and a check in `/verify`. JS Mastery adds one more rule worth copying: **every output value names its source**. "Prints the streak" is vague; "prints the streak, calculated from consecutive check-in dates in local time" is a contract.
+
+<KitFile id="spec-template" title="templates/SPEC.md" />
+
+## The gate
+
+A spec starts as `Draft`. Only **you** change it to `Approved`. The next step, `/develop`, refuses to build a spec that isn't approved, and stops if it needs a decision the spec doesn't make. That refusal is a **gate**: the moment where a human judgment is required before work continues. Without it, undecided questions get decided silently, deep in a chat you'll never reread.
+
+## The skill
+
+<KitFile id="skill-architect" />
+
+A few lines deserve attention:
+
+- **"Never contradict an accepted ADR silently."** Old decisions are respected, or openly challenged with a new ADR.
+- **"Don't weight implementation effort heavily: code is cheap to write."** The bias from lesson 1.8, corrected right where design happens.
+- **"Design only. Don't write application code."** Mixing design and building is how undecided questions sneak into code.
+
+<Exercise id="arch-1" title="Architect the 'check in today' slice" time="45 min" predict="Which load-bearing decision in this slice will you find hardest to choose?">
+
+1. Copy the skill to `.claude/skills/architect/SKILL.md`, and the spec template to `docs/specs/TEMPLATE.md`.
+2. `/clear`, then run `/architect check in today`.
+3. For each load-bearing decision, read all the options before its recommendation, and choose yourself. Disagree with at least one recommendation, with a reason.
+4. Read the spec. For every acceptance criterion, ask: *could I write a test for exactly this?* Rewrite any that fail.
+5. When you're satisfied, change its status to `Approved` yourself.
+
+</Exercise>
+
+<Expect>
+
+A spec at `docs/specs/0001-check-in-today.md` with 4 to 8 numbered criteria, including edge cases: checking in twice, checking in a habit that doesn't exist, what "today" means at 11:59pm. Probably an ADR for the time-zone decision. The slice is now `specced` in SCOPE.md.
+
+</Expect>
+
+<KitPiece id="skill-architect" />
+<KitPiece id="spec-template" />
+
+<Breaks title="Criteria nobody can test">
+  <BreakPart label="What happens">
+
+  The spec says "check-in should be fast and user-friendly". The build passes because nothing can fail against that. The real behaviour (what happens on a second check-in the same day) was never specified, so the agent picked something, and it was wrong.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Every criterion in given / when / then form, with a concrete observable result. If you can't imagine the test, it isn't a criterion yet.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="arch-q1" q="While designing a slice, the agent needs to choose whether streaks use the user's time zone or UTC. What should the /architect skill do?" options={["Pick UTC because it's simpler to code", "Treat it as load-bearing: present options and trade-offs, recommend one, and wait for you to choose", "Leave it for /develop to decide", "Ask you to research time zones"]} answer={1}>
+  <p>It changes stored data and user-visible behaviour, so it's expensive to change later. That makes it load-bearing, which means it's your call, made with the trade-offs in front of you, and written down.</p>
+</Quiz>
+
+<Terms ids={['spec', 'acceptance-criteria', 'load-bearing']} />

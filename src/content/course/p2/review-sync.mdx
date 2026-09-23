@@ -1,0 +1,81 @@
+---
+title: Review with fresh eyes, then document and sync
+summary: Build the last three steps of the loop. A reviewer that doesn't share the builder's blind spots, text written from the real diff, and context files kept honest.
+order: 6
+kind: lesson
+code: '2.6'
+tier: 2
+time: 70 min
+competencies: [verify, build, security]
+kit: [skill-review, skill-document, skill-sync]
+---
+
+<Analogy>
+  <p>An editor who didn't write the article. The writer reads what they meant to write; the editor reads what's actually on the page. Then someone updates the library catalogue so the next reader can find it.</p>
+</Analogy>
+
+## Review: fresh eyes, different model
+
+An agent reviewing its own work in the same conversation has the same blind spots it had while building. So the review step runs with a **fresh context**: it sees the diff, the spec and the rules, but not the conversation that produced them.
+
+The review skill does that with one frontmatter line: **`context: fork`**. The skill runs as an isolated subagent with its own context, instead of inside your current session.
+
+Kun Chen and JS Mastery go one step further: they review with a **different model family**. A model from another company tends to miss different things. Kun's no-mistakes gate does this adversarially on every change. If you have another agent tool installed (Codex, for example), you can run the same review prompt there. If not, a fresh Claude session at high effort still catches a lot.
+
+The review looks for five things, in order of how much damage they do: **correctness**, **security** (can user A reach user B's data?), **contract drift** (does the code match the spec's shapes?), **weakened tests** (expectations changed in the same diff as the code) and **architecture** (layering rules broken, decisions silently changed).
+
+<KitFile id="skill-review" />
+
+Two rules stand out. It's **read-only**: fixes go back to `/develop`, never applied by the reviewer. And: **"Never invent problems to seem useful."** Reviewers under pressure to find something will invent things; saying so explicitly reduces the noise.
+
+## Document: from the diff, not from chat
+
+When a change is verified and reviewed, someone has to explain it: a pull-request description, a changelog entry. The `/document` skill writes these **from the real diff**, not from memory of the conversation, so it describes what was actually built, including anything in the spec that wasn't.
+
+<KitFile id="skill-document" />
+
+## Sync: keep the files honest
+
+Everything in the loop depends on the files being true. But files drift: a command in AGENTS.md changes, a slice gets built but its status never updates, a rule becomes something the agent could now infer from the code. `/sync` reconciles the files with reality, and shows you the edits before applying them.
+
+<KitFile id="skill-sync" />
+
+<Exercise id="review-1" title="Review, document, sync" time="45 min" predict="Will the fresh-context review find anything the builder missed?">
+
+1. Copy the three skills into `.claude/skills/`.
+2. On a branch with your built and verified slice, run `/review docs/specs/0001-check-in-today.md`. Read the findings file.
+3. For each finding, decide: real problem, or noise? Send real ones back with `/develop` ("fix review finding 2") and re-run `/verify`.
+4. Run `/document pr` and read the result. Does it describe only what the diff contains?
+5. Merge the branch, then run `/sync`. Approve the edits it proposes.
+6. Optional: if you have a second agent tool installed, paste the same review instructions and diff into it, and compare what each found.
+
+</Exercise>
+
+<Expect>
+
+A review file with a few findings. Commonly: an edge case, a missing input check, or a test that asserts too little. A clean PR description with evidence links. After sync, SCOPE.md shows the slice as `verified`, and AGENTS.md is no longer than before.
+
+</Expect>
+
+<KitPiece id="skill-review" />
+<KitPiece id="skill-document" />
+<KitPiece id="skill-sync" />
+
+<Breaks title="The reviewer who fixed things">
+  <BreakPart label="What happens">
+
+  A reviewer with edit tools helpfully rewrites the function it was reviewing, and introduces a new bug. Nobody reviews the reviewer's change, because the reviewer was the last step.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Reviewers are read-only, always. Fixes go back through `/develop`, `/verify` and review again. In Part 4, you'll enforce this with a subagent whose tool list simply doesn't include editing.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="review-q1" q="Why does the review skill use `context: fork`?" options={["It makes the review faster", "It runs the review in an isolated context, so it doesn't share the builder's conversation or blind spots", "It lets the reviewer edit code safely", "It's required for every skill"]} answer={1}>
+  <p>A reviewer that has read the whole building conversation tends to accept the builder's reasoning. A forked, fresh context sees only the diff, spec and rules, which is what an independent review needs.</p>
+</Quiz>
+
+<Terms ids={['fresh-context-review']} />

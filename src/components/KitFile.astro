@@ -1,0 +1,24 @@
+---
+// Renders a kit file straight from public/kit, so the lesson and the download never drift apart.
+import { Code } from 'astro:components';
+import fs from 'node:fs';
+import path from 'node:path';
+import { kit } from '../data/kit';
+
+interface Props { id: string; title?: string }
+const { id, title } = Astro.props;
+const item = kit.find((k) => k.id === id);
+if (!item) throw new Error(`KitFile: unknown kit id "${id}"`);
+const file = path.join(process.cwd(), 'public', 'kit', item.path);
+const code = fs.readFileSync(file, 'utf8').replace(/\n$/, '');
+const ext = path.extname(item.path).slice(1);
+const lang = ({ md: 'markdown', sh: 'bash', json: 'json', yaml: 'yaml', yml: 'yaml', toml: 'toml' } as Record<string, string>)[ext] ?? 'text';
+---
+<div class="codefile">
+  <div class="codefile-bar">
+    <span class="dots"><i></i><i></i><i></i></span>
+    <span>{title ?? item.install}</span>
+    <a href={`/kit/${item.path}`} download style="margin-left:auto;color:var(--code-dim)">Download</a>
+  </div>
+  <Code code={code} lang={lang as any} theme="github-dark-dimmed" />
+</div>

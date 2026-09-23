@@ -1,0 +1,21 @@
+---
+// A self-check question. Pick an option, then reveal. The explanation goes in the slot.
+import { md } from '../lib/md';
+interface Props { id: string; q: string; options: string[]; answer: number }
+const { id, q, options, answer } = Astro.props;
+const letters = 'ABCDEFG';
+---
+<section class="block quiz" data-quiz={id} data-answer={answer}>
+  <div class="block-label">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg>
+    Check yourself
+  </div>
+  <p class="q" set:html={md(q)} />
+  <div class="opts" role="group" aria-label="Answer options">
+    {options.map((o, i) => (
+      <button type="button" class="opt" data-opt={i}><span class="letter">{letters[i]}</span><span set:html={md(o)} /></button>
+    ))}
+  </div>
+  <button type="button" class="key key--small" data-reveal-quiz>Reveal answer</button>
+  <div class="why"><slot /></div>
+</section>

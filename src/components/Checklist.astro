@@ -1,0 +1,15 @@
+---
+import { md } from '../lib/md';
+interface Props { id: string; title: string; intro?: string; items: string[]; label?: string }
+const { id, title, intro, items, label = 'Checklist' } = Astro.props;
+---
+<section class="block checklist">
+  <div class="block-label">{label}</div>
+  <h3>{title}</h3>
+  {intro && <p class="cl-intro" set:html={md(intro)} />}
+  <ul>
+    {items.map((it, i) => (
+      <li><label><input type="checkbox" data-check={`${id}:${i}`} /><span set:html={md(it)} /></label></li>
+    ))}
+  </ul>
+</section>

@@ -1,0 +1,166 @@
+/* Harbor: deep navy ink and emerald, with brass highlights and coral for warnings.
+   Light is warm ivory paper; dark is a harbor at night.
+   Every colour is a token. Components never use literal colours. */
+
+:root {
+  color-scheme: light;
+
+  --bg: #f6f1e7;
+  --bg-band: #efe7d6;
+  --surface: #fffdf8;
+  --surface-2: #f4eddf;
+  --surface-3: #ebe2cf;
+  --ink: #14202e;
+  --ink-soft: #485666;
+  --ink-faint: #626d7a;
+  --line: #e1d7c3;
+  --line-strong: #c9bb9c;
+
+  --accent: #0e7a5f;
+  --accent-strong: #0a5c48;
+  --accent-soft: #dcefe6;
+  --accent-ink: #ffffff;
+
+  --brass: #a8701a;
+  --brass-strong: #875913;
+  --brass-soft: #f6e8c9;
+
+  --coral: #b9422b;
+  --coral-strong: #973321;
+  --coral-soft: #f9e2db;
+
+  --sky: #2b64a8;
+  --sky-soft: #dde8f5;
+
+  --tier-1: #0e7a5f;
+  --tier-2: #2b64a8;
+  --tier-3: #8f5f14;
+  --tier-4: #8a3a68;
+  --on-tier: #ffffff;
+
+  /* Keycaps */
+  --key-face: #fffdf8;
+  --key-top: #ffffff;
+  --key-side: #cfc2a4;
+  --key-edge: #bfb08e;
+  --key-ink: #14202e;
+  --key-primary-face: #10886a;
+  --key-primary-top: #1a9d7c;
+  --key-primary-side: #075440;
+  --key-brass-face: #c38a2a;
+  --key-brass-top: #d69d3a;
+  --key-brass-side: #7c5210;
+
+  --code-bg: #111c2b;
+  --code-ink: #dce6f0;
+  --code-bar: #0c1522;
+  --code-dim: #8796a8;
+
+  --shadow-1: 0 1px 2px rgba(20, 32, 46, 0.06), 0 2px 6px rgba(20, 32, 46, 0.05);
+  --shadow-2: 0 2px 4px rgba(20, 32, 46, 0.06), 0 10px 28px rgba(20, 32, 46, 0.09);
+  --glow: rgba(14, 122, 95, 0.18);
+
+  --font-display: 'Bricolage Grotesque Variable', 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+  --font-sans: 'Figtree Variable', 'Avenir Next', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 18px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #0b1320;
+    --bg-band: #0e1829;
+    --surface: #121e31;
+    --surface-2: #17263d;
+    --surface-3: #1e3049;
+    --ink: #e6edf5;
+    --ink-soft: #a9b6c6;
+    --ink-faint: #8d9aab;
+    --line: #22334b;
+    --line-strong: #34496a;
+    --accent: #3ccb9e;
+    --accent-strong: #6fe0bd;
+    --accent-soft: #10362d;
+    --accent-ink: #062019;
+    --brass: #e3b054;
+    --brass-strong: #f0c677;
+    --brass-soft: #382a10;
+    --coral: #f2846a;
+    --coral-strong: #f7a591;
+    --coral-soft: #3b1f19;
+    --sky: #72aaf0;
+    --sky-soft: #15294a;
+    --tier-1: #3ccb9e;
+    --tier-2: #72aaf0;
+    --tier-3: #e3b054;
+    --tier-4: #d783b5;
+    --on-tier: #0b1320;
+    --key-face: #1c2c44;
+    --key-top: #243954;
+    --key-side: #0a111d;
+    --key-edge: #2d4263;
+    --key-ink: #e6edf5;
+    --key-primary-face: #2eb389;
+    --key-primary-top: #45c79e;
+    --key-primary-side: #0c4d3a;
+    --key-brass-face: #d4a045;
+    --key-brass-top: #e3b25a;
+    --key-brass-side: #6b4a10;
+    --code-bg: #0a1220;
+    --code-bar: #070d18;
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.25);
+    --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.35), 0 14px 32px rgba(0, 0, 0, 0.35);
+    --glow: rgba(60, 203, 158, 0.22);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0b1320;
+  --bg-band: #0e1829;
+  --surface: #121e31;
+  --surface-2: #17263d;
+  --surface-3: #1e3049;
+  --ink: #e6edf5;
+  --ink-soft: #a9b6c6;
+  --ink-faint: #8d9aab;
+  --line: #22334b;
+  --line-strong: #34496a;
+  --accent: #3ccb9e;
+  --accent-strong: #6fe0bd;
+  --accent-soft: #10362d;
+  --accent-ink: #062019;
+  --brass: #e3b054;
+  --brass-strong: #f0c677;
+  --brass-soft: #382a10;
+  --coral: #f2846a;
+  --coral-strong: #f7a591;
+  --coral-soft: #3b1f19;
+  --sky: #72aaf0;
+  --sky-soft: #15294a;
+  --tier-1: #3ccb9e;
+  --tier-2: #72aaf0;
+  --tier-3: #e3b054;
+  --tier-4: #d783b5;
+    --on-tier: #0b1320;
+  --key-face: #1c2c44;
+  --key-top: #243954;
+  --key-side: #0a111d;
+  --key-edge: #2d4263;
+  --key-ink: #e6edf5;
+  --key-primary-face: #2eb389;
+  --key-primary-top: #45c79e;
+  --key-primary-side: #0c4d3a;
+  --key-brass-face: #d4a045;
+  --key-brass-top: #e3b25a;
+  --key-brass-side: #6b4a10;
+  --code-bg: #0a1220;
+  --code-bar: #070d18;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.35), 0 14px 32px rgba(0, 0, 0, 0.35);
+  --glow: rgba(60, 203, 158, 0.22);
+}

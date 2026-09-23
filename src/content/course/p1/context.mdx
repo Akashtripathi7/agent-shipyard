@@ -1,0 +1,73 @@
+---
+title: Context, the agent's working memory
+summary: Everything the agent knows lives in one finite window. Learn why quality slips as it fills, and the three habits that prevent almost every context problem.
+order: 5
+kind: lesson
+code: '1.5'
+tier: 1
+time: 55 min
+competencies: [operate]
+---
+
+<Analogy>
+  <p>A whiteboard in a meeting room. Everything the agent knows right now is written on it. As it fills, the writing gets cramped and the important bits get lost among old scribbles. When it's full, someone erases the oldest part to make room, and what gets erased might be the one rule you cared about.</p>
+</Analogy>
+
+## The context window
+
+The **context window** is everything the model can see at this moment: Claude Code's instructions, your AGENTS.md, the whole conversation, every file it read, and every command's output. It's large, but it's finite, and long logs and search results fill it fastest.
+
+Two things go wrong as it fills:
+
+1. **Context rot.** Quality slips well *before* the window is full. Old, irrelevant or contradictory material competes for the model's attention. JS Mastery's course makes the same point: the wrong 400 lines of context pull the model confidently towards the wrong answer.
+2. **Compaction.** When the window is nearly full, Claude Code summarises older parts to free space. Summaries lose details: sometimes exactly the detail you needed.
+
+## Three habits that prevent almost every problem
+
+1. **One task per session.** Run `/clear` between unrelated tasks. A session that fixed a login bug and is now designing a dashboard carries login noise into every dashboard decision.
+2. **Keep state in files, not chat.** Write the plan to a file, such as `PLAN.md`, so a fresh session can pick it up. Anthropic's multi-agent research team does the same: agents save their plans to external memory so work survives when context runs out. This idea is the backbone of Part 2.
+3. **Send noisy work to a subagent.** A **subagent** is a helper with its own separate context. It can read fifty files and hand back a ten-line summary; only the summary lands in your context.
+
+## Clear or compact?
+
+| Situation | Do this |
+|---|---|
+| Switching to an unrelated task | `/clear` |
+| Same task, but the session is long and cluttered | Write a short handoff note to a file, then `/clear` and start fresh from the file |
+| You need the history but the window is nearly full | `/compact`, and tell it what to keep: `/compact keep the decisions about the data model` |
+
+`/context` shows what's filling the window right now.
+
+<Exercise id="ctx-1" title="Watch context fill, then keep it clean" time="30 min" predict="How much smaller will the context be when you start fresh from a three-line PLAN.md, compared with after reading every file?">
+
+1. Ask the agent to read every file in the lab repo and explain the project. Then ask for one small change. Run `/context` and note how full it is.
+2. Run `/clear`. Write `PLAN.md` describing the same small change in three lines. Ask: *"Do the task in PLAN.md."*
+3. Run `/context` again and compare.
+4. Finally, ask: *"Use a subagent to find every place we call add() and report back in five lines."* Check `/context` once more.
+
+</Exercise>
+
+<Expect>
+
+The fresh session working from `PLAN.md` uses a fraction of the space, and the subagent's search barely moves your main window. Same work, much less noise.
+
+</Expect>
+
+<Breaks title="The forgotten rule">
+  <BreakPart label="What happens">
+
+  Two hours into one long session, after a compaction, the agent starts storing amounts as decimals. You'd said "whole paise only" in an early message, and it was summarised away.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Rules that must always hold go in AGENTS.md, which is loaded on every turn and never summarised away. Long work gets fresh sessions and a handoff file, not one endless conversation.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="ctx-q1" q="An agent's answers have been getting worse over a long session, even though the context isn't full. What's happening, and what do you do?" options={["The model is tired; wait an hour", "Context rot: old, noisy material is crowding out what matters. Write a handoff note and start a fresh session", "The window is full; buy a bigger plan", "Nothing: quality is random"]} answer={1}>
+  <p>Quality degrades before the window fills, because irrelevant and contradictory material competes for attention. The cure is a clean session that starts from a short written summary of what matters.</p>
+</Quiz>
+
+<Terms ids={['context-window', 'context-rot', 'compaction', 'subagent']} />

@@ -1,0 +1,58 @@
+---
+title: Part 2 review
+summary: Pull Architecture A1 and the feature loop back from memory before you start your first real project.
+order: 9
+kind: review
+code: 'Review 2'
+tier: 2
+time: 30 min
+competencies: [architecture, brief, verify]
+---
+
+Answer from memory first. Project L1 uses every idea here, so any gap now will cost you later.
+
+## Recap
+
+- **Architecture is the decisions that are expensive to change.** See components, boundaries and data flow; name the qualities that matter.
+- **Start with a layered monolith.** Dependencies point downward; routes never contain SQL.
+- **Design the API and the data model deliberately.** Money as integers, ownership on every row, constraints in the database.
+- **Write load-bearing decisions as ADRs** and draw systems at the right zoom level.
+- **State lives in files.** Clear context between steps; the spec is the handoff.
+- **Scope challenges the idea** and cuts it into vertical slices.
+- **Architect surfaces load-bearing decisions** and writes testable criteria. Only you approve.
+- **Develop refuses unapproved specs,** builds test-first in small tasks, and stops to ask.
+- **Verify proves real behaviour** with evidence; tests prevent regressions. You need both.
+- **Review with fresh eyes, read-only.** Document from the diff. Sync keeps files honest.
+- **Pick the entry point and depth per change.** Overrides for auth, money, personal data and deletion.
+
+## Retrieval questions
+
+<Quiz id="r2-q1" q="Which quality is most likely to matter most for a password manager?" options={["Performance", "Security", "Cost", "Scalability"]} answer={1}>
+  <p>The whole product is trust: if its security fails, nothing else matters. Architecture is choosing which qualities matter most for this product and shaping the system around them. Lesson A1.1.</p>
+</Quiz>
+
+<Quiz id="r2-q2" q="In a layered monolith, where does 'an expense can't be dated in the future' belong?" options={["In the route handler", "In the service layer", "In the repository", "In the Flutter app only"]} answer={1}>
+  <p>It's a business rule, so it lives in the services, which know neither HTTP nor SQL. A database constraint can back it up, and the app can check it for a better experience, but the rule itself lives in one place. Lesson A1.2.</p>
+</Quiz>
+
+<Quiz id="r2-q3" q="Why write acceptance criteria as given / when / then?" options={["It's a legal requirement", "It forces each criterion to be concrete and testable, so it can become both a test and a verification step", "It makes specs longer", "Agents can't read other formats"]} answer={1}>
+  <p>A criterion you can't test can't fail, which means it can't catch anything. Lesson 2.3.</p>
+</Quiz>
+
+<Quiz id="r2-q4" q="What should /develop do when it needs a decision the spec doesn't make?" options={["Make the most sensible choice silently", "Stop and ask; if told to proceed, record the choice under 'Assumed' in the spec", "Skip the task", "Approve a new spec itself"]} answer={1}>
+  <p>Stop and ask is the most valuable behaviour in the loop. Silent decisions are how systems end up shaped by accident. Lesson 2.4.</p>
+</Quiz>
+
+<Quiz id="r2-q5" q="The unit tests pass but verification fails. Most likely cause?" options={["Flaky tests", "The code and tests share one misunderstanding of the spec", "Verification is always less reliable", "The wrong model was used"]} answer={1}>
+  <p>Same author, same misreading, so the code and tests agree with each other and not with the spec. Lesson 2.5.</p>
+</Quiz>
+
+<Checklist id="p2-ready" label="Before Project L1" title="You're ready for Pocket Ledger when…" items={[
+  "I can sketch any system as components, boundaries and data flow, and name its top qualities.",
+  "I've designed an API and a data model on paper, and defended them against an agent's challenge.",
+  "I've written at least two ADRs with honest consequences.",
+  "My practice project has the docs structure and all seven loop skills installed.",
+  "I've run a slice through scope, architect, develop, verify, review, document and sync.",
+  "I've watched /develop stop for an undecided question, and verification catch a planted bug.",
+  "I can choose an entry point and depth for a change, and I know my overrides."
+]} />

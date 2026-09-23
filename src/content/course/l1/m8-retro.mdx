@@ -1,0 +1,75 @@
+---
+title: M8 · Explain, retro and kit
+summary: Make sure you can explain every file, write down what the project taught you, and turn those lessons into a better kit for the next project.
+order: 9
+kind: milestone
+code: 'L1 · M8'
+tier: 2
+time: 90 min
+competencies: [build, decide, operate]
+---
+
+## Goal
+
+You can explain every file in the repository, you've written a short retrospective, and your kit is measurably better because of this project.
+
+## Step 1: never ship code you can't explain
+
+Walk the repository file by file. For each one, say out loud what it does and why it exists. Wherever you can't, use your `/explain-changes` skill on it, or ask:
+
+<Prompt>
+Teach me what api/app/services/summary.py does, as if I were a new teammate. Then ask me three questions about it, one at a time, and correct me if I'm wrong. Don't change anything.
+</Prompt>
+
+If you installed Altitude, its `/adopt-project` skill does this systematically, and writes a file map marking which files you understand.
+
+## Step 2: the retro
+
+Create `LEARNINGS.md` at the root and answer these honestly. Short answers are fine.
+
+<CodeFile title="LEARNINGS.md">
+
+```markdown
+# Pocket Ledger retro
+
+## What went well
+- Which loop step saved me the most trouble, and how?
+
+## What went wrong
+- Where did an agent go off track? Which step should have caught it?
+- Which decision did I make without enough thought?
+
+## Numbers
+- Review findings that were real / total findings:
+- Times /develop stopped to ask:
+- Bugs verification caught that tests missed:
+
+## Changes to my kit
+- 1.
+- 2.
+- 3.
+```
+
+</CodeFile>
+
+## Step 3: improve the kit
+
+The "changes to my kit" list is the most important output of the project. Common, and good, changes after a first project:
+
+- A new line in your review skill's checklist for something it missed (often rate limiting, or logging request bodies).
+- A tighter gate in `/develop` for a kind of decision it made silently.
+- A rule moved out of AGENTS.md into a skill, because it was only needed sometimes.
+- A new step in `/verify`, such as "use two different users for any ownership criterion".
+
+Make each change in the kit files themselves (wherever you keep your copies, such as `~/.claude/skills/`), not only in this project, so the next project starts better.
+
+## Step 4: celebrate, then look ahead
+
+You've done the whole loop, on a real product, from an empty folder to a phone. Everything from here builds on exactly this: Part 3 teaches what to do when the loop meets broken or inherited code, and Part 4 splits this same loop across a crew of agents.
+
+<Checklist id="l1-m8" label="Done when" title="M8, and Project L1, are done when…" items={[
+  "You can explain every file in the repository without notes.",
+  "LEARNINGS.md is filled in, including the numbers.",
+  "At least three concrete kit changes are made in your kit files, not just listed.",
+  "Every item in the project checklist on the overview page is true."
+]} />

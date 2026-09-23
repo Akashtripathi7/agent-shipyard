@@ -1,0 +1,81 @@
+---
+title: Models, effort and tokens
+summary: Which model for which job, when to spend more thinking, and where your usage actually goes.
+order: 10
+kind: lesson
+code: '1.10'
+tier: 1
+time: 45 min
+competencies: [operate, decide]
+---
+
+<Analogy>
+  <p>Staffing a project. You don't pay a senior architect to label boxes, and you don't give an intern the building's structural design. Matching the person to the job is most of what makes a team both good and affordable.</p>
+</Analogy>
+
+## Pick the model for the job
+
+Claude Code lets you choose the model per session (`/model`) and per subagent (the `model:` line in its file, Part 4). The names change as new models ship; in Claude Code you'll see aliases such as `opus`, `sonnet`, `haiku` and `fable`. Rather than memorising versions, think in three sizes:
+
+| Size | Good at | Use it for |
+|---|---|---|
+| **Largest** | Hard reasoning, design, spotting subtle problems | Architecture decisions, planning, security review, debugging something nasty |
+| **Middle** | Strong, fast, the everyday workhorse | Building features, writing tests, most of your work |
+| **Smallest** | Fast and cheap, fine for clear mechanical steps | Driving a review gate, formatting, simple lookups, summaries |
+
+Jason Ku uses exactly this split. His builder agents do the heavy work, and a small, cheap "driver" agent with a fresh context runs the review gate, because running a checklist doesn't need a big model or the builder's huge context.
+
+Run `/model` to see what's available to you and what each one costs against your plan.
+
+## Effort: how hard it thinks
+
+Separately from the model, the **effort level** controls how much the model thinks before acting: `low`, `medium`, `high`, `xhigh` or `max` (set with `/effort`). More effort helps on genuinely hard problems and wastes time on easy ones.
+
+- **Low or medium** for routine building.
+- **High** for designing, debugging, and anything where a wrong first step is expensive.
+- **Max** rarely: a knotty design question, once.
+
+## Where tokens go
+
+Everything the agent reads or writes costs **tokens**. The biggest costs are usually not what beginners expect:
+
+1. **Rereading.** A long session rereads its growing context on every turn. That's why `/clear` and fresh sessions save so much.
+2. **Noisy tool output.** A test run printing 2,000 lines costs more than the fix it enables. Quieter commands (`pytest -q`) and lean tools pay off.
+3. **Parallel agents.** Five agents cost roughly five times as much. Anthropic measured multi-agent systems using about 15 times the tokens of a normal chat.
+4. **Loops.** An agent retrying a flaky test for an hour burns usage and produces nothing.
+
+`/usage` shows your plan limits, and `/context` shows what's filling the current session.
+
+<Exercise id="model-1" title="Same task, two setups" time="30 min" predict="Will the smaller model get the task right? How will the time and usage compare?">
+
+1. Check `/usage` and note where you are.
+2. In the lab repo, with the smallest model (`/model` to switch) and low effort, ask for a `safe_divide(a, b)` that returns `None` when b is zero, test-first.
+3. `/clear`. Switch to the middle model and repeat on a new branch.
+4. Compare: did both pass `scripts/check.sh`? How many turns did each take (count lines in the loop log)? Check `/usage` again.
+
+</Exercise>
+
+<Expect>
+
+For a task this clear and small, the smaller model usually does fine, faster and cheaper. That's the point: size the model to the task. Try the same comparison later on a real design decision, and the gap shows up.
+
+</Expect>
+
+<Breaks title="The expensive default">
+  <BreakPart label="What happens">
+
+  Everything runs on the biggest model at maximum effort "to be safe", including formatting and simple lookups. Usage limits run out by midweek, just when you need them for something hard.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Default to the middle model at medium effort. Go up for design, debugging and security; go down for mechanical work. In Part 4, you'll set the model in each subagent's file so this happens automatically.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="model-q1" q="Which job most deserves the largest model at high effort?" options={["Formatting all files in the repo", "Deciding how to split a monolith into services", "Running a checklist-driven review gate", "Renaming a variable everywhere"]} answer={1}>
+  <p>Architecture decisions are expensive to get wrong and hard to reverse, so paying for the best reasoning is worth it. Formatting and renaming are mechanical, and a checklist-driven gate is exactly the job Jason Ku gives a small, cheap driver model.</p>
+</Quiz>
+
+<Terms ids={['effort']} />

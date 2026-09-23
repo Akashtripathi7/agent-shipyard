@@ -1,0 +1,88 @@
+---
+title: How this course works
+summary: What you'll be able to do by the end, how the course is built, and the five habits that turn reading into skill.
+order: 1
+kind: start
+tier: 1
+time: 20 min
+competencies: []
+---
+
+## What you'll be able to do
+
+By the end of this course you'll be able to take any software idea and decide, with reasons you can defend:
+
+- **how to build it with agents**: one agent or a crew, how much checking each change gets, which gates stop mistakes;
+- **how to architect it**: the components, the data, the boundaries, what happens when it fails or grows;
+- **how to run it alongside everything else**: several live projects without crossed wires, runaway cost, or surprises at 2am.
+
+You'll also own a **workflow kit**: your own instruction files, skills, subagents, hooks and gates, built one piece at a time and packaged as a Claude Code plugin you can drop into any new project.
+
+<Analogy>
+  <p>Learning this is like learning to run a kitchen, not like learning a recipe. A recipe works for one dish. A head chef knows how many cooks a service needs, which stations can work at once, what gets tasted before it leaves, and what to do when the walk-in freezer dies mid-shift. That judgment is what this course trains.</p>
+</Analogy>
+
+## Three pillars
+
+The course combines the two strongest schools of agentic engineering you studied, and adds the piece both assume you already have.
+
+| Pillar | Where it comes from | What it gives you |
+|---|---|---|
+| **The Loop** | JS Mastery's skills, obra's Superpowers | A repeatable path for one feature: scope, decide, build, prove, review, record. Every decision lives in a file, not in chat. |
+| **The Crew** | Kun Chen | Several agents at once, each in its own workspace, behind a validation gate, with you as the manager instead of the typist. |
+| **Architecture** | Software design practice | The ability to design the system itself: what the parts are, how data flows, where trust ends, how it scales and fails. |
+
+Agents now write most of the code. That moves your value to **decisions**: what to build, how it should be shaped, and whether what came back is good. Every part of this course trains one of those three.
+
+## How the bar rises
+
+The course climbs through four tiers. Each page shows its tier, and nothing appears before you have the foundation for it.
+
+| Tier | You can | Where |
+|---|---|---|
+| **1 · Foundation** | Drive one agent safely, and explain what it's doing and why | Start here, Parts 0 and 1 |
+| **2 · Practitioner** | Ship a feature end to end with a repeatable loop; debug; take over code you didn't write | Parts 2 and 3, Architecture A1 and A2, Project L1 |
+| **3 · Advanced** | Run a crew of agents behind gates; design multi-role and distributed systems | Part 4, Architecture A3 and A4, Projects L2 to L4 |
+| **4 · Expert** | Run many projects at once; design AI systems; choose workflow and architecture for any use case | Parts 5 to 7, Architecture A5 and A6, Projects L5 and L6, the mastery exam |
+
+The [skills map](/skills/) tracks ten competencies as you go, from "Operating an agent" to "Decisions and trade-offs".
+
+## What a lesson looks like
+
+Every lesson has the same shape, so you always know where you are.
+
+1. **An analogy** from everyday life, before any technical word.
+2. **A plain explanation**, with a diagram where a picture helps.
+3. **A hands-on exercise.** You write a prediction first, then do it, then compare with "what you should see".
+4. **How it breaks in real life**: a real failure pattern and its fix.
+5. **A self-check question**, answered from memory.
+6. **New words**, defined in plain English (all collected in the [glossary](/glossary/)).
+7. **Adds to your kit**, when the lesson produces a file you'll reuse.
+
+Projects have their own shape: an overview, then milestone pages with the architecture decision you make first, the exact prompts to give your agent, the files you should end up with, checkpoints, and what to do when it goes wrong.
+
+Scattered through the course are **decision drills**: short realistic scenarios where you commit to an answer (how many agents, how much checking, which architecture) before an expert's reasoning is revealed. They're where judgment gets built.
+
+## Five habits
+
+These come from how the best teachers and practitioners actually learn this, including Jason Ku's Altitude method.
+
+1. **One lesson per sitting.** About an hour, then stop. The gap between lessons is when it sticks; binge-reading gives the feeling of learning without the skill.
+2. **Predict before you run.** Every exercise asks for a one-line prediction. When you're wrong, that gap is the lesson.
+3. **Never ship code you can't explain.** If an agent wrote something you can't explain, ask it to teach you before you merge.
+4. **Break things on purpose.** Reproduce each "how it breaks" story once. You'll recognise it instantly when it happens for real.
+5. **Tick "Mark complete" only when the hands-on part ran**, not when you've read the page.
+
+<Quiz id="how-1" q="An agent built a feature and all the tests pass, but you can't explain how the new code works. What should you do?" options={["Merge it: the tests pass, so it works", "Delete it and write it yourself", "Ask the agent to walk you through it until you can explain it, then decide", "Ask a second agent whether it looks fine"]} answer={2}>
+  <p>Passing tests prove the code does what the tests check, not that it's the right design or that you can maintain it. The course rule is: never ship code you can't explain. Ask the agent to teach you. Often that conversation reveals a problem the tests missed.</p>
+</Quiz>
+
+## Your progress
+
+Everything you do here (completed pages, checklists, predictions, quiz answers, drill answers) is saved **in this browser**. There's no account and no server. To move to another device, or to keep a backup, use **Export** on the [skills map](/skills/) page, and **Import** on the other device.
+
+<Callout type="note" label="Optional: turn your agent into a tutor">
+  <p>Jason Ku's <a href="https://github.com/jasonku09/altitude-skills">Altitude skills</a> make Claude Code teach instead of ghostwrite. Read the repo first (a rule you'll meet often in this course), then install it with <code>/plugin marketplace add jasonku09/altitude-skills</code> and <code>/plugin install altitude@altitude</code>. You'll use its <code>/adopt-project</code> skill in Part 3.</p>
+</Callout>
+
+Next, set up your machine. Everything after that assumes it works.

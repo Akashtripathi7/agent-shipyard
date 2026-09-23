@@ -1,0 +1,50 @@
+---
+title: Part 3 decision drills
+summary: Diagnose the kind of broken before acting, and decide how carefully to approach code you don't know.
+order: 4
+kind: drill
+code: 'Drills 3'
+tier: 2
+time: 30 min
+competencies: [decide, verify, operate]
+---
+
+<Drill id="p3-d1" scenario="Every time you fix the monthly summary for one edge case, a different one breaks: first months with no expenses, then expenses exactly at midnight, then edited expenses. You've made five fixes in a week. What kind of broken is this, and what's your next move?" fields={[
+  { label: "Kind of broken", options: ["Isolated bug", "Polluted session", "Wrong foundation"] },
+  { label: "Next move", options: ["Sixth fix, with more tests", "Start a fresh session", "Revisit the design with /architect", "Rewrite the whole API"] },
+  { label: "Why?" }
+]}>
+
+**Expert answer: a wrong foundation; revisit the design with `/architect`.**
+
+Five fixes, each revealing a new failure in the same area, across several sessions, is the signature of a design problem, not a code problem. Here, the likely culprit is time: the summary probably mixes timestamps and dates, or computes "a month" differently in different places.
+
+A fresh session wouldn't help: the confusion is in the design, not the conversation. A full rewrite is overkill. Go back to the data-model spec and the ADRs, make one explicit decision ("a month is defined by the `spent_on` date in the user's time zone; timestamps are only for auditing"), and write a regression test for each of the five past bugs before changing the code.
+
+</Drill>
+
+<Drill id="p3-d2" scenario="You've joined a team maintaining a payments app nobody fully understands. Your first task: change the text of one error message shown to users. Your lead says 'it's trivial, just do it'. How do you approach it?" fields={[
+  { label: "Approach", options: ["Change the string and push", "Run /audit on the whole codebase first", "Audit just the area around the message, add a characterization test, then change it", "Refuse until the codebase has full test coverage"] },
+  { label: "Why?" }
+]}>
+
+**Expert answer: audit just the area around it, add a characterization test, then change it.**
+
+A text change is usually trivial, but in an unknown payments codebase, "usually" is doing a lot of work. The string might be matched by a client somewhere, logged and parsed by monitoring, or used as a key in a translation file. A focused audit of the surrounding code takes minutes and finds those.
+
+Auditing the entire codebase for one string is out of proportion; you'll do that as you take on bigger work. Refusing until there's full coverage is never going to happen. Matching effort to risk is the skill.
+
+</Drill>
+
+<Drill id="p3-d3" scenario="An agent has been debugging a failing integration test for 40 minutes. It has proposed four fixes, the last two nearly identical to the first two, and its explanations are getting longer. What do you do?" fields={[
+  { label: "Your move", options: ["Let it keep going", "Take over and debug it yourself", "Stop it, ask for a handoff note with 'tried and failed', rewind, and restart fresh", "Switch it to a bigger model in the same session"] },
+  { label: "Why?" }
+]}>
+
+**Expert answer: stop, capture a handoff note, get back to a clean state, and restart fresh.**
+
+Repeated near-identical fixes and swelling explanations are the classic signs of a polluted session. Letting it continue adds more noise. A bigger model in the same session reads the same polluted context. Taking over yourself is Kun Chen's third delegation mistake. You'd lose the manager's position for a problem the agent can solve with a clean start.
+
+The handoff note's "tried and failed" section is what makes the restart fast: the fresh session skips the four dead ends.
+
+</Drill>

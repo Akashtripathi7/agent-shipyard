@@ -1,0 +1,12 @@
+---
+// Hidden content behind a button: model answers, model ADRs, worked solutions.
+interface Props { title: string; button?: string; id: string }
+const { title, button = 'Show it', id } = Astro.props;
+---
+<section class="block reveal-box" data-reveal={id}>
+  <div class="reveal-head">
+    <span class="rtitle">{title}</span>
+    <button type="button" class="key key--small key--brass" data-reveal-btn aria-expanded="false" aria-controls={`rv-${id}`}>{button}</button>
+  </div>
+  <div class="reveal-body prose-inner" id={`rv-${id}`} hidden><slot /></div>
+</section>

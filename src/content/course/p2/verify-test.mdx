@@ -1,0 +1,87 @@
+---
+title: Verify and test, two kinds of proof
+summary: Tests prove the code does what the tests check. Verification proves the real product does what the spec promised. You need both, and they catch different bugs.
+order: 5
+kind: lesson
+code: '2.5'
+tier: 2
+time: 60 min
+competencies: [verify, build]
+kit: [skill-verify]
+---
+
+<Analogy>
+  <p>A car factory tests every part on the bench: the brakes grip, the lights light. Then a driver takes the finished car round the test track. Parts that pass every bench test can still produce a car that pulls to the left. You need the bench and the track.</p>
+</Analogy>
+
+## Two kinds of proof
+
+| | Tests | Verification |
+|---|---|---|
+| **Proves** | The code does what the tests check | The real product does what the spec promised |
+| **Runs** | Automatically, forever, in `check.sh` and CI | Once per slice, against the running app |
+| **Catches** | Regressions: things that used to work breaking | Gaps: things that never worked, or the tests themselves being wrong |
+| **Made by** | `/develop`, test-first | `/verify`, criterion by criterion |
+
+Tests have a blind spot: they check what someone *thought* to check, often the same someone who wrote the code. If the agent misunderstood a criterion, it writes code *and* tests that agree with each other and are both wrong. Everything passes, and the product is still broken.
+
+**Verification** closes that gap. It ignores the tests, starts the real application, and does exactly what each acceptance criterion says, like a user would. It collects evidence for each: the actual command and output, or a screenshot. JS Mastery calls this "two kinds of proof", and their `/check verify` drives the real app for exactly this reason.
+
+## Evidence, not claims
+
+The rule from lesson 1.6 applies with full force here: **never mark something as passing without evidence observed in this session.** "Criterion 3: PASS" is a claim. "Criterion 3: ran `habits check read` with a 4-day streak; output `read: 5 day streak`; PASS" is evidence. The verify skill writes a table of evidence to `docs/reviews/`, so you, and later a reviewer, can see exactly what was proven.
+
+## Tests from verification
+
+When verification finds a gap, the fix goes back to `/develop`, and the fix should include a **regression test**: an automated test that reproduces what verification caught, so it can never silently come back.
+
+## The skill
+
+<KitFile id="skill-verify" />
+
+Note that it's **read-only for application code**. A verifier that also fixes things stops being an independent check: it's just another builder, grading its own work.
+
+<Exercise id="verify-1" title="Make it lie to you" time="40 min" predict="Will the unit tests catch the bug you plant? Will verification?">
+
+This is a JS Mastery exercise worth doing exactly: plant a bug that the tests can't see, and prove that verification finds it.
+
+1. Copy the skill to `.claude/skills/verify/SKILL.md`.
+2. `/clear`, then run `/verify docs/specs/0001-check-in-today.md` on your working slice. Read the evidence table. Everything should pass.
+3. Now plant a bug the tests won't catch: change the code so that checking in **twice** on the same day increases the streak twice, and **also** edit the matching test so it expects that. `scripts/check.sh` still passes.
+4. `/clear`, then run `/verify` again.
+5. Put the code and test back, then ask `/develop` to add a regression test for the double check-in case.
+
+</Exercise>
+
+<Expect>
+
+In step 4, `scripts/check.sh` is green but verification marks the "check in twice" criterion FAIL, with the actual output as evidence, because it tested against the spec, not against the tests. That gap is why both kinds of proof exist.
+
+</Expect>
+
+<IfNot>
+
+- **Verification passed the planted bug:** check the evidence. If it reports running something it didn't actually run, it's claiming instead of proving. Tighten the skill's "never mark PASS without evidence" line, and check that the spec has a criterion for checking in twice. If it doesn't, the real gap was in the spec.
+
+</IfNot>
+
+<KitPiece id="skill-verify" />
+
+<Breaks title="Green tests, broken product">
+  <BreakPart label="What happens">
+
+  An agent misreads "streaks reset if you miss a day" and implements "streaks reset after a week". It writes tests for its own interpretation. Every test passes. A user loses their 30-day streak and emails you.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Verify against the spec, not the tests, with evidence per criterion. And keep the verifier read-only, so it stays independent of the builder.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="verify-q1" q="All unit tests pass, but verification fails a criterion. What's the most likely explanation?" options={["Verification is broken", "The code and its tests share the same misunderstanding of the spec", "The tests are too slow", "Verification ran on the wrong branch"]} answer={1}>
+  <p>When the same agent writes code and tests from one misreading, they agree with each other and disagree with the spec. Verification checks against the spec directly, which is exactly how it catches this.</p>
+</Quiz>
+
+<Terms ids={['verification', 'regression-test']} />

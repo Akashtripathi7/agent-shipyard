@@ -1,0 +1,94 @@
+---
+title: Workflow or agent?
+summary: Scripts for anything that should happen the same way every time; agents only where judgment is needed. The strongest setups are mostly scripts.
+order: 2
+kind: lesson
+code: '1.2'
+tier: 1
+time: 45 min
+competencies: [operate, decide]
+kit: [check-sh]
+---
+
+<Analogy>
+  <p>A recipe card versus a chef. The card says "bake for 20 minutes" whatever happens. The chef looks at the cake, sees it's pale in the middle, and gives it five more. You want the card for measuring flour and the chef for judging the cake.</p>
+</Analogy>
+
+## Two ways to get work done
+
+A **workflow** is a list of steps fixed in advance. A script that formats the code, runs the tests and builds the app is a workflow: it does the same thing every time. An **agent** chooses its own steps as it goes. Anthropic draws exactly this line in its guide to building agents, and neither one is better. They do different jobs.
+
+Anything **deterministic**, meaning it should happen identically every time, belongs in a script: formatting, linting, tests, builds, deploys. Scripts are fast, free and never improvise. Anything that needs judgment belongs to an agent: why a test fails, how a screen should behave with an empty list, what a sensible name is.
+
+Kun Chen keeps his deterministic steps in plain bash for exactly this reason: a script costs zero reasoning tokens and never has an off day. Good setups are mostly scripts, with agents placed at the moments that need judgment.
+
+| Task | Script or agent | Why |
+|---|---|---|
+| Format and lint the code | Script | Same steps every time |
+| Fix a lint error that needs a decision | Agent | Needs to understand intent |
+| Bump the version and tag a release | Script | Mechanical, and must be exact |
+| Write release notes from the commits | Agent | Summarising needs understanding |
+| Deploy to staging | Script, started by you or CI | Must be repeatable and reversible |
+| Investigate a production error | Agent, with read-only access | Detective work, but no power to change things |
+
+## One script as the source of truth
+
+The single most useful script in any project is one that runs **all** the checks. The agent calls it, you call it, and later your CI calls the same script. Then "it passes" means exactly one thing, everywhere.
+
+<Exercise id="wf-1" title="Give your agent one pipeline to call" time="25 min" predict="When you ask the agent to add a function, will it run your check script, or invent its own commands?">
+
+1. Install the linter: `.venv/bin/pip install ruff`
+2. Create the check script:
+
+   <CodeFile title="scripts/check.sh">
+
+   ```bash
+   #!/usr/bin/env bash
+   # Runs every check. Exits non-zero if anything fails.
+   set -euo pipefail
+   .venv/bin/ruff format --check .
+   .venv/bin/ruff check .
+   .venv/bin/pytest -q
+   ```
+
+   </CodeFile>
+
+   Make it executable: `chmod +x scripts/check.sh`
+3. Run it yourself: `scripts/check.sh`. Then break a test on purpose and run it again. It must fail loudly. Put the test back.
+4. In Claude Code, ask: *"Add a subtract function with a test."*
+5. Read `.claude/loop.jsonl`. Did the agent run `scripts/check.sh`, or improvise?
+
+</Exercise>
+
+<Expect>
+
+It doesn't know your script exists yet, so it probably runs pytest its own way and skips formatting. Keep this log. In lesson 1.3 you'll tell it about the script, and the difference will show you what a good instruction file is for.
+
+</Expect>
+
+<IfNot>
+
+- **`ruff format --check` fails straight away:** your files aren't formatted yet. Run `.venv/bin/ruff format .` once, then check again.
+
+</IfNot>
+
+<KitPiece id="check-sh" />
+
+<Breaks title="The agent improvises your pipeline">
+  <BreakPart label="What happens">
+
+  Every session runs slightly different commands. One skips the linter; another runs half the tests. "It passed" means something different every day, and nobody notices until CI disagrees.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  One script is the source of truth. The agent calls it, CI calls the same script, and you never accept "done" from a run that didn't use it.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="wf-q1" q="You want every commit's version number bumped and tagged correctly. Who should do it?" options={["An agent, because it can read the changelog", "A script, because it's mechanical and must be exact every time", "You, by hand, every release", "A subagent with a strict prompt"]} answer={1}>
+  <p>Anything that must happen exactly the same way every time belongs in a script. An agent might get it right 99 times and improvise on the 100th. Agents are for the parts that need judgment, like writing the release notes.</p>
+</Quiz>
+
+<Terms ids={['workflow', 'deterministic']} />

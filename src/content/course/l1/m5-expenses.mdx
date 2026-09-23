@@ -1,0 +1,76 @@
+---
+title: M5 · Slice, expenses and monthly totals
+summary: The product's core, built through the loop at Beta depth, with an explicit test that one user can never see another's data.
+order: 6
+kind: milestone
+code: 'L1 · M5'
+tier: 2
+time: 2.5 hours
+competencies: [architecture, verify, security]
+---
+
+## Goal
+
+Categories, expenses (add, list, edit, delete) and the monthly summary, all matching the OpenAPI contract, with ownership enforced on every query.
+
+## Step 1: architect
+
+This slice is bigger. Consider splitting it into two specs, one for categories and expenses and one for the summary, so each `/develop` run stays small.
+
+<Prompt title="Fresh session">
+/architect expenses, categories and the monthly summary. Follow docs/api/openapi.yaml and docs/specs/0000-data-model.md exactly. Decisions I expect: default categories for new users, what editing an expense's date does to past totals, how the summary handles months with no expenses, and the time zone that defines "a month". Every query must filter by the current user. Include acceptance criteria for another user's ids returning 404, and for pagination.
+</Prompt>
+
+Check the spec includes these criteria:
+
+1. Adding an expense with amount 0 or a negative amount returns 400; the database constraint also rejects it.
+2. `GET /expenses/<another user's id>` returns **404**, not 403 and not the data. The same goes for `PATCH` and `DELETE`.
+3. Listing returns at most `limit` items and a cursor that gets the next page.
+4. The summary for a month with no expenses returns a total of 0 and an empty category list, not an error.
+5. The summary's total equals the sum of that month's expenses exactly, in paise.
+
+## Step 2: develop, with the ownership test first
+
+Ask for the ownership test to be written **first**, before any expense code:
+
+<Prompt>
+/develop docs/specs/0002-expenses.md. Before anything else, write a test that creates two users, gives user A an expense, and proves that user B gets 404 for GET, PATCH and DELETE on it. Run it and show it failing. Then build the slice.
+</Prompt>
+
+This test is the most important one in the project. It guards against **IDOR**: a server that trusts an id from the request without checking that it belongs to the person asking. It's among the most common API security bugs, and exactly the kind a quick glance at a diff misses.
+
+## Step 3: verify
+
+`/clear`, then `/verify`. Watch for evidence that verification used **two** real users with two real tokens for criterion 2. If it only used one user, it didn't prove anything; ask it to redo that criterion.
+
+## Step 4: review, document, merge, sync
+
+`/review`, fix real findings, `/document pr`, merge, `/sync`. This slice is Beta depth, so no second-model review, unless your review turns up anything touching access control. Then treat it as an override.
+
+<Breaks title="The summary that trusted the app">
+  <BreakPart label="What happens">
+
+  To make the summary screen fast, an agent suggests having the app compute totals from the expense list it already downloaded. It works, until the list is paginated: the app only has 50 expenses, so its total is wrong for anyone with more.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Your ADR says business rules live on the server. The summary endpoint computes totals in the database with one indexed query. The app only displays them.
+
+  </BreakPart>
+</Breaks>
+
+<IfNot label="When it goes wrong">
+
+- **The summary is slow even with little data:** check the index on `(user_id, spent_on)` exists. Ask the agent to show `EXPLAIN ANALYZE` for the summary query.
+- **Totals are off by one day around midnight:** time zones. The spec said which time zone defines a month. Make sure both the query and the tests use it.
+
+</IfNot>
+
+<Checklist id="l1-m5" label="Done when" title="M5 is done when…" items={[
+  "The ownership test exists, was seen failing first, and now passes.",
+  "Verification evidence shows two different users for the 404 criteria.",
+  "The summary is computed in one database query, using the index.",
+  "Every endpoint matches docs/api/openapi.yaml.",
+  "The PR is merged and `/sync` has been run."
+]} />

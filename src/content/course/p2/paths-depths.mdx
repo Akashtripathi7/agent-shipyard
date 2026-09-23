@@ -1,0 +1,100 @@
+---
+title: Picking your path, entry points and depths
+summary: Not every change needs every step. Choose where a change enters the loop and how much checking it gets, and write the default down for each project.
+order: 7
+kind: lesson
+code: '2.7'
+tier: 2
+time: 50 min
+competencies: [decide, verify]
+kit: [workflow-md]
+---
+
+<Analogy>
+  <p>A hospital doesn't send every patient through every test. A sprained wrist gets an X-ray; chest pain gets the full work-up, fast. Good triage matches the checking to the risk, so serious cases get full attention without the waiting room grinding to a halt.</p>
+</Analogy>
+
+## Entry points
+
+Changes don't all start in the same place. JS Mastery's workflow selector is worth adopting exactly:
+
+| Situation | Where it enters | Then |
+|---|---|---|
+| **New product** (empty folder) | `/scope` to challenge the idea | `/architect` (including the stack), scaffold, `/audit`, then the loop |
+| **Next feature** in a live project | `/scope next` | `/architect`, `/develop`, `/verify`, `/review` |
+| **Code you didn't write** | `/audit` to learn it first (Part 3) | `/scope` to enrol what exists, then the feature path |
+| **Something broke** | `/debug` to find the real cause (Part 3) | `/develop` for the fix, `/verify`, `/review` |
+
+JS Mastery points out that most courses only teach the first row, which is maybe 20% of real work. You spend most of your days in rows two to four.
+
+## Depths
+
+The second choice is **how much checking** a change gets. This is the depth dial from lesson 0.3:
+
+| Depth | Runs | Right for |
+|---|---|---|
+| **Prototype** | `/develop` only | Throwaway experiments nobody else uses |
+| **Alpha** | + `/verify` | Early product, a few trusted users |
+| **Beta** | + tests + `/review` | Real users depending on it |
+| **GA** | + second-model review, `/document`, `/sync` | Anything important, public or long-lived |
+
+One rule holds at every depth, even Prototype: **a load-bearing decision gets written down.** You can skip checks on throwaway code; you can't skip recording decisions that will outlive it, because prototypes have a habit of becoming products.
+
+## Overrides
+
+A project's default depth isn't the end of it. Some changes always get the full treatment, whatever the default: anything touching **authentication, money, personal data, data deletion or infrastructure**. Write these overrides down too.
+
+<KitFile id="workflow-md" />
+
+<Exercise id="depth-1" title="Triage eight changes" time="30 min" predict="How many of the eight need the full GA treatment?">
+
+For each change, choose the entry point and the depth, and write one line of reasoning. Then compare with the answers below.
+
+1. Fix a typo in the habit tracker's help text.
+2. Add a new "weekly summary" command.
+3. A user reports that streaks reset at 5:30am instead of midnight.
+4. Add an export to CSV, used by one person, you.
+5. You join a new team and must add a field to their 3-year-old API.
+6. Change how passwords are hashed in your company's app.
+7. Try out a new charting library to see if you like it.
+8. Add sign-in with Google to a product with 5,000 users.
+
+</Exercise>
+
+<Reveal id="depth-1-answers" title="Suggested answers" button="Show answers">
+
+| # | Entry | Depth | Why |
+|---|---|---|---|
+| 1 | Straight to the fix | Prototype | Cosmetic, trivially reversible |
+| 2 | `/scope next` | Beta | New behaviour real users rely on |
+| 3 | `/debug` | Beta | Time-zone bugs return unless a regression test pins them |
+| 4 | `/scope next` | Alpha | Low risk, one user, but it should actually work |
+| 5 | `/audit` first | Beta, or GA if it's public | You don't know the codebase's rules yet |
+| 6 | `/architect` (load-bearing) | GA, always | Authentication: an override |
+| 7 | Nowhere near main | Prototype, on a throwaway branch | An experiment; but record the verdict |
+| 8 | `/architect` | GA | Authentication, many users |
+
+If you put more than half at GA, you'd drown in process. If you put #6 or #8 below GA, revisit the overrides.
+
+</Reveal>
+
+<KitPiece id="workflow-md" />
+
+<Breaks title="Everything at GA, or nothing at all">
+  <BreakPart label="What happens">
+
+  A team runs the full loop, with second-model review, on every typo fix. It's so slow that people start skipping it entirely, including for the authentication change that needed it most.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Match depth to risk. A cheap path for cheap changes keeps people using the process, so the expensive path is still followed when it matters.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="depth-q1" q="A prototype is suddenly being shown to paying customers. What should change first?" options={["Nothing: it's still a prototype", "Raise its depth to at least Alpha or Beta, and write down the load-bearing decisions it made", "Rewrite it from scratch immediately", "Add more features before anyone complains"]} answer={1}>
+  <p>The moment real users depend on it, it needs real checking. And the decisions baked into it (data shapes, auth) are now load-bearing, so they need recording before more is built on them.</p>
+</Quiz>
+
+<Terms ids={['entry-point', 'workflow-depth']} />

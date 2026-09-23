@@ -1,0 +1,112 @@
+---
+title: Instructions that actually help
+summary: Your AGENTS.md is read on every turn. Put in only what the agent can't work out from the code, and watch its behaviour change.
+order: 3
+kind: lesson
+code: '1.3'
+tier: 1
+time: 60 min
+competencies: [operate, brief]
+kit: [agents-md, claude-md]
+---
+
+<Analogy>
+  <p>The note you leave a house-sitter. "The back door sticks; lift it while you turn the key" is gold. "This house has a kitchen" wastes their time: they can see the kitchen. Every line should be something they couldn't find out by looking around.</p>
+</Analogy>
+
+## The file every agent reads first
+
+Claude Code reads `CLAUDE.md` when a session starts, and most other agent tools read `AGENTS.md`. It stays in context on every turn, so every line costs **tokens**, the units models read and bill by, every single time.
+
+Jason Ku's guide to these files comes down to one question, asked of every line: **could the agent work this out from the code?** If yes, delete it. He points to an ETH Zurich study from February 2026: context files packed with information agents could infer, like maps of the folder structure, *lowered* task success and raised cost by up to 20%. Agents are very good at reading code. A folder map goes stale the moment files move, and then the agent spends turns looking in the wrong place.
+
+### What earns a place
+
+- **Commands that aren't obvious:** "run `scripts/check.sh` before saying you're done".
+- **Working conventions:** "write the failing test first".
+- **Product rules the code can't show:** "money is stored as whole paise, never decimals".
+- **Pointers outside the repo:** the separate landing-page repo, where staging lives.
+- **Decisions you've made together:** "never add agent-specific code to the core library".
+
+### What doesn't
+
+- Folder and file maps.
+- The tech stack, if it's obvious from the project files.
+- Generic advice every model already follows, like "write clean code".
+
+## Three levels
+
+| Level | Where | Put here |
+|---|---|---|
+| **Global** | `~/.claude/CLAUDE.md` | Rules for every project. Your git-identity rule is already here. |
+| **Project** | The repo root | This project's commands, conventions and product rules. |
+| **Subfolder** | Inside a folder | Only in big monorepos where teams differ. Skip it for now. |
+
+Keep projects **agent-agnostic**: put the real rules in `AGENTS.md`, and make `CLAUDE.md` a single line, `@AGENTS.md`. Claude Code reads that line as "import this file", and every other tool reads `AGENTS.md` directly. So Claude Code, Codex and Cursor all follow the same rules.
+
+Two more habits from Jason Ku: **add one rule at a time**, and keep it only if you can see behaviour change; and **audit the file monthly**, because it grows stale and bloated on its own.
+
+<CodeFile title="AGENTS.md · an example for Project L1">
+
+```markdown
+# Pocket Ledger
+
+## Commands
+- All checks: scripts/check.sh (run before saying any task is done)
+- Backend only: cd api && pytest -q
+- App only: cd app && flutter test
+
+## Working conventions
+- Test first: write a failing test, run it, see it fail, then implement.
+- Never report something as working without running it.
+- Don't commit or push unless I ask.
+
+## Product rules
+- Amounts are stored as integer paise, never floats.
+- Deleted expenses are soft-deleted and kept for 30 days.
+```
+
+</CodeFile>
+
+<Exercise id="instr-1" title="Write a file with nothing wasted" time="35 min" predict="After you mention scripts/check.sh in AGENTS.md, will the agent run it without being asked?">
+
+1. Write `AGENTS.md` for your lab repo in **ten lines or fewer**. Mention `scripts/check.sh` and the "never report working without running it" rule.
+2. For each line, ask: could the agent figure this out from the code? Delete every yes.
+3. Create `CLAUDE.md` containing only `@AGENTS.md`.
+4. Start a **fresh** session and ask: *"Add a multiply function with a test."*
+5. Compare the new entries in `.claude/loop.jsonl` with the log from lesson 1.2.
+6. Run Jason Ku's audit: *"Audit my AGENTS.md. For each line, tell me whether you could infer it from the code, and what you'd remove."*
+
+</Exercise>
+
+<Expect>
+
+This time the agent runs `scripts/check.sh` without you mentioning it in the request. An instruction that visibly changes behaviour is the only kind worth keeping.
+
+</Expect>
+
+<KitPiece id="agents-md" />
+<KitPiece id="claude-md" />
+
+<Callout type="tip" label="A second opinion on demand">
+  <p>Kun Chen distilled his principal-engineer experience into a skill you can install (read the repo first): <code>npx skills add kunchenguid/kun -g</code>. Then, in any session, ask <code>/kun how would you improve this AGENTS.md?</code> You'll learn what a skill is in lesson 1.9.</p>
+</Callout>
+
+<Breaks title="The file that grew">
+  <BreakPart label="What happens">
+
+  Every annoyance becomes a new rule. A month later the file is 300 lines long, contradicts itself, and points to folders that moved. The agent spends turns obeying stale directions, and every message costs more.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Audit it monthly with the prompt above. Move rules you need only sometimes into a skill, which loads only when relevant (lesson 1.9). Later, Kun Chen's backpass tool proposes edits backed by quotes from your real sessions (Part 7).
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="instr-q1" q="Which line belongs in AGENTS.md?" options={["The project uses FastAPI and PostgreSQL", "src/api contains the routes, src/models contains the models", "Money is always stored as integer paise, never floats", "Write clean, readable code"]} answer={2}>
+  <p>The stack is visible in the project files, the folder layout is visible by looking, and "clean code" is something every model already tries to do. The paise rule is a product decision the code can't reveal on its own, and getting it wrong causes real bugs. That's exactly what the file is for.</p>
+</Quiz>
+
+<Terms ids={['agents-md', 'token']} />

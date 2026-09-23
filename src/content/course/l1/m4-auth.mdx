@@ -1,0 +1,89 @@
+---
+title: M4 · Slice, sign up and log in
+summary: Your first full loop on a real product, on the riskiest slice first. Specified, built test-first, verified with real requests, and reviewed at GA depth.
+order: 5
+kind: milestone
+code: 'L1 · M4'
+tier: 2
+time: 2.5 hours
+competencies: [security, verify, brief]
+---
+
+## Goal
+
+A working, verified and reviewed authentication API: sign up, log in, refresh. Authentication is an override in your WORKFLOW.md, so this slice gets the full GA treatment.
+
+## Why this slice first
+
+Every other slice depends on knowing who the user is, and authentication is where security mistakes are most expensive. Doing it first, carefully, means every later slice builds on a solid base.
+
+## Step 1: architect the slice
+
+<Prompt title="Fresh session, high effort">
+/architect sign up and log in. Follow the auth ADR and docs/api/openapi.yaml exactly. Decisions I expect to make: password rules (minimum length, no maximum below 64), what the error says for a wrong password versus an unknown email (they must be identical), access and refresh token lifetimes, and where refresh tokens are stored so they can be revoked. Write acceptance criteria that include the failure cases.
+</Prompt>
+
+Before you approve the spec, check that it includes at least these criteria. Add any that are missing:
+
+1. Signing up with a new email returns 201 and stores an Argon2id hash, never the password.
+2. Signing up with an existing email returns 409, with no hint about the existing account beyond that.
+3. Logging in with a wrong password and logging in with an unknown email return **the same** 401 response.
+4. An access token older than its lifetime is rejected with 401.
+5. A refresh token can be used once, and a revoked one is rejected.
+6. No response and no log line ever contains a password or a full token.
+
+## Step 2: develop
+
+`/clear`, then `/develop docs/specs/0001-auth.md`. Read the task plan before approving it. Expect it to stop and ask about at least one thing, such as which library to use for hashing. That's the gate working: answer it, and check the choice lands in the spec.
+
+## Step 3: verify with real requests
+
+`/clear`, then `/verify docs/specs/0001-auth.md`. With the API running, the evidence should be real `curl` calls and their responses, for example:
+
+```bash
+curl -s -X POST localhost:8000/auth/signup \
+  -H 'content-type: application/json' \
+  -d '{"email":"a@example.com","password":"correct horse battery"}' -w '\n%{http_code}\n'
+```
+
+Then look inside the database yourself, once:
+
+```bash
+docker compose exec db psql -U postgres -d pocket_ledger -c "select email, password_hash from users;"
+```
+
+The hash should start with `$argon2id$`. If you can read a password there, stop everything and go back to develop.
+
+## Step 4: review at GA depth
+
+`/clear`, then `/review docs/specs/0001-auth.md`. Because this is an override slice, also do a **second-model review**: either paste the diff and the review instructions into another agent tool, or run a fresh Claude session at the highest effort with this prompt:
+
+<Prompt>
+You are a security reviewer who didn't write this code. Review the authentication change on this branch for: user enumeration (do responses or timing differ between an unknown email and a wrong password?), token handling (lifetimes, revocation, storage), password hashing parameters, secrets in code or logs, and missing rate limiting. For each finding: severity, file and line, the attack it enables, and the fix. Say plainly if you find nothing.
+</Prompt>
+
+Send real findings back through `/develop`, then `/verify` again.
+
+<Callout type="warn" label="Rate limiting">
+  <p>A login endpoint without rate limiting lets attackers guess passwords as fast as your server answers. For v1, a simple limit per IP and per email is enough. If your reviewers didn't flag its absence, add it to your review skill's checklist. That's your kit getting better.</p>
+</Callout>
+
+## Step 5: document, merge, sync
+
+`/document pr`, merge the branch, then `/sync`.
+
+<IfNot label="When it goes wrong">
+
+- **Tests pass but login always fails in verification:** the hash was probably computed differently at sign-up and at login (different parameters or encoding). Use `/debug` from Part 3 if you've reached it; otherwise ask the agent to reproduce it with one failing test first.
+- **The agent logs the request body while debugging:** that logs passwords. Delete the line, and add "never log request bodies on auth routes" to AGENTS.md.
+
+</IfNot>
+
+<Checklist id="l1-m4" label="Done when" title="M4 is done when…" items={[
+  "The spec has all six criteria above, and it's Approved and Verified.",
+  "You saw an `$argon2id$` hash in the database with your own eyes.",
+  "Unknown-email and wrong-password logins return identical responses.",
+  "Both the fresh-context review and the second-model review are in `docs/reviews/`, with every real finding fixed.",
+  "Login is rate-limited.",
+  "The PR is merged and `/sync` has been run."
+]} />

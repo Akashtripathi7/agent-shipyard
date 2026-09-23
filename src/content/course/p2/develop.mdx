@@ -1,0 +1,83 @@
+---
+title: Develop, build from the spec
+summary: Build a /develop skill that refuses unapproved specs, plans small tasks, builds each one test-first, and stops to ask rather than guess.
+order: 4
+kind: lesson
+code: '2.4'
+tier: 2
+time: 70 min
+competencies: [operate, verify, build]
+kit: [skill-develop]
+---
+
+<Analogy>
+  <p>A good contractor with approved blueprints. They get on with the work, check each wall is level before starting the next, and when they find a pipe the drawings don't show, they stop and call you instead of rerouting it themselves.</p>
+</Analogy>
+
+## Three jobs
+
+`/develop` has three jobs, and the order matters:
+
+1. **Guard the gate.** Refuse to start unless the spec is `Approved`. Stop and ask if building needs a decision the spec doesn't make.
+2. **Plan small.** Break the spec into tasks of a few minutes each: one test and the code that makes it pass. Show you the plan and wait for your OK.
+3. **Build test-first,** one task at a time, then run the full check script.
+
+The planning step comes from Superpowers, which insists on plans of 2 to 5 minute tasks with exact files and verification steps. Small tasks keep the agent on track: after each one, something is proven to work.
+
+## Stop and ask
+
+The single most valuable behaviour in the whole loop is an agent that **stops when it meets a decision nobody made**, instead of guessing silently. JS Mastery built their `/develop` around it: "an AI that refuses to decide things behind your back."
+
+What counts as an undecided decision? A new dependency. A change to stored data. An API shape. A UI behaviour the spec didn't describe. When one comes up, the skill stops. If you tell it to go ahead anyway, it records the choice under **"Assumed (not yet ratified)"** in the spec, so the decision is at least visible for review, instead of buried in code.
+
+## The handoff
+
+The skill ends with a **handoff note**, a pattern from Jason Ku: what changed, how it was verified (the exact commands and results), what was assumed, and the next step. Handoffs are written to be read by someone with no context: you tomorrow, or a fresh reviewer agent.
+
+## The skill
+
+<KitFile id="skill-develop" />
+
+<Exercise id="dev-1" title="Build the slice, and trigger a stop" time="50 min" predict="Where will the agent stop to ask you something that the spec didn't decide?">
+
+1. Copy the skill to `.claude/skills/develop/SKILL.md`.
+2. `/clear`, then run `/develop docs/specs/0001-check-in-today.md`.
+3. Read its task plan before approving. Is every acceptance criterion covered by at least one task?
+4. Watch the loop log as it works: test written, test fails, code written, test passes. Stop it if it ever writes code before a failing test.
+5. **Trigger a stop on purpose.** Temporarily add a line to the spec's Goal: *"Also show a motivational quote after checking in."* Run `/develop` again on that addition. It should stop and ask where quotes come from, because nothing decided it. Tell it to go ahead with a hard-coded list, and confirm the choice appears under "Assumed" in the spec. Then remove the line and revert the change.
+
+</Exercise>
+
+<Expect>
+
+The slice built test-first, `scripts/check.sh` passing, the spec marked `Built`, the slice marked `built` in SCOPE.md, and a handoff note. In step 5, a clear stop before any quote code was written.
+
+</Expect>
+
+<IfNot>
+
+- **It started coding without showing a plan:** remind it ("show me the task list first"). If it keeps happening, move the plan instruction higher in the skill.
+- **It never stopped for the quote:** it decided silently. That's exactly the failure this lesson is about. Strengthen the gate wording in your skill with your own example.
+
+</IfNot>
+
+<KitPiece id="skill-develop" />
+
+<Breaks title="The silent dependency">
+  <BreakPart label="What happens">
+
+  To parse dates, the agent adds a new date-handling package. It works. Nobody noticed: the spec didn't mention dependencies, and the agent didn't ask. Three months later that package is abandoned and has a security advisory.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  "A new dependency" is on the skill's list of decisions that require a stop. New packages are a supply-chain decision (Part 4 covers why), never a silent implementation detail.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="dev-q1" q="Halfway through building, the agent realises the spec never said what happens when a user checks in a habit that doesn't exist. What should it do?" options={["Pick the most sensible behaviour and carry on", "Stop and ask, or, if told to proceed, record its choice under 'Assumed' in the spec", "Skip that case entirely", "Rewrite the spec itself and approve it"]} answer={1}>
+  <p>It's user-visible behaviour the spec didn't decide, so the agent shouldn't decide it silently. Stopping costs you a minute; a silent guess can cost a rewrite. Only you approve specs.</p>
+</Quiz>
+
+<Terms ids={['gate', 'handoff']} />

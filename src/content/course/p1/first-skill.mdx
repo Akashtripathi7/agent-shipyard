@@ -1,0 +1,104 @@
+---
+title: Your first skill
+summary: Package a repeatable instruction as a skill that loads only when needed. Learn why the description decides whether it's ever used.
+order: 9
+kind: lesson
+code: '1.9'
+tier: 1
+time: 70 min
+competencies: [build]
+kit: [skill-explain]
+---
+
+<Analogy>
+  <p>A laminated card for a job you do now and then. You don't carry the "how to bleed a radiator" instructions around all day. You keep the card in the drawer, and the label on the front tells you when to pull it out. A skill is that card, and its description is the label.</p>
+</Analogy>
+
+## What a skill is
+
+A **skill** is a folder containing a `SKILL.md` file: a short description, followed by instructions. Claude Code keeps only the *descriptions* of your skills in context. When your request matches one, or you type `/skill-name`, it loads the full instructions. Everything else stays out of the way.
+
+That's why skills are the answer to "the file that grew" from lesson 1.3. Instructions you need only sometimes, like how to cut a release or how to review a PR, move out of AGENTS.md into skills.
+
+| Where | Scope |
+|---|---|
+| `.claude/skills/<name>/SKILL.md` | This project only; commit it to share with a team |
+| `~/.claude/skills/<name>/SKILL.md` | Every project on your machine |
+
+## The file
+
+<KitFile id="skill-explain" />
+
+Line by line:
+
+- **`name`** becomes the command: `/explain-changes`.
+- **`description`** is the most important line. It's what the agent reads to decide whether to use the skill. More on this below. It's in quotes because it contains a colon, which would otherwise break the file's YAML header and stop the skill loading. Quoting descriptions is a good habit.
+- **`argument-hint`** shows up in autocomplete.
+- **`` !`command` ``** runs a shell command *before* the skill reaches the model, and pastes the output in. The skill arrives with the diff already attached. If any of these commands fails, the whole skill refuses to load, so each one has a fallback after `||`.
+- **`$ARGUMENTS`** is replaced by whatever you type after the command, such as `/explain-changes the auth code`.
+
+## The description decides everything
+
+Kun Chen built a benchmark (superpowers-bench) to test whether agents pick the right skill from context alone. The finding: whether a skill gets used depends heavily on how clearly its description says **what it does and when to use it**. A vague description means a skill that exists but never triggers.
+
+| Weak description | Strong description |
+|---|---|
+| "Code explanation helper." | "Explains uncommitted code changes in plain English, flags risks, and quizzes me. Use when I ask what changed, or before I commit agent-written code." |
+
+Write descriptions as *what it does* plus *when to use it*, in words you'd actually say.
+
+## Skill, subagent, hook, MCP or AGENTS.md?
+
+You now know five ways to shape an agent. They're easy to mix up, so here's the rule of thumb:
+
+| Use | When the thing is |
+|---|---|
+| **AGENTS.md** | A rule that must hold on every turn |
+| **Skill** | A procedure you need sometimes |
+| **Subagent** | A side job that should run in its own context, with its own tools |
+| **Hook** | Something that must happen automatically, with no exceptions |
+| **MCP server** | Access to an outside system |
+
+<Exercise id="skill-1" title="Build and trigger your first skill" time="40 min" predict="Will the agent use your skill when you ask 'what did we just change?', without typing the command?">
+
+1. Create the folder and file: `~/.claude/skills/explain-changes/SKILL.md`, with the content above.
+2. In your lab repo, make a small uncommitted change (or ask the agent to add a `power` function).
+3. Type `/explain-changes`. Answer its two questions.
+4. Make another change. This time don't type the command; just ask: *"What did we just change?"* Did the skill load?
+5. Weaken the description to "Code explanation helper." and repeat step 4. Then restore it.
+
+</Exercise>
+
+<Expect>
+
+The command works directly. With the strong description, the plain question also loads the skill; with the weak one, it's less likely to. That difference is the whole lesson about descriptions.
+
+</Expect>
+
+<IfNot>
+
+- **`/explain-changes` isn't in the menu:** check the path and that the file starts with `---` on the very first line.
+- **"Failed" on load:** a `` !`command` `` failed. Make sure you're inside a git repository.
+
+</IfNot>
+
+<KitPiece id="skill-explain" />
+
+<Breaks title="The skill that never fires">
+  <BreakPart label="What happens">
+
+  You write a careful review skill, name it `rv`, and describe it as "review stuff". The agent never uses it on its own, you forget it exists, and it rots.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Name skills by what they do and write descriptions as "what it does + when to use it". Test triggering with a plain-language request, not just the slash command.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="skill-q1" q="You want the agent to follow a 40-line release checklist, but only when you cut a release. Where should it go?" options={["AGENTS.md, so it's never forgotten", "A skill, so it loads only when you're releasing", "A hook that runs on every tool call", "A comment at the top of the main file"]} answer={1}>
+  <p>AGENTS.md is read on every turn, so 40 lines of release steps would cost tokens and attention in every unrelated task. A skill stays out of the way until it's relevant. A hook is for things that must happen automatically every time, which a release checklist isn't.</p>
+</Quiz>
+
+<Terms ids={['skill', 'skill-description']} />

@@ -1,0 +1,103 @@
+---
+title: Set up your machine
+summary: Install and check everything the course uses, once, so no exercise stalls on a missing tool.
+order: 2
+kind: start
+tier: 1
+time: 45–90 min
+competencies: [operate]
+---
+
+Every exercise in this course assumes the tools below work. Doing this once now saves you from debugging your setup in the middle of a lesson, which is the worst time to learn anything.
+
+<Analogy>
+  <p>A good cook lays out every ingredient and tool before turning on the stove. Chefs call it mise en place. Halfway through a sauce is the wrong moment to discover there's no salt.</p>
+</Analogy>
+
+## The core tools
+
+You need these from Part 1 onward.
+
+| Tool | Why the course needs it | Check it with |
+|---|---|---|
+| **Claude Code** | The agent you'll drive, extend and eventually run in crews | `claude --version` |
+| **git** | Every change an agent makes goes through git branches | `git --version` |
+| **GitHub CLI** (`gh`) | Pull requests and both of your accounts | `gh auth status` |
+| **tmux** | Terminal sessions that survive you walking away (Part 0) | `tmux -V` |
+| **jq** | Hooks read JSON; `jq` picks values out of it | `jq --version` |
+| **Python 3.12+ and uv** | FastAPI backends and the Part 1 lab | `python3 --version` and `uv --version` |
+| **Docker Desktop** | Databases and services run in containers | `docker ps` |
+| **Flutter SDK** | Mobile apps in the projects | `flutter doctor` |
+| **Node.js 20+** | A few tools, and this website itself | `node --version` |
+
+Anything missing on a Mac installs with Homebrew:
+
+```bash
+brew install git gh tmux jq uv node
+brew install --cask docker
+```
+
+Claude Code and Flutter have their own installers. If either is missing, ask Claude (in the browser if needed) for the current official install steps rather than trusting an old blog post: both change often.
+
+## Check everything in one go
+
+<Exercise id="setup-check" title="Run the setup check" time="10 min" predict="Which of these do you expect to fail on your machine, and why?">
+
+1. Paste this into a terminal. It prints one line per tool, marked OK or MISSING.
+
+   ```bash
+   for t in claude git gh tmux jq python3 uv docker flutter node; do
+     if command -v "$t" >/dev/null 2>&1; then echo "OK       $t"; else echo "MISSING  $t"; fi
+   done
+   docker ps >/dev/null 2>&1 && echo "OK       docker is running" || echo "PROBLEM  docker is not running"
+   ```
+
+2. Install anything marked MISSING, then run it again.
+3. Run `flutter doctor` and fix what it lists for Android at least. iOS matters only from Project L6.
+4. Run `gh auth status`. You should see both of your accounts. Your rule for choosing between them already lives in `~/.claude/CLAUDE.md`: the account is read from each repo's remote, and Claude asks you when it can't tell.
+
+</Exercise>
+
+<Expect>
+
+Every line says OK, Docker is running, and `gh auth status` lists both accounts.
+
+</Expect>
+
+<IfNot>
+
+- **Docker says it isn't running:** open Docker Desktop and wait for the whale icon to settle, then retry.
+- **`gh` shows an account with an invalid token:** run `gh auth login` for that account, or `gh auth logout -u <name>` if you no longer use it.
+- **`flutter doctor` complains about Android licences:** run `flutter doctor --android-licenses` and accept them.
+
+</IfNot>
+
+## Your MCP servers
+
+You already have MCP servers configured (you'll learn exactly what they are in lesson 1.4). When this course was written, three were failing to connect: **Dart**, **Chrome DevTools** and **Firebase**. Don't fix them yet. Lesson 1.4 fixes Dart as its exercise, because diagnosing a broken tool connection is one of the skills.
+
+## Where your course work lives
+
+Keep all course projects in one place, separate from your work repositories:
+
+```bash
+mkdir -p ~/shipyard/lab && cd ~/shipyard/lab && git init
+```
+
+`~/shipyard/lab` is the practice folder for Parts 0 to 3. Each project gets its own folder next to it, such as `~/shipyard/pocket-ledger`. When a project gets a GitHub remote, use your personal account. Your global instructions make Claude check this before any commit.
+
+## Usage and cost
+
+Claude Code runs on your subscription, which has usage limits that reset on a schedule. Three things to know from day one:
+
+1. **One agent is cheap. Many agents multiply.** Running five agents in parallel uses roughly five times the allowance. Anthropic measured multi-agent systems using about 15 times the tokens of a normal chat.
+2. **`/usage` shows where you stand.** Glance at it before starting anything big or long-running.
+3. **Every project page gives a rough budget,** so you can plan heavy work for when your limits have reset.
+
+<Checklist id="setup-ready" title="You're ready to start when…" items={[
+  "Every tool in the check prints OK, and Docker is running.",
+  "`flutter doctor` is clean for Android.",
+  "`gh auth status` shows both accounts.",
+  "`~/shipyard/lab` exists and is a git repository.",
+  "You know where `/usage` is and what it shows."
+]} />

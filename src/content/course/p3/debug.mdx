@@ -1,0 +1,91 @@
+---
+title: Debug, root cause first
+summary: Three kinds of broken need three different responses. Learn a debugging method that works on any code, and build a /debug skill that refuses to guess.
+order: 1
+kind: lesson
+code: '3.1'
+tier: 2
+time: 70 min
+competencies: [verify, operate, build]
+kit: [skill-debug]
+---
+
+<Analogy>
+  <p>A good doctor doesn't prescribe on the first symptom. They ask questions, run the test that tells two possible causes apart, and treat the cause. A cough medicine that silences a cough caused by pneumonia makes the patient feel better and worse at the same time.</p>
+</Analogy>
+
+## Three kinds of broken
+
+JS Mastery's course makes a distinction that saves hours: before fixing anything, work out **what kind** of broken you're facing.
+
+| Kind | What it looks like | The right response |
+|---|---|---|
+| **Isolated bug** | One behaviour is wrong, and you can make it happen reliably | The method below: reproduce, isolate, prove, fix |
+| **Polluted session** | The agent keeps contradicting itself, reintroduces bugs it fixed, or retries the same failed fix | Don't debug the code; rescue the session (lesson 3.2) |
+| **Wrong foundation** | The bug keeps coming back in new forms; every fix creates another problem | A design decision is wrong: go back to `/architect` |
+
+Treating a polluted session as a code bug burns hours: the agent is the problem, not the code. Treating a wrong foundation as a bug gives you whack-a-mole. The classification takes a minute and points you at the right fix.
+
+## The method
+
+For an isolated bug, the same six steps work on any code, whether you wrote it or not:
+
+1. **Reproduce.** Find the smallest set of steps that makes it happen every time. A bug you can't reproduce, you can't prove you've fixed.
+2. **Isolate.** Narrow it down: which layer, which function, which input. When you know it worked last week, `git bisect` can find the exact commit that broke it by testing halfway points in the history.
+3. **Hypothesise.** State one specific cause: "the summary uses UTC, so expenses after 6:30pm IST count towards the next day".
+4. **Prove it** with a test or an experiment, *before* changing the code. If the proof fails, back to step 3.
+5. **Write a failing regression test** that reproduces the bug.
+6. **Fix the cause, not the symptom,** and watch the test pass.
+
+The failure mode agents fall into is skipping from symptom straight to a fix. They see an error, wrap it in a try/except, add a retry, or loosen a test, and report "fixed". The symptom is gone; the cause is still there, and now it's hidden. The skill below forbids exactly that.
+
+## The skill
+
+<KitFile id="skill-debug" />
+
+Note the last rule: **if two fixes in a row fail, stop and re-classify.** That's usually the sign it wasn't an isolated bug after all.
+
+<Exercise id="debug-1" title="Debug a planted time-zone bug" time="45 min" predict="What will the agent's first instinct be: a real diagnosis, or a quick patch?">
+
+1. Copy the skill into your practice project (or Pocket Ledger).
+2. Plant a subtle bug. In the habit tracker, make "today" use UTC instead of local time. Commit it with a boring message like "tidy date helpers", so the history doesn't give it away.
+3. Describe only the symptom, the way a user would: `/debug check-ins made after 5:30am show up on the wrong day`
+4. Watch each step. Did it reproduce first? Did it prove a hypothesis before changing code? Did it write a failing test before the fix?
+5. Try `git bisect` yourself to find the commit, so you know how it works when you need it:
+
+   ```bash
+   git bisect start
+   git bisect bad                 # the current commit has the bug
+   git bisect good <older-hash>   # a commit you know was fine
+   # git checks out a middle commit: test it, then run `git bisect good` or `git bisect bad`
+   git bisect reset               # when it names the culprit
+   ```
+
+</Exercise>
+
+<Expect>
+
+A report that classifies it as an isolated bug, names UTC as the proven cause, includes a regression test that fails at 11pm IST and passes after the fix, and changes only the date helper, not the tests.
+
+</Expect>
+
+<KitPiece id="skill-debug" />
+
+<Breaks title="The try/except that fixed everything">
+  <BreakPart label="What happens">
+
+  A crash appears when the summary loads. The agent wraps the calculation in `try/except` and returns 0 on any error. No more crash. Users now silently see ₹0 totals whenever something goes wrong, and nobody knows.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Reproduce, prove the cause, fix it. Error handling is for errors you expect and can handle meaningfully, never for hiding ones you don't understand. Your review skill should flag any new broad `except` in a diff.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="debug-q1" q="An agent has tried three different fixes for the same bug, and each one caused a new failure somewhere else. What's the most likely situation?" options={["It needs a bigger model", "An isolated bug that just needs a fourth attempt", "A wrong foundation or a polluted session: stop and re-classify", "The tests are flaky"]} answer={2}>
+  <p>Fix after fix creating new problems is the signature of either a polluted session (the agent is confused) or a wrong foundation (the design is fighting you). Another attempt at the same level rarely helps. Step back and classify.</p>
+</Quiz>
+
+<Terms ids={['root-cause', 'reproduction', 'git-bisect']} />

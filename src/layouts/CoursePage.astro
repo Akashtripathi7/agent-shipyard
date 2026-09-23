@@ -1,0 +1,94 @@
+---
+import Base from './Base.astro';
+import CourseMap from '../components/CourseMap.astro';
+import { navItems } from '../lib/nav';
+import { sectionById, tiers } from '../data/course';
+import { competencies } from '../data/competencies';
+import type { MarkdownHeading } from 'astro';
+
+interface Props {
+  slug: string;
+  title: string;
+  summary: string;
+  code?: string;
+  kind: string;
+  tier: 1 | 2 | 3 | 4;
+  time?: string;
+  updated: string;
+  comps: string[];
+  headings: MarkdownHeading[];
+}
+const { slug, title, summary, code, kind, tier, time, updated, comps, headings } = Astro.props;
+const items = await navItems();
+const idx = items.findIndex((i) => i.slug === slug);
+const prev = idx > 0 ? items[idx - 1] : undefined;
+const next = idx < items.length - 1 ? items[idx + 1] : undefined;
+const section = sectionById[slug.split('/')[0]];
+const kindLabel: Record<string, string> = {
+  start: 'Start here', lesson: 'Lesson', arch: 'Architecture', decision: 'Decisions', overview: 'Project overview',
+  milestone: 'Milestone', drill: 'Decision drill', review: 'Review', exam: 'Exam',
+};
+const compNames = comps.map((c) => competencies.find((x) => x.id === c)?.name).filter(Boolean);
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+<Base title={title} description={summary} withDrawer>
+  <div class="course-shell">
+    <CourseMap current={slug} />
+    <main class="page" id="main" data-page={slug}>
+      <div class="page-inner">
+        <header class="page-head">
+          <div class="crumbs">
+            <span class={`tier-dot t${tier}`}></span>
+            <span>{section.label}</span>
+            {section.label !== section.title && (<><span>·</span><span>{section.title}</span></>)}
+          </div>
+          {code && <span class="code-tag">{kindLabel[kind]} {code}</span>}
+          <h1>{title}</h1>
+          <p class="summary">{summary}</p>
+          <div class="meta">
+            <span class={`pill tier t${tier}`}>Tier {tier} · {tiers[tier].name}</span>
+            {time && <span class="pill">{time}</span>}
+            {compNames.map((n) => <span class="pill">{n}</span>)}
+          </div>
+        </header>
+
+        <article class="prose">
+          <slot />
+        </article>
+
+        <footer class="page-foot">
+          <div class="complete-row">
+            <p>Tick this only when you've done the hands-on part, not just read it.</p>
+            <button type="button" class="key key--primary" data-complete={slug} aria-pressed="false">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+              <span data-complete-label>Mark complete</span>
+            </button>
+          </div>
+          <nav class="pager" aria-label="Previous and next">
+            {prev ? (
+              <a href={prev.href} data-prev>
+                <span class="dir"><kbd>p</kbd> Previous</span>
+                <span class="ttl">{prev.code ? `${prev.code} · ` : ''}{prev.title}</span>
+              </a>
+            ) : <span />}
+            {next && (
+              <a class="next" href={next.href} data-next>
+                <span class="dir">Next <kbd>n</kbd></span>
+                <span class="ttl">{next.code ? `${next.code} · ` : ''}{next.title}</span>
+              </a>
+            )}
+          </nav>
+          <p class="updated">Last checked {updated}. Tools change quickly: if a command here stops working, ask your agent to check the tool's current docs first.</p>
+        </footer>
+      </div>
+    </main>
+    {toc.length > 2 && (
+      <aside class="toc" aria-label="On this page">
+        <div class="toc-k">On this page</div>
+        <ol>
+          {toc.map((h) => <li><a class={`depth-${h.depth}`} href={`#${h.slug}`}>{h.text}</a></li>)}
+        </ol>
+      </aside>
+    )}
+  </div>
+</Base>

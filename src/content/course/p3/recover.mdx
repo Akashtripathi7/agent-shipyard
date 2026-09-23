@@ -1,0 +1,89 @@
+---
+title: Recovering a broken session
+summary: Recognise a session that's gone wrong, get back to safety with git and checkpoints, and restart from a handoff note without losing anything that mattered.
+order: 2
+kind: lesson
+code: '3.2'
+tier: 2
+time: 50 min
+competencies: [operate, verify]
+kit: [handoff-template]
+---
+
+<Analogy>
+  <p>A hiker who realises they're lost. The worst move is to keep walking faster in the same direction. The right one is to stop, go back to the last point on the map they're sure of, and set off again with what they've learned.</p>
+</Analogy>
+
+## Signs a session has gone wrong
+
+You'll learn to feel this, but here are the signals:
+
+- The agent **contradicts decisions** it made earlier in the session.
+- It **reintroduces a bug** it already fixed.
+- It **retries the same fix** with small variations.
+- Its explanations get **longer and vaguer**, and its confidence doesn't match the results.
+- You've been saying "no, not that" for twenty minutes.
+
+These are the symptoms of a **polluted session**: context so full of failed attempts, abandoned ideas and superseded decisions that the agent can no longer tell current truth from old noise (lesson 1.5). The code may be fine; the conversation isn't.
+
+## Three safety nets
+
+You can only recover quickly if you can get back to a known-good state. You have three safety nets, from finest to coarsest:
+
+| Net | What it restores | How |
+|---|---|---|
+| **Checkpoints** | Files as they were before a given edit in this session | `/rewind` in Claude Code |
+| **Commits** | The whole project at any committed point | `git log`, then `git restore` or a new branch from the good commit |
+| **Branches** | Everything up to where the branch started | Abandon the branch; `main` is untouched |
+
+The habit that makes these work: **commit whenever something works.** Small, frequent commits on a branch are cheap save points. An agent can wander for an hour, and you lose nothing if the last good state was committed ten minutes ago.
+
+## The recovery routine
+
+1. **Stop.** Don't send "try again". Each retry adds more noise.
+2. **Save what was learned.** Ask the agent to fill in a handoff note, especially the "tried and failed" section, so the next session doesn't repeat the dead ends.
+3. **Get back to safety.** `/rewind` to before things went wrong, or restore the last good commit.
+4. **Move decisions out of chat.** Anything decided in the session goes into the spec, an ADR or AGENTS.md.
+5. **`/clear` and restart** from the handoff note, with a sharper brief.
+
+<KitFile id="handoff-template" />
+
+<Prompt title="Before you clear a broken session">
+We're going to start a fresh session. Fill in this handoff note from our conversation. Be especially complete in "Tried and failed", including why each approach failed, and list any decision we made that isn't in a file yet. [paste the template]
+</Prompt>
+
+<Exercise id="recover-1" title="Rescue a session on purpose" time="30 min" predict="How much faster will the fresh session be than the polluted one?">
+
+1. In your practice project, on a new branch, start a session and deliberately pollute it. Ask for a feature, then keep changing your mind: "actually store it differently", "no, go back", "use a different format", for about ten exchanges.
+2. Now ask for something that depends on the final decision. Note any confusion or contradiction.
+3. Run the recovery routine: the handoff prompt above, then `/rewind` or restore a good commit, move decisions into the spec, `/clear`, and start from the handoff note.
+4. Compare the quality and speed of the fresh session's work with the polluted one's.
+
+</Exercise>
+
+<Expect>
+
+The polluted session mixes old and new decisions. The fresh session, starting from a clean note, gets it right quickly, often on the first try. And "tried and failed" stops it walking back into the dead ends.
+
+</Expect>
+
+<KitPiece id="handoff-template" />
+
+<Breaks title="Sunk-cost sessions">
+  <BreakPart label="What happens">
+
+  Two hours into a session that's clearly going in circles, you keep going because "it's almost there" and restarting feels like wasting the two hours. Another hour passes. The final result still needs reworking.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  The two hours aren't in the chat; the useful parts can be in a handoff note in two minutes. Set yourself a rule: three failed attempts at the same thing means stop and recover.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="recover-q1" q="What's the most important section of a handoff note after a session that went badly?" options={["Goal", "Tried and failed, with the reasons", "Current branch", "Next step"]} answer={1}>
+  <p>A fresh session knows nothing about the dead ends. Without "tried and failed", it will often walk straight back into them. The other sections matter too, but that one is what turns a wasted session into a useful one.</p>
+</Quiz>
+
+<Terms ids={['polluted-session', 'checkpoint']} />

@@ -1,0 +1,19 @@
+---
+import { render } from 'astro:content';
+import CoursePage from '../../layouts/CoursePage.astro';
+import { orderedPages } from '../../lib/nav';
+import { mdxComponents } from '../../components/mdx';
+
+export async function getStaticPaths() {
+  const pages = await orderedPages();
+  return pages.map((page) => ({ params: { slug: page.id }, props: { page } }));
+}
+
+const { page } = Astro.props;
+const { Content, headings } = await render(page);
+const d = page.data;
+---
+<CoursePage slug={page.id} title={d.title} summary={d.summary} code={d.code} kind={d.kind} tier={d.tier}
+  time={d.time} updated={d.updated} comps={d.competencies} headings={headings}>
+  <Content components={mdxComponents} />
+</CoursePage>

@@ -1,0 +1,163 @@
+---
+import Base from '../layouts/Base.astro';
+import { competencies, levels } from '../data/competencies';
+import { navItems } from '../lib/nav';
+import { sectionById, tiers } from '../data/course';
+
+const items = await navItems();
+const rows = competencies.map((c) => ({
+  ...c,
+  pages: items.filter((i) => i.competencies.includes(c.id)),
+}));
+const unassigned = items.filter((i) => i.competencies.length === 0).length;
+---
+
+<Base
+  title="Skills map"
+  description="The ten competencies this course builds, which lessons build each one, and how far along you are."
+  active="skills"
+>
+  <main id="main" class="ref">
+    <header class="ref-head">
+      <p class="eyebrow">Skills map</p>
+      <h1>What you are actually getting good at</h1>
+      <p class="lede">
+        A course is easy to finish and hard to measure. These are the ten abilities the lessons build, what each one
+        means in practice, and which lessons develop it. Your level in each rises as you mark lessons complete, so you
+        can see where you are strong and where you have been avoiding the work.
+      </p>
+      <div class="levels">
+        {levels.map((l) => (
+          <span class="lvl"><b>{l.name}</b>{l.min === 0 ? 'nothing yet' : l.min >= 1 ? 'every lesson' : `${Math.round(l.min * 100)}%+ of its lessons`}</span>
+        ))}
+      </div>
+    </header>
+
+    <section class="grid">
+      {rows.map((c) => (
+        <article class="comp" data-comp={c.id}>
+          <header>
+            <h2>{c.name}</h2>
+            <span class="badge" data-comp-level>Not started</span>
+          </header>
+          <p class="what">{c.what}</p>
+          <div class="bar"><span data-comp-bar style="width:0%"></span></div>
+          <p class="count"><b data-comp-count>0 of {c.pages.length}</b> lessons</p>
+          <details>
+            <summary>Which lessons build it</summary>
+            <ul>
+              {c.pages.map((p) => (
+                <li>
+                  <a href={p.href} data-slug={p.slug}>
+                    <span class="tier">T{p.tier}</span>
+                    <span class="ttl">{p.code ? `${p.code} · ` : ''}{p.title}</span>
+                    <span class="sec">{sectionById[p.section]?.label}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </article>
+      ))}
+    </section>
+
+    <section class="tiers-note">
+      <h2>How this relates to the four tiers</h2>
+      <p class="group-intro">
+        The tiers are the order you learn in; the skills map is what you end up with. A tier is finished when its
+        lessons are done, but a competency keeps growing across several tiers, which is why the two look different.
+      </p>
+      <div class="tier-list">
+        {([1, 2, 3, 4] as const).map((t) => (
+          <div class={`tier-card t${t}`}>
+            <span class="tn">Tier {t}</span>
+            <b>{tiers[t].name}</b>
+            <p>{tiers[t].can}</p>
+          </div>
+        ))}
+      </div>
+      {unassigned > 0 && (
+        <p class="note">{unassigned} pages (overviews, milestones and reviews) build no single competency and are not counted above.</p>
+      )}
+    </section>
+  </main>
+</Base>
+
+<style>
+  .ref { max-width: 1100px; margin: 0 auto; padding: 56px 22px 100px; }
+  .ref-head { max-width: 72ch; }
+  .eyebrow { font: 700 0.76rem var(--font-mono); letter-spacing: 0.13em; text-transform: uppercase; color: var(--accent-strong); margin-bottom: 12px; }
+  h1 { font-size: clamp(2.1rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -0.035em; margin-bottom: 16px; }
+  .lede { font-size: 1.12rem; color: var(--ink-soft); margin-bottom: 22px; }
+  .levels { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .lvl { font-size: 0.85rem; color: var(--ink-soft); background: var(--surface-2); border: 1px solid var(--line); border-radius: 99px; padding: 5px 12px; }
+  .lvl b { color: var(--ink); margin-right: 6px; }
+
+  .grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); margin-top: 48px; }
+  .comp { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l); padding: 20px 22px; box-shadow: var(--shadow-1); }
+  .comp header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .comp h2 { font: 750 1.2rem var(--font-display); letter-spacing: -0.02em; }
+  .badge { font: 700 0.68rem var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-strong); background: var(--surface-2); border-radius: 99px; padding: 4px 10px; white-space: nowrap; }
+  .what { color: var(--ink-soft); font-size: 0.95rem; margin: 8px 0 14px; }
+  .bar { height: 7px; background: var(--surface-3); border-radius: 99px; overflow: hidden; }
+  .bar span { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.4s ease; }
+  .count { font-size: 0.85rem; color: var(--ink-soft); margin: 8px 0 0; }
+  .count b { font-family: var(--font-mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+  details { margin-top: 12px; }
+  summary { cursor: pointer; font-size: 0.88rem; color: var(--ink-soft); }
+  summary:hover { color: var(--ink); }
+  details ul { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 2px; }
+  details a { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: baseline; padding: 5px 6px; border-radius: 8px; text-decoration: none; color: var(--ink); font-size: 0.88rem; }
+  details a:hover { background: var(--surface-2); }
+  details a.is-done .ttl { color: var(--ink-faint); text-decoration: line-through; }
+  .tier { font: 700 0.68rem var(--font-mono); color: var(--ink-faint); }
+  .sec { font: 600 0.68rem var(--font-mono); color: var(--ink-faint); white-space: nowrap; }
+
+  .tiers-note { margin-top: 64px; }
+  .tiers-note h2 { font-size: clamp(1.5rem, 3.2vw, 2rem); font-weight: 750; letter-spacing: -0.025em; margin-bottom: 10px; }
+  .group-intro { color: var(--ink-soft); max-width: 68ch; margin-bottom: 22px; }
+  .tier-list { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+  .tier-card { background: var(--surface); border: 1px solid var(--line); border-left: 5px solid var(--t); border-radius: var(--radius-l); padding: 16px 18px; }
+  .tn { font: 700 0.7rem var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--t); }
+  .tier-card b { display: block; font: 750 1.1rem var(--font-display); margin: 4px 0 6px; }
+  .tier-card p { color: var(--ink-soft); font-size: 0.9rem; margin: 0; }
+  .note { margin-top: 20px; }
+  @media (max-width: 560px) { .ref { padding-top: 36px; } }
+</style>
+
+<script is:inline>
+  (function () {
+    var KEY = 'shipyard:v1';
+    var LEVELS = [
+      { min: 1, name: 'Expert' },
+      { min: 0.7, name: 'Advanced' },
+      { min: 0.35, name: 'Practitioner' },
+      { min: 0.01, name: 'Aware' },
+      { min: 0, name: 'Not started' },
+    ];
+    var done = {};
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) done = (JSON.parse(raw) || {}).done || {};
+    } catch (e) {}
+
+    document.querySelectorAll('[data-comp]').forEach(function (card) {
+      var links = Array.prototype.slice.call(card.querySelectorAll('a[data-slug]'));
+      var total = links.length;
+      var hit = 0;
+      links.forEach(function (a) {
+        var isDone = !!done[a.getAttribute('data-slug')];
+        if (isDone) hit++;
+        a.classList.toggle('is-done', isDone);
+      });
+      var share = total ? hit / total : 0;
+      var level = LEVELS.find(function (l) { return share >= l.min; });
+      var bar = card.querySelector('[data-comp-bar]');
+      if (bar) bar.style.width = Math.round(share * 100) + '%';
+      var count = card.querySelector('[data-comp-count]');
+      if (count) count.textContent = hit + ' of ' + total;
+      var badge = card.querySelector('[data-comp-level]');
+      if (badge) badge.textContent = level ? level.name : 'Not started';
+    });
+  })();
+</script>

@@ -1,0 +1,11 @@
+---
+interface Props { label?: string }
+const { label = 'Think of it like' } = Astro.props;
+---
+<aside class="block analogy">
+  <div class="block-label">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+    {label}
+  </div>
+  <slot />
+</aside>

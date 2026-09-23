@@ -1,0 +1,87 @@
+---
+title: Taking over code you didn't write
+summary: Most real work is in existing codebases. Audit one from evidence, understand it before changing it, and land a first change safely.
+order: 3
+kind: lesson
+code: '3.3'
+tier: 2
+time: 90 min
+competencies: [architecture, operate, verify, build]
+kit: [skill-audit]
+---
+
+<Analogy>
+  <p>Moving into an old house. Before you knock down a wall, you find out which walls hold up the roof, where the pipes run, and why the previous owner put a switch in that odd place. There was usually a reason.</p>
+</Analogy>
+
+## The most common, least taught scenario
+
+JS Mastery calls it "80,000 lines you didn't write" and notes that almost no course teaches it. Yet it's most of real work: joining a team, taking over a project, adding a feature to a three-year-old app. Codebases like this are called **brownfield**; an empty folder is **greenfield**.
+
+Agents are both a blessing and a danger here. A blessing, because they read code very fast. A danger, because an agent that doesn't know the codebase's conventions will confidently write code in its own style, breaking patterns everyone else relies on.
+
+## Understand before you change
+
+The order is always the same:
+
+1. **Audit.** Map the system, find the real commands, learn the conventions from the code, and flag risks. Write it down.
+2. **Enrol.** Run `/scope` on what exists, so the loop knows the current state.
+3. **Protect.** Before changing important code that has no tests, write **characterization tests**: tests that record what the code *currently* does, right or wrong. They'll tell you if your change alters behaviour you didn't intend to.
+4. **Change something small.** Your first change should be low-risk and fully verified, to prove you understand how the pieces fit.
+
+## Three tools for understanding
+
+- **Your `/audit` skill** (below) maps the codebase from evidence and drafts a short AGENTS.md.
+- **Kun Chen's `vision`** skill reads a repository's merged pull requests and commits and drafts a `VISION.md` of the project's actual values. Every principle has to cite real history, and it stress-tests the draft with hypothetical cases. It's useful when you need to know not just *what* the code does but what the project *cares about*.
+- **Jason Ku's `/adopt-project`** (Altitude) explains every file to you, and keeps a file map of what you understand and what you've parked for later. It enforces the rule "never build on a file you can't explain".
+
+Read each repository before installing it, as always.
+
+## The skill
+
+<KitFile id="skill-audit" />
+
+<Exercise id="takeover-1" title="Audit a real open-source app, then your work repo" time="60 min" predict="Which convention will you only discover by reading the code, and would an agent have broken it?">
+
+1. Pick a small, active open-source Flutter or FastAPI project on GitHub (a few thousand lines, with tests). Clone it into `~/shipyard/inherited`. Don't pick one of your work repos for this first run.
+2. Copy the audit skill in and run `/audit`.
+3. Read `docs/audit/AUDIT.md`. Check three of its claims yourself by opening the files it cites. Are they right?
+4. Pick a tiny first change, such as improving one error message. Before changing it, ask for a characterization test: *"Write a test that records what this function currently returns for these inputs, even if it's wrong. Don't change the function."*
+5. Make the change through your loop at Beta depth, and confirm the characterization test tells you exactly what changed.
+6. Now run `/audit` on one of your work repositories, read-only. Compare its AGENTS.md draft with what your team actually knows.
+
+</Exercise>
+
+<Expect>
+
+An audit with claims you could verify, at least one convention you'd have broken without it (how errors are returned, how tests are named, where state lives), and a first change that passed through the loop with the characterization test catching the intended difference.
+
+</Expect>
+
+<IfNot>
+
+- **The audit makes claims without citing files:** tell it to cite a file for every claim, or say "I couldn't tell".
+- **Commands fail during the audit:** that's valuable information. Many real projects have broken setup steps. Record them in the audit, and fix the setup before any feature work.
+
+</IfNot>
+
+<KitPiece id="skill-audit" />
+
+<Breaks title="The agent's style, everywhere">
+  <BreakPart label="What happens">
+
+  Asked to add a feature to an old codebase, the agent writes it in its own preferred style: a different error format, a new folder pattern, its favourite HTTP library. It works, but now the codebase has two ways of doing everything, and the next change is harder.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Audit first, and put the codebase's real conventions in AGENTS.md, with an example file for each. Review against those conventions, not against the agent's taste.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="takeover-q1" q="You need to change a 400-line function in an inherited codebase that has no tests. What do you do first?" options={["Rewrite it cleanly", "Write characterization tests that record its current behaviour", "Ask the agent to refactor it", "Delete what looks unused"]} answer={1}>
+  <p>Without tests, you can't tell whether your change altered behaviour other code depends on. Characterization tests pin down what it does today, so every difference after your change is visible and deliberate.</p>
+</Quiz>
+
+<Terms ids={['brownfield', 'characterization-test']} />

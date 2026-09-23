@@ -1,0 +1,76 @@
+---
+title: M2 · Architecture
+summary: Make the load-bearing decisions deliberately, record them as ADRs, finalise the data model, and write the API contract as an OpenAPI file.
+order: 3
+kind: milestone
+code: 'L1 · M2'
+tier: 2
+time: 2 hours
+competencies: [architecture, decide, brief]
+---
+
+## Goal
+
+Every decision the build will rest on, written down: ADRs for the load-bearing ones, the data model, and an **API contract** in OpenAPI format that both the backend and the app will be built against.
+
+## Why decide now
+
+Architecture A1 taught you that architecture is the decisions expensive to change. For Pocket Ledger those are: the stack, where money rules live, how money is stored, how users authenticate, and the shape of the data and the API. Decide them once, here, at high effort, and every later session inherits them.
+
+## Step 1: the system-level decisions
+
+Switch to the largest model at high effort for this session (`/model`, `/effort high`). Then:
+
+<Prompt title="Fresh session">
+/architect system design for Pocket Ledger. Read docs/scope/SCOPE.md and the designs in design/. Load-bearing decisions I expect: the stack (Flutter, FastAPI, PostgreSQL unless you can argue otherwise), where business rules live, how money is stored, how authentication works (sign-up, login, session tokens, password hashing), and deployment. Give me options and trade-offs for each, one at a time. Write an ADR for each decision.
+</Prompt>
+
+Make each choice yourself. The recommended answers for this project are below, but decide first and compare after.
+
+<Reveal id="l1-m2-decisions" title="Recommended decisions, for comparison" button="Compare my decisions">
+
+| Decision | Recommended | Why |
+|---|---|---|
+| Stack | Flutter, FastAPI, PostgreSQL | Your defaults fit; nothing is OS-specific or high-concurrency |
+| Business rules | In the API's service layer only | One source of truth; the app displays, the server decides |
+| Money | Integer paise (`bigint`), rupees only in v1 | Exact totals; currency support gets its own ADR later |
+| Password hashing | Argon2id via a maintained library | Current recommended algorithm for passwords |
+| Sessions | Short-lived access token (JWT, ~15 min) plus a refresh token | Standard, stateless for the API, revocable via the refresh token |
+| Token storage on phone | Secure storage (Keychain / Keystore) | Never in plain preferences |
+| Deployment | Managed host plus managed Postgres | No servers to run yourself |
+
+If you chose differently with a clear reason tied to *this* product, that's fine. The point is that you chose.
+
+</Reveal>
+
+## Step 2: the data model
+
+Start from your A1.3 model. `/clear`, then:
+
+<Prompt>
+/architect data model for Pocket Ledger. Start from this draft: [paste your A1.3 model]. Check it against the ADRs in docs/decisions. Resolve: soft or hard delete for expenses, what happens to expenses when a category is deleted, UUIDs or integer ids, and the index needed for monthly totals. Write the model into docs/specs/0000-data-model.md, with an ADR for any load-bearing choice.
+</Prompt>
+
+## Step 3: the API contract
+
+An **OpenAPI** file describes every endpoint, its inputs, outputs and errors in a machine-readable format. It's the contract between backend and app, and later between agents working on each side. FastAPI can generate one from code, but here you write it *first*, so the code is built to match the contract rather than the other way round.
+
+<Prompt>
+Write the API contract for Pocket Ledger as docs/api/openapi.yaml (OpenAPI 3.1), based on docs/specs/0000-data-model.md and the ADRs. Include: POST /auth/signup, POST /auth/login, POST /auth/refresh, GET/POST /expenses (paginated with limit and cursor), GET/PATCH/DELETE /expenses/\{id\}, GET/POST /categories, and GET /summary?month=YYYY-MM. Amounts are integer paise. Use one error shape everywhere. Return 404 for other users' resources. Then review it against lesson A1.2's checklist and tell me what you'd change.
+</Prompt>
+
+Read the whole file. It's long, but it's the single most important file in the project: every screen and every endpoint will be built against it.
+
+<IfNot label="When it goes wrong">
+
+- **The agent wants to add endpoints for features outside v1:** point it at the "not in version 1" list in SCOPE.md.
+- **It recommends a different stack:** that's fine if the reason is about this product. If the reason is "it's more modern", ask how that serves the qualities in SCOPE.md.
+
+</IfNot>
+
+<Checklist id="l1-m2" label="Done when" title="M2 is done when…" items={[
+  "`docs/decisions/` has an ADR for each load-bearing decision, each with honest consequences.",
+  "`docs/specs/0000-data-model.md` defines every table, key, constraint and index.",
+  "`docs/api/openapi.yaml` covers every v1 endpoint, with one error shape and paginated lists.",
+  "You can explain why each decision fits this product, without looking."
+]} />

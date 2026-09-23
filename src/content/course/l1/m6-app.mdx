@@ -1,0 +1,79 @@
+---
+title: M6 · Slice, the app
+summary: Build the four Flutter screens on design tokens, wire them to the API, handle every state, and verify on a real emulator against the Stitch designs.
+order: 7
+kind: milestone
+code: 'L1 · M6'
+tier: 2
+time: 3 hours
+competencies: [ui, verify, brief]
+---
+
+## Goal
+
+Four screens that match the Stitch designs, built on one set of design tokens, talking to your local API, with real empty, loading and error states and two small animations.
+
+## The order that keeps screens consistent
+
+Build in this order, and don't skip ahead:
+
+1. **Design tokens**: colours, text styles, spacing, corner radii and animation durations, as named values in the app's theme.
+2. **Components**: the button, the amount field, the category chip, the expense row. Each built once, from tokens.
+3. **Screens**: assembled from components.
+
+Screens built one at a time in separate sessions drift apart: slightly different padding, a new shade of green each time. Tokens and components first prevent that. Part 4 goes much deeper into UI with agents; this is the foundation.
+
+## Step 1: architect the app slice
+
+<Prompt title="Fresh session">
+/architect the Flutter app for Pocket Ledger. Inputs: the designs in design/, docs/api/openapi.yaml, and the auth ADR. Decisions I expect: state management approach, how the API client is generated or written (it must match the OpenAPI file), secure token storage, how the API's base URL is supplied (at build time with --dart-define, never hard-coded), and the design tokens taken from the Stitch designs. Acceptance criteria must cover the empty, loading and error state of every screen, and what happens when the access token expires mid-session.
+</Prompt>
+
+## Step 2: develop in three passes
+
+Run `/develop` three times, with a `/clear` between each: first **tokens and components**, then **sign in and summary**, then **add expense and the list**. Give it the relevant design images each time.
+
+<Prompt title="Pass 1">
+/develop docs/specs/0003-app.md, tokens and components only. Put every colour, text style, spacing value, radius and duration in the theme (ThemeData plus a ThemeExtension). Build the button, amount field, category chip and expense row as widgets that use only tokens. Write a widget test for each. No screens yet.
+</Prompt>
+
+Add two implicit animations in the later passes: the summary total animates between values (`AnimatedSwitcher`), and tapping an expense opens its detail with a shared-element transition (`Hero`). Both must switch off when the system asks for reduced motion (`MediaQuery.disableAnimations`).
+
+## Step 3: verify on a real emulator
+
+With the API running locally and an Android emulator open:
+
+```bash
+cd app && flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000
+```
+
+`10.0.2.2` is how the Android emulator reaches your Mac's `localhost`.
+
+Then `/clear` and `/verify docs/specs/0003-app.md`. If you fixed the Dart MCP server in lesson 1.4, the agent can run the app, take screenshots and compare them with `design/` itself. Otherwise, take the screenshots yourself and give them to it. For each screen, check the empty state (a fresh account), the loading state (slow the API down temporarily), and the error state (stop the API).
+
+## Step 4: a check for design drift
+
+Add one line to `scripts/check.sh` that fails if any raw colour value appears outside the theme folder:
+
+```bash
+! grep -rn "Color(0x" app/lib --include=*.dart | grep -v "lib/theme/" || { echo "Raw colour outside theme"; exit 1; }
+```
+
+Now nobody, human or agent, can sneak in a one-off colour. Then review, document, merge and sync as usual.
+
+<IfNot label="When it goes wrong">
+
+- **The app can't reach the API:** on the emulator, use `10.0.2.2`, not `localhost`. On a real phone, use your Mac's local IP, with both devices on the same network.
+- **Screens look close to the designs, but not quite:** give the agent the design image and a screenshot side by side, and ask it to list every difference before fixing any.
+- **The token expires and the app shows an error instead of refreshing:** that was an acceptance criterion. Verification should have caught it; if it didn't, add an explicit step to your verify skill for "wait out the token lifetime".
+
+</IfNot>
+
+<Checklist id="l1-m6" label="Done when" title="M6 is done when…" items={[
+  "All colours, spacing and durations come from the theme; the drift check passes.",
+  "All four screens match the designs, including their empty, loading and error states.",
+  "The API base URL comes from --dart-define, not the source code.",
+  "Tokens are in secure storage, and expiry mid-session refreshes silently.",
+  "Both animations work and switch off with reduced motion.",
+  "The PR is merged and `/sync` has been run."
+]} />

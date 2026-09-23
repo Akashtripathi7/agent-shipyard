@@ -1,0 +1,13 @@
+# Blocks secrets and insecure patterns at commit time, before they reach history.
+# Install: brew install pre-commit gitleaks semgrep
+# Then:    pre-commit autoupdate && pre-commit install
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v0.0.0          # replaced with the latest release by `pre-commit autoupdate`
+    hooks:
+      - id: gitleaks
+  - repo: https://github.com/semgrep/pre-commit
+    rev: v0.0.0          # replaced with the latest release by `pre-commit autoupdate`
+    hooks:
+      - id: semgrep
+        args: ["--config", "auto", "--error"]

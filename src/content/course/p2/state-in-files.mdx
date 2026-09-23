@@ -1,0 +1,125 @@
+---
+title: State lives in files, not chat
+summary: The one idea that makes every other step of the loop work. Set up the folder structure every project in this course will use.
+order: 1
+kind: lesson
+code: '2.1'
+tier: 2
+time: 45 min
+competencies: [operate, brief, build]
+---
+
+<Analogy>
+  <p>A hospital runs on the chart at the end of the bed, not on the memory of whoever was on shift. Nurses change, doctors change, and the patient's care carries on, because everything that matters is written down where the next person will look.</p>
+</Analogy>
+
+## The problem with chat
+
+Everything you've told an agent in a conversation lives in that conversation's context. When you `/clear`, start a new session, hand work to a subagent, or come back tomorrow, it's gone. Worse, long conversations rot (lesson 1.5).
+
+So the Loop school's core rule is simple: **anything that must outlive this session goes in a file.** The plan, the decisions, the specs, the review findings. Chat is for working; files are for remembering. JS Mastery's skills are built entirely around this, and so is Superpowers, which writes every plan to a file before building.
+
+The payoff is huge:
+
+- A fresh session picks up exactly where the last one left off, by reading files.
+- Different agents (a builder, a reviewer, a subagent) all work from the same source of truth.
+- Your future self, and your teammates, can see *why* things are the way they are.
+- You can `/clear` freely, because nothing is lost.
+
+## The folder structure
+
+Every project in this course uses the same layout:
+
+```text
+my-project/
+├── AGENTS.md              # rules every agent follows (lesson 1.3)
+├── CLAUDE.md              # one line: @AGENTS.md
+├── WORKFLOW.md            # how much checking changes get (lesson 2.7)
+├── docs/
+│   ├── scope/SCOPE.md     # what we're building and why, split into slices
+│   ├── specs/             # one spec per slice: 0001-sign-up.md, 0002-...
+│   ├── decisions/         # ADRs: 0001-use-postgresql.md, ...
+│   └── reviews/           # verification evidence and review findings
+├── scripts/check.sh       # the one command that runs every check
+└── .claude/
+    ├── settings.json      # hooks and permissions
+    └── skills/            # the project's loop skills
+```
+
+Each file has a job, and each step of the loop reads and writes specific ones:
+
+| Step | Reads | Writes |
+|---|---|---|
+| `/scope` | SCOPE.md | SCOPE.md |
+| `/architect` | AGENTS.md, SCOPE.md, existing specs and ADRs | a spec, ADRs |
+| `/develop` | the spec, AGENTS.md | code, tests, spec status |
+| `/verify` | the spec | `docs/reviews/…-verify.md` |
+| `/review` | the diff, spec, AGENTS.md, ADRs | `docs/reviews/…-review.md` |
+| `/sync` | everything | AGENTS.md, statuses |
+
+<Figure caption="The whole loop you'll build in this Part. Every step talks to the same set of files, which is what lets you clear context between steps without losing anything.">
+  <FeatureLoop />
+</Figure>
+
+## /clear between steps
+
+Because state lives in files, you can, and should, **clear context between steps**: `/scope`, then `/clear`, then `/architect`, then `/clear`, then `/develop`. Each step starts fresh, reads exactly the files it needs, and carries none of the previous step's noise. JS Mastery's skills suggest a `/clear` at every handoff for this reason.
+
+It feels wasteful at first, like throwing away work. It isn't: the work is in the files.
+
+## Your practice product
+
+Part 2 builds each loop step as a skill and tries it on a small practice product: **habits**, a command-line habit tracker in Python. It's deliberately tiny, so each lesson can run its step end to end in one sitting. Project L1 then uses the whole loop on a real app.
+
+<Exercise id="state-1" title="Set up the practice project" time="25 min" predict="Which of these files do you expect to change most often, and which rarely?">
+
+1. Create the project with this lesson's layout:
+
+   ```bash
+   mkdir -p ~/shipyard/habits && cd ~/shipyard/habits && git init
+   mkdir -p docs/scope docs/specs docs/decisions docs/reviews scripts .claude/skills
+   uv init --app --name habits . && uv add typer && uv add --dev pytest ruff
+   ```
+
+2. Copy your kit files into place: `AGENTS.md` and `CLAUDE.md` (lesson 1.3), `scripts/check.sh` (lesson 1.2), `.claude/settings.json` from the guardrails settings (lesson 1.7), and the require-green hook into `.claude/hooks/`. Edit `check.sh` to use `uv run`:
+
+   ```bash
+   uv run ruff format --check . && uv run ruff check . && uv run pytest -q
+   ```
+
+3. Edit AGENTS.md for this project: the check command, the test-first convention, and one product rule: *"All data is stored in a single JSON file at `~/.habits.json`."*
+4. Commit: `git add -A && git commit -m "Project skeleton"`.
+
+</Exercise>
+
+<Expect>
+
+A repo with the folder structure above, a working `scripts/check.sh`, and a first commit. The `docs` folders are empty; the next lessons fill them.
+
+</Expect>
+
+<IfNot>
+
+- **`uv init` complains the folder isn't empty:** run it before creating the `docs` folders, or add `--no-readme`.
+- **`pytest` exits with "no tests ran":** expected until the first test exists. Temporarily change the pytest step to `uv run pytest -q || [ $? -eq 5 ]`, where exit code 5 means "no tests collected".
+
+</IfNot>
+
+<Breaks title="The decision that lived in chat">
+  <BreakPart label="What happens">
+
+  In a long session you and the agent agree that streaks reset at midnight in the user's time zone. Two days later a fresh session builds the streak display using UTC. Nobody wrote the decision down, so nobody could know.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Before you `/clear`, ask: "Did we decide anything that isn't in a file yet?" Put it in the spec, an ADR or AGENTS.md. The `/sync` skill in lesson 2.6 makes this a routine.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="state-q1" q="Why is it safe to /clear between /architect and /develop?" options={["Because /develop doesn't need any context", "Because the spec that /architect wrote contains everything /develop needs", "Because Claude Code remembers the previous session anyway", "It isn't safe; you should keep one long session"]} answer={1}>
+  <p>The spec is the handoff. As long as every decision is in it, a fresh /develop session has exactly what it needs and none of the design discussion's noise. If /develop has to ask about something, that's a sign the spec was missing a decision.</p>
+</Quiz>
+
+<Terms ids={['scope-doc']} />

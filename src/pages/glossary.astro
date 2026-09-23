@@ -1,0 +1,171 @@
+---
+import Base from '../layouts/Base.astro';
+import { termGroups, allPlainTerms } from '../data/terms';
+import { glossary } from '../data/glossary';
+import { md } from '../lib/md';
+import { hrefOf, writtenSlugs } from '../lib/nav';
+
+const written = await writtenSlugs();
+
+const azTerms = [...glossary].sort((a, b) => a.term.localeCompare(b.term, 'en', { sensitivity: 'base' }));
+---
+
+<Base
+  title="Glossary"
+  description="Every AI and agentic term used in this course, explained in plain language with an everyday analogy, plus the precise course definitions A to Z."
+  active="glossary"
+>
+  <main id="main" class="ref">
+    <header class="ref-head">
+      <p class="eyebrow">Plain language</p>
+      <h1>Every word, explained properly</h1>
+      <p class="lede">
+        This field is full of vocabulary that sounds harder than it is. Each term below gets three things: what it
+        actually means in ordinary words, an everyday analogy, and why it matters when you work this way. No prior
+        knowledge assumed, and nothing left as jargon.
+      </p>
+      <ul class="stats">
+        <li><b>{allPlainTerms.length}</b>explained simply</li>
+        <li><b>{glossary.length}</b>course definitions</li>
+        <li><b>{termGroups.length}</b>groups</li>
+      </ul>
+      <div class="filter-row">
+        <input id="term-filter" type="search" placeholder="Filter terms, e.g. context, injection, worktree…" aria-label="Filter terms" autocomplete="off" />
+        <span class="note" id="filter-count" aria-live="polite"></span>
+      </div>
+      <nav class="jump" aria-label="Jump to a group">
+        {termGroups.map((g) => <a href={`#${g.id}`}>{g.name}</a>)}
+        <a href="#a-z">Course A–Z</a>
+      </nav>
+    </header>
+
+    {termGroups.map((g) => (
+      <section class="group" id={g.id} data-group>
+        <h2>{g.name}</h2>
+        <p class="group-intro">{g.intro}</p>
+        <div class="cards">
+          {g.terms.map((t) => (
+            <article class="term-card" data-term data-search={`${t.term} ${t.also ?? ''} ${t.plain}`.toLowerCase()} id={`t-${t.id}`}>
+              <h3>{t.term}</h3>
+              {t.also && <p class="also">also called {t.also}</p>}
+              <p class="plain">{t.plain}</p>
+              <p class="analogy"><span>Think of it like</span>{t.analogy}</p>
+              <p class="matters"><span>Why it matters</span>{t.matters}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+    ))}
+
+    <section class="group az" id="a-z" data-group>
+      <h2>Course glossary, A to Z</h2>
+      <p class="group-intro">
+        The precise definition of every term the lessons introduce, with a link to the lesson that introduces it. These
+        are the same definitions the lessons show in their "New words" box, so the two can never disagree.
+      </p>
+      <dl class="az-list">
+        {azTerms.map((t) => (
+          <div class="az-row" data-term data-search={`${t.term} ${t.def}`.toLowerCase()}>
+            <dt>{t.term}</dt>
+            <dd>
+              <span set:html={md(t.def)} />
+              {written.has(t.first)
+                ? <a class="az-link" href={hrefOf(t.first)}>Introduced here →</a>
+                : <span class="az-soon">Introduced in a later tier</span>}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+
+    <p class="empty note" id="no-results" hidden>Nothing matches that. Try a shorter word.</p>
+  </main>
+</Base>
+
+<style>
+  .ref { max-width: 1100px; margin: 0 auto; padding: 56px 22px 100px; }
+  .ref-head { max-width: 72ch; }
+  .eyebrow { font: 700 0.76rem var(--font-mono); letter-spacing: 0.13em; text-transform: uppercase; color: var(--accent-strong); margin-bottom: 12px; }
+  h1 { font-size: clamp(2.1rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -0.035em; margin-bottom: 16px; }
+  .lede { font-size: 1.12rem; color: var(--ink-soft); margin-bottom: 24px; }
+  .stats { list-style: none; padding: 0; margin: 0 0 26px; display: flex; flex-wrap: wrap; gap: 8px 26px; color: var(--ink-soft); font-size: 0.95rem; }
+  .stats b { font: 750 1.35rem var(--font-display); color: var(--ink); margin-right: 6px; font-variant-numeric: tabular-nums; }
+
+  .filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 18px; }
+  #term-filter {
+    flex: 1 1 320px; font: 400 1rem var(--font-body); color: var(--ink);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 11px 14px;
+  }
+  #term-filter:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .jump { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .jump a {
+    font: 600 0.82rem var(--font-body); text-decoration: none; color: var(--ink-soft);
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 99px; padding: 6px 13px;
+  }
+  .jump a:hover { color: var(--ink); border-color: var(--accent); }
+
+  .group { margin-top: 64px; scroll-margin-top: 80px; }
+  .group h2 { font-size: clamp(1.6rem, 3.4vw, 2.1rem); font-weight: 750; letter-spacing: -0.025em; margin-bottom: 10px; }
+  .group-intro { color: var(--ink-soft); max-width: 68ch; margin-bottom: 26px; }
+
+  .cards { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+  .term-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l);
+    padding: 20px 22px 18px; box-shadow: var(--shadow-1); scroll-margin-top: 80px;
+  }
+  .term-card h3 { font: 750 1.25rem var(--font-display); letter-spacing: -0.02em; margin-bottom: 2px; }
+  .also { font: 500 0.8rem var(--font-mono); color: var(--ink-faint); margin-bottom: 10px; }
+  .plain { margin-bottom: 12px; }
+  .analogy, .matters { font-size: 0.95rem; margin-bottom: 10px; }
+  .analogy { background: var(--surface-2); border-radius: 12px; padding: 12px 14px; color: var(--ink); }
+  .analogy span, .matters span {
+    display: block; font: 700 0.68rem var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent-strong); margin-bottom: 5px;
+  }
+  .matters { color: var(--ink-soft); }
+  .matters span { color: var(--ink-faint); }
+
+  .az-list { display: grid; gap: 0; margin: 0; }
+  .az-row { display: grid; gap: 4px 24px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  @media (min-width: 720px) { .az-row { grid-template-columns: 220px 1fr; } }
+  .az-row dt { font: 700 0.95rem var(--font-mono); color: var(--accent-strong); }
+  .az-row dd { margin: 0; color: var(--ink-soft); }
+  .az-link { display: inline-block; margin-left: 8px; font-size: 0.86rem; white-space: nowrap; }
+
+  .empty { margin-top: 40px; }
+  @media (max-width: 560px) { .ref { padding-top: 36px; } }
+  .az-soon { font-size: 0.8rem; color: var(--ink-faint); font-style: italic; }
+</style>
+
+<script is:inline>
+  (function () {
+    var input = document.getElementById('term-filter');
+    var count = document.getElementById('filter-count');
+    var none = document.getElementById('no-results');
+    if (!input) return;
+    var items = Array.prototype.slice.call(document.querySelectorAll('[data-term]'));
+    var groups = Array.prototype.slice.call(document.querySelectorAll('[data-group]'));
+
+    function apply() {
+      var q = input.value.trim().toLowerCase();
+      var shown = 0;
+      items.forEach(function (el) {
+        var hit = !q || (el.getAttribute('data-search') || '').indexOf(q) !== -1;
+        el.hidden = !hit;
+        if (hit) shown++;
+      });
+      groups.forEach(function (g) {
+        var any = g.querySelector('[data-term]:not([hidden])');
+        g.hidden = !any;
+      });
+      count.textContent = q ? shown + ' matching' : '';
+      none.hidden = shown !== 0;
+    }
+
+    input.addEventListener('input', apply);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && document.activeElement === input) { input.value = ''; apply(); }
+    });
+  })();
+</script>

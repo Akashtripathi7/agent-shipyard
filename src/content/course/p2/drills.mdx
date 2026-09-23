@@ -1,0 +1,54 @@
+---
+title: Part 2 decision drills
+summary: Architecture and loop decisions under realistic constraints. Commit first, then compare.
+order: 8
+kind: drill
+code: 'Drills 2'
+tier: 2
+time: 35 min
+competencies: [decide, architecture, verify]
+---
+
+These drills combine Architecture A1 with the loop. Commit to an answer before revealing, and write your reasoning in a sentence.
+
+<Drill id="p2-d1" scenario="You're designing a group expense splitter: friends add shared expenses, and the app shows who owes whom. Three developers, launching to a few hundred users. Where should 'who owes whom' be calculated?" fields={[
+  { label: "Where?", options: ["In each phone app", "On the server, stored as balances", "On the server, calculated from expenses when asked", "In the database, with a trigger"] },
+  { label: "Why?" }
+]}>
+
+**Expert answer: on the server, calculated from the expenses when asked, at least at first.**
+
+- *In each app* means every client can disagree, and a tampered app could lie. Balances are money: the server is the single source of truth.
+- *Stored balances* are faster to read but create two sources of truth, the expenses and the balances. Every edit, delete or bug risks them drifting apart. That's a load-bearing decision you'd take on only when reading is proven to be slow.
+- *A database trigger* hides business rules where agents and developers rarely look.
+
+At a few hundred users, calculating from expenses is fast enough and can't drift. Write it as an ADR with "revisit if the summary takes over 300 ms" as a consequence. That's how you make a decision that's right now, and honest about when it stops being right.
+
+</Drill>
+
+<Drill id="p2-d2" scenario="Mid-way through /develop, the agent says: 'The spec doesn't say what happens to a habit's history when the habit is deleted. Should I delete the history, keep it hidden, or block deletion?' You're busy. What do you do?" fields={[
+  { label: "Your move", options: ["Tell it to pick whatever is simplest", "Answer now, and have it add the decision to the spec", "Stop, run /architect for this decision, then resume", "Tell it to skip deletion for now"] },
+  { label: "Why?" }
+]}>
+
+**Expert answer: it depends on whether it's load-bearing, and here it is. Answer now if you're sure, and record it; otherwise run `/architect`.**
+
+What happens to data on deletion is expensive to change later: hard-deleted history can't come back. So "whatever is simplest" is the wrong answer: it lets the agent make a load-bearing decision silently.
+
+If you already know the answer (say, soft-delete and keep the history for 30 days), give it, and make sure it goes into the spec, not just the chat. If you'd need to think about trade-offs such as privacy, undo or storage, stop and run `/architect` for this one decision. Skipping deletion is legitimate, but only as an explicit scope decision, written in the spec's "Out of scope".
+
+</Drill>
+
+<Drill id="p2-d3" scenario="A personal tool, used only by you, that renames photo files by date. You'll use it for years. What depth, and what's the one thing you won't skip?" fields={[
+  { label: "Depth", options: ["Prototype", "Alpha", "Beta", "GA"] },
+  { label: "The one thing you won't skip", options: ["Second-model review", "A changelog", "Verification against real files, with a dry-run mode", "Unit tests for every function"] },
+  { label: "Why?" }
+]}>
+
+**Expert answer: Alpha, and don't skip verification on real files, ideally with a dry-run mode.**
+
+One user and low complexity don't justify Beta or GA ceremony. But this tool touches irreplaceable data, your photos, and one bad rename run can scramble years of files. The risk isn't in the code's elegance; it's in real-world behaviour. So the thing worth paying for is verification against a copy of real files, plus a dry-run mode that shows what would happen before doing it.
+
+This is the core skill of depth: spend your checking where the actual risk is, not evenly everywhere.
+
+</Drill>

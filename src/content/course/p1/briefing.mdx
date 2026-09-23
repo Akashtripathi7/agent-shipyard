@@ -1,0 +1,113 @@
+---
+title: Briefing an agent like a manager
+summary: Kun Chen's three delegation mistakes, a brief template you'll use all course, and why agents need to be told that code is cheap.
+order: 8
+kind: lesson
+code: '1.8'
+tier: 1
+time: 60 min
+competencies: [brief, decide]
+kit: [brief-template]
+---
+
+<Analogy>
+  <p>Handing work to a new contractor. "Put a shelf there" gets you a shelf. "I need somewhere for 40 cookbooks, it must hold 30 kilos, and the wall is plasterboard" gets you the right shelf, fixed to the studs, without you standing over them.</p>
+</Analogy>
+
+## Kun Chen's three delegation mistakes
+
+Kun Chen's whole workflow rests on handing work to agents well. He names three mistakes that sink most attempts:
+
+1. **Asking for actions instead of outcomes.** "Add a login endpoint" is an action. "Users must be able to sign in with email before they can see their data" is an outcome. With an outcome, the agent can make sensible decisions you didn't anticipate. With an action, it does exactly what you said, even when that's wrong.
+2. **Leaving out the why.** Without knowing why something matters, an agent can't trade things off sensibly. "This blocks every other feature" and "this is a nice-to-have" lead to very different amounts of care.
+3. **Grabbing back control after a mistake.** When an agent gets something wrong, the instinct is to take over and fix it yourself. Instead, tell it what's wrong and let it fix it. You stay the manager, it learns the context, and you don't end up typing the code after all.
+
+## A brief template
+
+A good brief answers five questions. You'll use this shape for every task in the course.
+
+<CodeFile title="BRIEF.md · the template">
+
+```markdown
+## Outcome
+What should be true when this is done, from the user's point of view.
+
+## Why it matters
+What this unblocks or protects. How much care it deserves.
+
+## Constraints
+What must not change. Rules to follow (point to AGENTS.md, specs, contracts).
+
+## Done means
+The evidence you want: which tests, which command output, which screenshot.
+
+## Ask me if
+The decisions you want escalated instead of guessed.
+```
+
+</CodeFile>
+
+Compare two briefs for the same task:
+
+| Weak | Strong |
+|---|---|
+| "Add a login endpoint." | "Build `POST /auth/login` per API_CONTRACT.md. Users must sign in before they can see their expenses, so this blocks every other feature. On failure, return a generic 401 that doesn't reveal which field was wrong. Write a test for both cases and show me it passing. Ask me before adding any new dependency." |
+
+The strong version takes 40 seconds longer to write and saves you a round of back-and-forth, a security hole, and an unexpected package.
+
+## Tell agents that code is cheap
+
+Here's a subtle one, from Kun Chen by way of Jason Ku. Models learned to estimate work from human developers, so when they weigh two designs they overweight how long the code takes to write. They'll pick the quicker hack over the cleaner design "to save time", even though writing the code costs them seconds.
+
+The fix is a line in your global instructions:
+
+<CodeFile title="~/.claude/CLAUDE.md · add this section">
+
+```markdown
+## Technical decisions
+When comparing designs, don't weight implementation effort heavily: you write
+code fast. Weight correctness, simplicity, and how easy it is to change later.
+```
+
+</CodeFile>
+
+## Talk instead of type
+
+Kun Chen dictates most of his briefs. Speaking is about three times faster than typing, and you naturally include more of the "why" when you talk it through. macOS has built-in dictation (press <kbd>Fn</kbd> twice), and local speech-to-text apps work well too. Dictate the messy version, then let the agent tidy it into the five sections before it starts.
+
+<Exercise id="brief-1" title="Brief the same task twice" time="35 min" predict="How many clarifying questions or wrong turns do you expect from the weak brief compared with the strong one?">
+
+1. In your lab repo, open a fresh session and give a weak brief: *"Add a divide function."*
+2. Note what it did about dividing by zero, whether it ran `scripts/check.sh`, and whether it asked anything.
+3. Undo the change (`git checkout .` if you haven't committed).
+4. Fresh session again. Write a full brief using the template: the outcome, why (other functions will rely on it), constraints (no new dependencies), done means (tests for normal cases **and** dividing by zero, checks passing), and ask-me-if (you're unsure what dividing by zero should return).
+5. Compare the two results.
+
+</Exercise>
+
+<Expect>
+
+The weak brief gets you *a* divide function, with whatever handling of zero the agent guessed. The strong brief gets you either your preferred behaviour or a question about it, plus tests for the edge case, plus a green check run.
+
+</Expect>
+
+<KitPiece id="brief-template" />
+
+<Breaks title="The manager who became the typist">
+  <BreakPart label="What happens">
+
+  The agent's first attempt has a bug. You fix it yourself because it's faster. Next time, you fix two things. By the end of the week you're writing most of the code with an agent watching.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  When output is wrong, say what's wrong and why, and let the agent fix it. If the same kind of mistake keeps happening, fix the cause instead: the brief, AGENTS.md, or a missing check.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="brief-q1" q="Which instruction is an outcome rather than an action?" options={["Add a Redis cache to the products endpoint", "Refactor the product service into three classes", "The products page must load in under 300ms for 1,000 items, because slow pages are costing us sign-ups", "Use async functions in the product module"]} answer={2}>
+  <p>The third one says what must be true and why, and leaves the how open. Maybe a cache is right, maybe a missing database index is the real problem. The other three prescribe a solution before anyone has diagnosed the problem.</p>
+</Quiz>
+
+<Terms ids={['brief']} />

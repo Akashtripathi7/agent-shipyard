@@ -1,0 +1,103 @@
+---
+import Base from '../../layouts/Base.astro';
+import { kit } from '../../data/kit';
+import { hrefOf, navItems, writtenSlugs } from '../../lib/nav';
+
+const items = await navItems();
+const written = await writtenSlugs();
+const titleOf = (slug: string) => items.find((i) => i.slug === slug)?.title ?? slug;
+const groups = [...new Set(kit.map((k) => k.group))];
+const byGroup = groups.map((g) => ({ name: g, items: kit.filter((k) => k.group === g) }));
+---
+
+<Base
+  title="Your kit"
+  description="Every reusable file the course has you build: instruction files, skills, subagents, hooks, gates and templates, ready to download and install."
+  active="kit"
+>
+  <main id="main" class="ref">
+    <header class="ref-head">
+      <p class="eyebrow">Your workflow kit</p>
+      <h1>Everything you build, in one place</h1>
+      <p class="lede">
+        The course never asks you to copy a file you do not understand: each of these is built in a lesson, for a reason
+        you will have felt first. This page is the reference copy, so you can install a piece into a new project without
+        going back through the lesson that made it.
+      </p>
+      <ul class="stats">
+        <li><b>{kit.length}</b>files</li>
+        <li><b>{groups.length}</b>kinds</li>
+      </ul>
+      <div class="callout">
+        <p>
+          <strong>A word before you copy.</strong> A kit file that lands in a project nobody understands is just more
+          configuration. Install the piece when you hit the problem it solves, and adapt the wording to your own project
+          rather than keeping mine.
+        </p>
+      </div>
+    </header>
+
+    {byGroup.map((g) => (
+      <section class="group">
+        <h2>{g.name}</h2>
+        <div class="cards">
+          {g.items.map((k) => (
+            <article class="kit-card">
+              <h3>{k.title}</h3>
+              <p class="what">{k.what}</p>
+              <dl class="meta">
+                <div><dt>Goes in</dt><dd><code>{k.install}</code></dd></div>
+                <div><dt>Built in</dt><dd>{written.has(k.lesson)
+                  ? <a href={hrefOf(k.lesson)}>{titleOf(k.lesson)}</a>
+                  : <span class="soon">{titleOf(k.lesson)} <em>(later tier)</em></span>}</dd></div>
+              </dl>
+              <a class="key key--brass dl" href={`/kit/${k.path}`} download={k.install.split('/').pop()}>Download <span class="fname">{k.install.split('/').pop()}</span></a>
+            </article>
+          ))}
+        </div>
+      </section>
+    ))}
+
+    <section class="group">
+      <h2>Packaging it as a plugin</h2>
+      <p class="group-intro">
+        By the end of Part 7 these pieces become one installable bundle, so a new project — or a teammate — gets the whole
+        workflow in a single command instead of a folder of files to copy. Until that lesson is written, copying the
+        files above into a new project's <code>.claude/</code> folder does the same job by hand.
+      </p>
+    </section>
+  </main>
+</Base>
+
+<style>
+  .ref { max-width: 1100px; margin: 0 auto; padding: 56px 22px 100px; }
+  .ref-head { max-width: 72ch; }
+  .eyebrow { font: 700 0.76rem var(--font-mono); letter-spacing: 0.13em; text-transform: uppercase; color: var(--accent-strong); margin-bottom: 12px; }
+  h1 { font-size: clamp(2.1rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -0.035em; margin-bottom: 16px; }
+  .lede { font-size: 1.12rem; color: var(--ink-soft); margin-bottom: 22px; }
+  .stats { list-style: none; padding: 0; margin: 0 0 22px; display: flex; gap: 8px 26px; color: var(--ink-soft); font-size: 0.95rem; }
+  .stats b { font: 750 1.35rem var(--font-display); color: var(--ink); margin-right: 6px; font-variant-numeric: tabular-nums; }
+
+  .group { margin-top: 56px; }
+  .group h2 { font-size: clamp(1.5rem, 3.2vw, 2rem); font-weight: 750; letter-spacing: -0.025em; margin-bottom: 20px; }
+  .group-intro { color: var(--ink-soft); max-width: 68ch; }
+
+  .cards { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); }
+  .kit-card {
+    display: flex; flex-direction: column; gap: 10px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l);
+    padding: 20px 22px 20px; box-shadow: var(--shadow-1);
+  }
+  .kit-card h3 { font: 750 1.2rem var(--font-display); letter-spacing: -0.02em; }
+  .what { color: var(--ink-soft); font-size: 0.97rem; flex: 1; margin: 0; }
+  .meta { margin: 0; display: grid; gap: 6px; }
+  .meta > div { display: grid; grid-template-columns: 78px 1fr; gap: 10px; align-items: baseline; }
+  .meta dt { font: 700 0.68rem var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+  .meta dd { margin: 0; font-size: 0.9rem; overflow-wrap: anywhere; }
+  .meta code { font-size: 0.84rem; }
+  .dl { align-self: flex-start; font-size: 0.92rem; padding: 0.6em 1em 0.68em; }
+  .fname { font: 600 0.8rem var(--font-mono); opacity: 0.85; margin-left: 6px; }
+  @media (max-width: 560px) { .ref { padding-top: 36px; } }
+  .soon { color: var(--ink-faint); }
+  .soon em { font-style: normal; font-size: 0.82rem; }
+</style>

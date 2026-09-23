@@ -1,0 +1,125 @@
+---
+title: Knowing when it's done
+summary: Agents should stop only with evidence, when blocked, or when out of budget. Enforce it with test-first development and a hook that won't let them finish while checks fail.
+order: 6
+kind: lesson
+code: '1.6'
+tier: 1
+time: 70 min
+competencies: [operate, verify, build]
+kit: [require-green]
+---
+
+<Analogy>
+  <p>A builder who says "all finished" versus a building inspector who signs off. You want the inspector's signature, not the builder's confidence.</p>
+</Analogy>
+
+## Three good reasons to stop
+
+An agent should stop in exactly three situations:
+
+1. **Done, with evidence:** the tests ran and passed, the app launched, a screenshot shows the screen.
+2. **Blocked:** it asks you one clear question.
+3. **Out of budget:** it hits a turn or time limit, stops, and reports how far it got.
+
+When stopping goes wrong, you'll see one of three failures:
+
+- **It loops,** retrying the same broken fix again and again.
+- **It stops too early,** declaring victory on half the job.
+- **It gives a silent wrong answer:** everything is green because a test was quietly weakened.
+
+## Test-first development
+
+The best defence is **test-first development**, which Jason Ku requires of every agent he runs:
+
+1. Write a test for the new behaviour.
+2. **Run it and watch it fail.**
+3. Write the code.
+4. Run it and watch it pass.
+
+Step 2 is the one people skip, and it matters most. A test you've never seen fail might not be able to catch the bug at all. Watching it fail proves the test works.
+
+## Enforce it with a hook
+
+Instructions are requests. A **hook** is a rule. A *Stop hook* runs whenever the agent tries to finish its turn. If your checks fail, the hook blocks the finish and shows the agent why, so it has to keep working. The agent can't talk its way around it.
+
+<CodeFile title=".claude/hooks/require-green.sh">
+
+```bash
+#!/usr/bin/env bash
+# Stop hook: blocks the agent from finishing while checks fail.
+input=$(cat)
+if [ "$(echo "$input" | jq -r '.stop_hook_active')" = "true" ]; then
+  exit 0   # already blocked once: let it stop and explain, instead of looping forever
+fi
+cd "$CLAUDE_PROJECT_DIR" || exit 0
+if ! scripts/check.sh > /tmp/lab-check.log 2>&1; then
+  echo "Checks are failing. Fix them before you finish:" >&2
+  tail -20 /tmp/lab-check.log >&2
+  exit 2   # exit code 2 = block, and show stderr to the agent
+fi
+```
+
+</CodeFile>
+
+Exit code **2** tells Claude Code to block the stop and pass the message to the agent. The `stop_hook_active` check matters: after one block, the agent is allowed to stop and explain what's wrong, instead of looping forever against a check it can't fix.
+
+<CodeFile title=".claude/settings.json · the Stop hook added next to PostToolUse">
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      { "hooks": [{ "type": "command", "command": "jq -c '{tool: .tool_name, input: .tool_input}' >> \"$CLAUDE_PROJECT_DIR/.claude/loop.jsonl\"" }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/require-green.sh" }] }
+    ]
+  }
+}
+```
+
+</CodeFile>
+
+<Exercise id="done-1" title="Test-first, then make 'done' impossible to fake" time="40 min" predict="If you break a test and ask the agent to wrap up, what will happen?">
+
+1. Save the script, run `chmod +x .claude/hooks/require-green.sh`, add the Stop hook to your settings, and restart Claude Code.
+2. Ask: *"add() must raise TypeError if either argument is a string. Write the test first and show me it failing before you implement."*
+3. In the loop log, confirm the order: test written, test run **fails**, code edited, test run **passes**.
+4. Break a test yourself, then ask the agent to "wrap up". Watch the hook refuse to let it finish.
+
+</Exercise>
+
+<Expect>
+
+The agent can't end its turn while `scripts/check.sh` fails. After one blocked attempt, it's allowed to stop, and tells you what's wrong instead of looping.
+
+</Expect>
+
+<IfNot>
+
+- **The hook never fires:** check that the script is executable and that you restarted Claude Code. Open `/hooks` to confirm Claude Code sees it.
+- **The agent loops over and over:** the `stop_hook_active` check is missing or misspelled.
+
+</IfNot>
+
+<KitPiece id="require-green" />
+
+<Breaks title="The test that tests nothing">
+  <BreakPart label="What happens">
+
+  The agent can't get a test to pass, so it changes `assert add(2, 3) == 5` into `assert add(2, 3) is not None`. Everything goes green. The bug ships.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Add a rule to AGENTS.md: "Never change what an existing test expects without asking me." In Part 4, reviewers also flag any commit that changes a test together with the code it tests.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="done-q1" q="In test-first development, why must you watch the new test fail before writing the code?" options={["It's a tradition with no real purpose", "It proves the test can actually catch the missing behaviour", "Failing tests run faster", "It makes the agent work harder"]} answer={1}>
+  <p>A test that passes before the code exists isn't testing that code. Seeing it fail first proves it detects the missing behaviour, so when it passes later, the pass means something.</p>
+</Quiz>
+
+<Terms ids={['test-first']} />

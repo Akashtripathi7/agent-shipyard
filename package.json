@@ -1,0 +1,30 @@
+{
+  "name": "agent-shipyard",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A hands-on course in agentic software development: one agent, a crew, a fleet, and the architecture decisions behind them.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && pagefind --site dist",
+    "preview": "astro preview",
+    "check": "astro check",
+    "verify": "node scripts/verify.mjs"
+  },
+  "engines": {
+    "node": ">=20.3.0"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^4.3.14",
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/figtree": "^5.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "astro": "~5.18.2"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "pagefind": "^1.5.2",
+    "typescript": "~5.9.0",
+    "yaml": "^2.8.0"
+  }
+}

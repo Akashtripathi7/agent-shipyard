@@ -1,0 +1,78 @@
+---
+title: M1 · Scope and screens
+summary: Challenge the idea with /scope, cut version 1 down to size, and design the four screens in Google Stitch before any code exists.
+order: 2
+kind: milestone
+code: 'L1 · M1'
+tier: 2
+time: 90 min
+competencies: [brief, ui, decide]
+---
+
+## Goal
+
+A `SCOPE.md` with vertical slices, and four designed screens exported into the repo, so every later step builds towards a visual target rather than a paragraph.
+
+## Set up the folder
+
+```bash
+mkdir -p ~/shipyard/pocket-ledger && cd ~/shipyard/pocket-ledger && git init
+mkdir -p docs/{scope,specs,decisions,reviews} design scripts .claude/{skills,hooks}
+cp -R ~/shipyard/habits/.claude/skills/* .claude/skills/
+```
+
+The last line reuses the loop skills you built in Part 2. (If you installed them in `~/.claude/skills/` instead, skip it: they're already available everywhere.)
+
+## Step 1: scope
+
+<Prompt title="Run in a fresh session">
+/scope Pocket Ledger: a personal expense tracker. One person adds an expense in two taps (amount, category, optional note) and sees this month's total by category. Mobile app plus an API.
+</Prompt>
+
+Answer its questions one at a time. Hold these boundaries for version 1, and push back if it tries to add more:
+
+- **In:** sign up and log in, add, edit and delete expenses, categories, monthly total by category.
+- **Out:** shared expenses, budgets, bank sync, receipts, charts, multiple currencies.
+
+<Expect>
+
+A SCOPE.md with three or four vertical slices, all `planned`. For example: *sign up and log in*, *add and list expenses*, *monthly total by category*, *edit and delete*. The "not in version 1" list is explicit.
+
+</Expect>
+
+## Step 2: design the screens in Stitch
+
+Open [Google Stitch](https://stitch.withgoogle.com) and describe each screen. Stitch designs quickly, and it exports Flutter code and connects to coding agents through its MCP server. Use a prompt like this for the first screen, then ask for the others in the same project so they share a style:
+
+<Prompt title="Paste into Google Stitch">
+A mobile expense tracker called Pocket Ledger. Screen 1: this month's summary. Big total at the top in rupees, a list of categories below with their totals and a thin bar showing each category's share. A floating "Add expense" button. Calm, trustworthy, warm neutrals with one green accent. Material 3.
+</Prompt>
+
+The four screens: **Summary** (above), **Add expense** (amount keypad, category chips, note, save), **Expense list** for a month (grouped by day, swipe to delete), and **Sign in / sign up**.
+
+For each screen, also ask Stitch for its **empty state** (no expenses yet) and an **error state** (couldn't reach the server). Beginners forget these; real users hit them on day one.
+
+Export the designs (images and, if you like, Flutter code) into `design/`.
+
+<Callout type="note" label="Designs are a spec, not code">
+  <p>You'll give these images to the agent in M6 as the visual target. Stitch's exported Flutter code is a useful reference, but the agent will rebuild the screens on your design tokens, so the whole app shares one style.</p>
+</Callout>
+
+## Step 3: commit
+
+```bash
+git add -A && git commit -m "Scope and screen designs"
+```
+
+<IfNot label="When it goes wrong">
+
+- **The scope keeps growing:** tell `/scope` directly: "Version 1 is only the four in-scope items. Move everything else to 'not in version 1'."
+- **Stitch screens look inconsistent:** generate them in one Stitch project, and ask it to "apply the style of screen 1 to all screens".
+
+</IfNot>
+
+<Checklist id="l1-m1" label="Done when" title="M1 is done when…" items={[
+  "`docs/scope/SCOPE.md` has 3 to 4 vertical slices and an explicit 'not in version 1' list.",
+  "`design/` has the four screens, each with an empty and an error state.",
+  "Everything is committed."
+]} />

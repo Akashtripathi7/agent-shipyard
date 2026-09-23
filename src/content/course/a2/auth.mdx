@@ -1,0 +1,96 @@
+---
+title: Authentication and authorization
+summary: Two different questions every request must answer. Design sessions, password storage and access checks that hold up, and learn the bugs agents most often introduce.
+order: 2
+kind: arch
+code: 'A2.2'
+tier: 2
+time: 70 min
+competencies: [security, architecture]
+---
+
+<Analogy>
+  <p>A hotel. Showing ID at check-in proves who you are: that's authentication. Your key card opening your room, but not anyone else's, is authorization. A hotel that checks ID perfectly but hands out master keys has solved the wrong problem.</p>
+</Analogy>
+
+## Two questions, never one
+
+- **Authentication (authn):** *who are you?* Answered at login, then carried with each request as a session or token.
+- **Authorization (authz):** *are you allowed to do this, to this thing?* Answered on **every request**, for **every resource**.
+
+Most real breaches aren't broken logins. They're missing authorization checks: the server knows perfectly well who you are, and lets you read someone else's data anyway. You met this in Project L1 as IDOR.
+
+## Storing passwords
+
+Never store passwords, only a **hash** made with an algorithm designed for passwords: slow, and using a unique random **salt** per user, so identical passwords produce different hashes. The current recommendation is **Argon2id**. Libraries handle the details; your job is to choose a maintained library and never invent your own scheme.
+
+Rules that matter:
+
+- Allow long passwords (at least 64 characters) and passphrases.
+- The same error for "unknown email" and "wrong password", so attackers can't discover who has an account.
+- Rate-limit login attempts per account and per IP.
+
+## Sessions and tokens
+
+After login, the server needs to recognise the user on each request. Two common designs:
+
+| | Server sessions | Signed tokens (JWT) |
+|---|---|---|
+| **How** | Random session id in a cookie; the server looks it up | The token itself contains the user id, signed by the server |
+| **Revoking** | Easy: delete the session | Hard until it expires: keep access tokens short-lived |
+| **Best for** | Web apps on one domain | Mobile apps and APIs used by several clients |
+
+For mobile apps, the usual pattern is a **short-lived access token** (around 15 minutes) plus a **refresh token** stored securely on the device and revocable on the server. That's what you built in Project L1.
+
+## Authorization models
+
+| Model | Rule | Example |
+|---|---|---|
+| **Ownership** | You can act on what you own | Users see only their own expenses |
+| **Roles (RBAC)** | Your role grants permissions | Staff manage bookings; owners manage staff |
+| **Tenants** | Everything is scoped to an organisation | Clinic A never sees clinic B's data |
+| **Attributes / policies** | Rules combine user, resource and context | Doctors see patients assigned to them, during their shift |
+
+Start with the simplest model that fits. Project L3 needs roles and tenants; that's Architecture A3.
+
+## Where the checks go
+
+The single most important architecture rule for authorization: **check on the server, in one place, on every request.**
+
+- Never trust the client to hide what a user can't do. Hiding a button isn't security.
+- Put the check where it can't be forgotten: filter every query by owner or tenant in the repository layer, or use one authorization function that every service calls.
+- Test it explicitly: two users, one trying to reach the other's data. Every protected endpoint gets that test.
+
+<Exercise id="auth-1" title="Hunt for missing authorization" time="40 min" predict="How many endpoints in your Pocket Ledger API would fail a two-user test if you hadn't written one?">
+
+1. Ask an agent to generate a list of every endpoint in your Pocket Ledger API, with what each one should allow.
+2. For each, ask: *"Show me the exact line that ensures a user can only touch their own data here."* Any endpoint where it can't point to a line is a bug.
+3. Plant an IDOR bug in a copy of your project: remove the ownership filter from one query. Run your tests and your review skill. Did they catch it?
+4. If they didn't, add the missing test, and add a line to your review skill's checklist.
+
+</Exercise>
+
+<Expect>
+
+Every endpoint maps to a specific ownership check, and the planted bug is caught, either by the two-user test from L1 M5 or by the review. If it wasn't, you've just found a real gap in your kit.
+
+</Expect>
+
+<Breaks title="The admin endpoint nobody protected">
+  <BreakPart label="What happens">
+
+  An agent adds `GET /admin/users` for a support dashboard. It checks the user is logged in (authentication), but not that they're an admin (authorization). Any logged-in user can list every account.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Deny by default. New endpoints require an explicit authorization rule to be reachable at all, and the review skill checks every new route for one.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="auth-q1" q="A logged-in user can see another user's data by changing an id in the URL. What failed?" options={["Authentication", "Authorization", "Encryption", "Rate limiting"]} answer={1}>
+  <p>The server knew exactly who they were (authentication worked). It just never checked whether they were allowed to see that record. That's an authorization failure, and the most common serious API bug.</p>
+</Quiz>
+
+<Terms ids={['authn', 'authz', 'password-hash', 'jwt', 'rbac', 'idor']} />

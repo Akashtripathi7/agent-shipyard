@@ -1,0 +1,89 @@
+---
+title: Threat modelling in ten minutes
+summary: Before designing anything security-sensitive, answer four questions on one page. Find the attacks while they're still cheap to design out.
+order: 1
+kind: arch
+code: 'A2.1'
+tier: 2
+time: 60 min
+competencies: [security, architecture]
+kit: [threat-model]
+---
+
+<Analogy>
+  <p>Before fitting locks, a good locksmith walks round the house: what's worth stealing, who might try, which doors and windows they'd use, and which ones matter most. Fitting the best lock on the front door is pointless if the back window doesn't close.</p>
+</Analogy>
+
+## Why before, not after
+
+Security designed in costs a little. Security added after a breach costs a lot, and some mistakes can't be undone: a leaked password database stays leaked. A **threat model** is a short, structured look at how your system could be attacked, done while the design is still on paper. Ten minutes for a small feature; an hour for a password manager.
+
+## Four questions
+
+1. **What are we protecting?** The **assets**: user data, passwords, money, tokens, your signing keys, your reputation.
+2. **Who might attack, and how?** The **actors**: a curious user, a determined attacker, a compromised dependency, a malicious file your agent reads.
+3. **Where can they get in?** The **trust boundaries** (lesson A1.1): every place data crosses from something you don't control to something you do.
+4. **What stops them, and what if that fails?** The mitigations, and the damage if one fails.
+
+<Figure caption="Threats live at trust boundaries. List what crosses each one, who could abuse it, and what protects the assets behind it.">
+  <ThreatModel />
+</Figure>
+
+## STRIDE, a checklist for question 2
+
+Microsoft's STRIDE gives you six categories to walk through at each boundary, so you don't rely on inspiration:
+
+| Letter | Threat | Question to ask | Typical defence |
+|---|---|---|---|
+| **S** | Spoofing | Can someone pretend to be another user? | Strong authentication |
+| **T** | Tampering | Can someone change data they shouldn't? | Authorization checks, integrity checks |
+| **R** | Repudiation | Can someone deny doing something? | Audit logs |
+| **I** | Information disclosure | Can someone see data they shouldn't? | Access control, encryption |
+| **D** | Denial of service | Can someone make it unavailable? | Rate limits, quotas |
+| **E** | Elevation of privilege | Can someone gain powers they shouldn't have? | Least privilege, role checks |
+
+You don't need to be exhaustive. The goal is to find the few serious threats early, and make an explicit decision about each: mitigate it, accept it, or change the design.
+
+## Don't forget the agent itself
+
+From the OWASP Top 10 for Agentic Applications (December 2025): your *agents* are also part of the threat model. Goal hijacking through prompt injection, tool misuse, abuse of the agent's identity and permissions, and supply-chain attacks through packages, skills or MCP servers. When an agent works on a security-sensitive product, its access is an asset too.
+
+<KitFile id="threat-model" />
+
+<Exercise id="tm-1" title="Threat-model Vault before it exists" time="40 min" predict="What will turn out to be the single most valuable asset in a password manager, and the most likely attack?">
+
+Project L2 is Vault, a zero-knowledge password manager. Threat-model it now, on paper, before any design.
+
+1. Fill in the template for Vault: assets, actors, trust boundaries, and at least one STRIDE threat per boundary.
+2. For each threat, choose: mitigate (how?), accept (why?), or redesign.
+3. Ask your agent to attack your model: *"Here's my threat model for a zero-knowledge password manager. Act as an attacker: find the three most damaging attacks I missed, and rank my listed threats by real-world likelihood. Explain each."*
+4. Keep the result. You'll use it in lesson A2.3 and in Project L2.
+
+</Exercise>
+
+<Expect>
+
+The master password and the vault contents as the top assets; credential stuffing, a stolen phone, a malicious dependency, and a compromised server as leading threats. The agent will likely raise something you missed: recovery flows ("forgot master password"), or what the server logs.
+
+</Expect>
+
+<KitPiece id="threat-model" />
+
+<Breaks title="Security as a final review step">
+  <BreakPart label="What happens">
+
+  A team designs and builds a feature, then asks for a security review a week before launch. The review finds that the data model stores what it shouldn't, and fixing it means redesigning three screens and migrating data. Launch slips a month.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Threat-model at design time, in the `/architect` step, when changing the design costs nothing. The final review then confirms rather than discovers.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="tm-q1" q="In STRIDE, a user changing the `user_id` in a request to edit someone else's expense is which threat?" options={["Spoofing", "Tampering", "Repudiation", "Denial of service"]} answer={1}>
+  <p>They're modifying data they shouldn't be able to. (You could argue elevation of privilege too; STRIDE categories overlap, and that's fine.) The defence is an authorization check on every write: this is the IDOR bug from Project L1.</p>
+</Quiz>
+
+<Terms ids={['threat-model', 'asset', 'stride']} />

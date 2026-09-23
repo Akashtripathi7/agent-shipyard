@@ -1,0 +1,76 @@
+---
+title: Pocket Ledger, project overview
+summary: A personal expense tracker, built end to end with one agent and your own feature loop, from an empty folder to a deployed API and an app on your phone.
+order: 1
+kind: overview
+code: 'L1'
+tier: 2
+time: 12–16 hours over 2 weeks
+competencies: [architecture, brief, verify, operate, ui]
+---
+
+## What you're building
+
+Pocket Ledger lets one person add an expense in two taps and see this month's total, by category. That's it, on purpose. The product is simple so that all your attention goes to doing every part of it properly: the loop, the architecture decisions, and a real deployment.
+
+<Analogy>
+  <p>A driving test route. It isn't long and it isn't exotic, but it includes every manoeuvre: a junction, a roundabout, parking. Passing it proves you can do each one properly, which is exactly what the harder routes will assume.</p>
+</Analogy>
+
+## Why this stack
+
+| Part | Choice | Why for this product |
+|---|---|---|
+| App | **Flutter** | Your default for mobile. Nothing here is operating-system specific. |
+| API | **FastAPI** (Python) | Your default backend. Fast to build, excellent typing through Pydantic, and agents write it very well. |
+| Database | **PostgreSQL** | Relational data, exact totals, constraints (lesson A1.3). |
+| Local setup | **Docker Compose** | Postgres runs in a container, so nothing is installed on your Mac. |
+| Hosting | **A managed host** (such as Render or Railway) with managed Postgres | A real server from your first project, without running one yourself. |
+
+## How hard it is, on five fronts
+
+| Front | Level in L1 |
+|---|---|
+| **Architecture** | A layered monolith and one database. No queues, no second service. |
+| **Security** | Argon2 password hashing, token-based sessions, secrets only in environment variables, every input validated, users see only their own data. |
+| **UI and UX** | Four screens designed in Google Stitch, built on design tokens, with real empty, loading and error states. |
+| **Product** | One core loop: add an expense, see the monthly total. |
+| **Animation** | Implicit animations only: the total animates when it changes; a smooth transition from list to detail. |
+
+## How you work
+
+- **One agent**, one task per session, `/clear` between loop steps.
+- **Your seven loop skills** from Part 2, installed in the project.
+- **Default depth: Beta.** Override: anything touching authentication gets GA (second-model review).
+- **Guardrails from Part 1:** check script, loop log, require-green Stop hook, deny rules.
+- Optional: begin with Altitude's `/start-project` if you installed it, and let it quiz you along the way.
+
+## The milestones
+
+| # | Milestone | You end with |
+|---|---|---|
+| M1 | Scope and screens | SCOPE.md and four Stitch screen designs |
+| M2 | Architecture | ADRs, the data model, and an OpenAPI contract |
+| M3 | Scaffold | A monorepo that runs, checks and guards itself |
+| M4 | Slice: sign up and log in | A verified, reviewed auth API |
+| M5 | Slice: expenses and totals | A verified API that never leaks data |
+| M6 | Slice: the app | Four real screens on your phone, talking to the API |
+| M7 | Ship it | A deployed API and an installable app |
+| M8 | Explain, retro, kit | Every file explained, and a better kit |
+
+## Budget
+
+About 12 to 16 hours of your time. On usage: mostly single-agent work at the middle model, with occasional high-effort sessions for M2 and reviews. Plan the M2 architecture session and the M4 GA review for when your limits have reset.
+
+<Callout type="brass" label="The rule for this project">
+  <p>Don't skip ahead. Each milestone's "done when" must be true before you start the next one. The whole point of L1 is doing every step properly once.</p>
+</Callout>
+
+<Checklist id="l1-done" label="Project done" title="Pocket Ledger is finished when…" items={[
+  "A friend installs the app, signs up, adds five expenses and sees the right monthly total.",
+  "The API is deployed, and its URL is not in the app's source code (it's passed in at build time).",
+  "Every slice has a spec, verification evidence and a review file in `docs/`.",
+  "`scripts/check.sh` passes, and so does the require-green hook.",
+  "You can explain every file in the repository, out loud.",
+  "LEARNINGS.md lists at least three changes you made to your kit because of this project."
+]} />

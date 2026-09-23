@@ -1,0 +1,99 @@
+---
+title: The layered monolith and REST
+summary: Why almost every product should start as one well-layered application, and how to design an API that clients, agents and future you can understand.
+order: 2
+kind: arch
+code: 'A1.2'
+tier: 2
+time: 70 min
+competencies: [architecture]
+---
+
+<Analogy>
+  <p>A restaurant with a front of house, a kitchen and a storeroom. Waiters never go into the storeroom, and the storekeeper never talks to customers. Each part does one job and talks only to its neighbour, so you can reorganise the storeroom without retraining the waiters.</p>
+</Analogy>
+
+## Start with one application
+
+A **monolith** is a single application you deploy as one unit. It has a bad reputation it mostly doesn't deserve. For a new product, a well-organised monolith is almost always the right start:
+
+- One thing to run, test, deploy and debug.
+- No network calls between parts, so no partial failures between them.
+- Easy to change shape while you're still learning what the product is.
+
+Splitting into separate services has real benefits, but they only pay off at a certain size or for particular problems. You'll meet those in Architecture A4. Until then, the goal is a monolith with **clean layers**, so splitting later is possible if you ever need to.
+
+## Layers
+
+<Figure caption="Each layer knows only about the layer below it. Routes know HTTP, repositories know SQL, and the business rules in the middle know neither, so they're easy to test and hard to break.">
+  <Layers />
+</Figure>
+
+| Layer | Its job | Must not |
+|---|---|---|
+| **Routes** | Turn an HTTP request into a function call and the result back into a response. Validate input. | Contain business rules, or write SQL |
+| **Services** | The business rules: what's allowed, how totals are calculated | Know about HTTP or SQL |
+| **Repositories** | Read and write the database | Make business decisions |
+
+The one rule that makes this work: **dependencies point downward only.** A service never imports a route; a repository never calls a service. Put this rule in AGENTS.md, because agents will happily put a quick SQL query in a route handler if nothing stops them.
+
+## Designing a REST API
+
+The API is the contract between your app and your server, and later between agents working on each side. REST is the most common style. Its core ideas are simple:
+
+1. **Resources are nouns.** `/expenses`, `/expenses/42`, `/categories`. Not `/getExpenses`.
+2. **HTTP methods are the verbs.** `GET` reads, `POST` creates, `PATCH` updates part of something, `PUT` replaces it, `DELETE` removes it.
+3. **Status codes tell the client what happened.**
+
+| Code | Means | Use when |
+|---|---|---|
+| `200 OK` | Worked, here's the result | Successful read or update |
+| `201 Created` | Created | After a successful `POST` |
+| `204 No Content` | Worked, nothing to return | After a successful `DELETE` |
+| `400 Bad Request` | Your input is wrong | Validation failed |
+| `401 Unauthorized` | Who are you? | Missing or invalid login |
+| `403 Forbidden` | I know you, but no | Logged in, not allowed |
+| `404 Not Found` | No such thing | Wrong id, **or** it belongs to someone else |
+| `409 Conflict` | Clashes with the current state | Duplicate, or edited by someone else |
+| `500 Internal Server Error` | Our fault | Bugs. Never on purpose |
+
+Three habits make an API pleasant to use for years:
+
+- **One error shape everywhere**, such as `{"error": {"code": "amount_invalid", "message": "Amount must be positive"}}`.
+- **Paginate every list from day one** (`?limit=50&cursor=...`), because lists always grow.
+- **Return 404, not 403, for other people's things.** A 403 confirms the item exists.
+
+<Exercise id="a1-2" title="Design Pocket Ledger's API on paper" time="40 min" predict="How many resources and endpoints does a simple expense tracker need?">
+
+1. Pocket Ledger lets a user sign up, log in, add, edit and delete expenses with a category, and see a monthly total. List every **resource** (noun).
+2. For each resource, write its endpoints: method, path, what it returns, and its success and error status codes.
+3. Decide the error shape and the pagination style.
+4. Ask your agent to review it: *"Review this REST API design for a personal expense tracker. Check naming, status codes, pagination and anything that would leak other users' data. Explain each problem; don't redesign it wholesale."*
+5. Keep the result. You'll use it in Project L1.
+
+</Exercise>
+
+<Expect>
+
+Around three resources (`/auth`, `/expenses`, `/categories`) plus a summary endpoint such as `GET /expenses/summary?month=2026-09`, 8 to 12 endpoints in total, one error shape, and paginated lists. If the agent flagged how the summary is calculated or who can see which expenses, good: those are the decisions that matter.
+
+</Expect>
+
+<Breaks title="SQL in the route handler">
+  <BreakPart label="What happens">
+
+  To finish fast, an agent writes a raw SQL query straight in a route. It works. Then another route copies it with a small change, then a third. When the money rules change, you have to find and fix the same logic in five places, and you miss one.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Write the layering rule into AGENTS.md ("routes never contain SQL or business rules"), and have your reviewer check it. Rules that live only in your head don't bind agents.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="a1-2-q" q="A logged-in user requests GET /expenses/99, which belongs to someone else. What should the API return?" options={["200 with the expense", "403 Forbidden", "404 Not Found", "500 Internal Server Error"]} answer={2}>
+  <p>404 treats "not yours" the same as "doesn't exist", so the response leaks nothing, not even whether expense 99 exists. 403 would confirm that it does. And of course never 200: that's a data leak.</p>
+</Quiz>
+
+<Terms ids={['monolith', 'layers', 'rest', 'status-code']} />

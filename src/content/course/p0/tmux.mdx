@@ -1,0 +1,114 @@
+---
+title: tmux, a terminal that doesn't die when you leave
+summary: Keep agents running while you close the laptop, split one screen into many, and come back to exactly where you were.
+order: 1
+kind: lesson
+code: '0.1'
+tier: 1
+time: 50 min
+competencies: [operate, fleet]
+---
+
+<Analogy>
+  <p>A normal terminal is a phone call: hang up and it's over. tmux puts the call on hold. Close the window, walk away, open a different terminal, even on a different machine, and pick the call back up exactly where you left it.</p>
+</Analogy>
+
+## Why this matters for agents
+
+An agent can take ten minutes, or an hour, to finish a task. If it runs in a normal terminal window, closing that window, or your laptop going to sleep, kills it. Later in the course you'll run several agents at once and check on them from your phone. All of that rests on one tool: **tmux**, short for *terminal multiplexer*.
+
+It gives you three things:
+
+1. **Persistence.** Programs keep running inside tmux after you disconnect.
+2. **Windows.** Several full-screen terminals inside one, like browser tabs.
+3. **Panes.** One window split into side-by-side terminals.
+
+Persistence is the one that matters. Windows and panes are conveniences.
+
+<Figure caption="One session holds several windows, and a window can be split into panes. You can detach from the whole session and it keeps running.">
+  <TmuxLayout />
+</Figure>
+
+## The prefix key
+
+Almost every tmux command starts with the **prefix**: press <kbd>Ctrl</kbd> + <kbd>b</kbd>, let go, then press one more key. So "prefix, then <kbd>d</kbd>" means: press <kbd>Ctrl</kbd>+<kbd>b</kbd>, release both, press <kbd>d</kbd>.
+
+| Keys | What happens |
+|---|---|
+| prefix, <kbd>d</kbd> | **Detach**: leave the session running and go back to your normal shell |
+| prefix, <kbd>c</kbd> | Create a new window |
+| prefix, <kbd>,</kbd> | Rename the current window |
+| prefix, <kbd>0</kbd>…<kbd>9</kbd> | Jump to window number 0 to 9 |
+| prefix, <kbd>w</kbd> | Show a list of all windows to pick from |
+| prefix, <kbd>%</kbd> | Split the pane left and right |
+| prefix, <kbd>"</kbd> | Split the pane top and bottom |
+| prefix, arrow keys | Move between panes |
+| prefix, <kbd>x</kbd> | Close the current pane (asks first) |
+
+And three commands you type at a normal shell prompt:
+
+```bash
+tmux new -s lab        # start a new session called "lab"
+tmux ls                # list the sessions that are running
+tmux attach -t lab     # reconnect to the "lab" session
+```
+
+<Exercise id="tmux-1" title="Prove that tmux keeps things running" time="20 min" predict="If you start a 5-minute timer inside tmux, detach, and close the terminal app completely, what happens to the timer?">
+
+1. **See the problem first.** In a plain terminal (not tmux), run `sleep 300`. Now close that terminal window. Open a new one and run `ps aux | grep "sleep 300"`. The process is gone: closing the window killed it.
+2. Start a session: `tmux new -s lab`. A coloured status bar appears at the bottom. That bar is how you know you're inside tmux.
+3. Inside it, run `sleep 300`.
+4. Detach: prefix, then <kbd>d</kbd>. You're back at your normal shell.
+5. Run `tmux ls`. You should see `lab` listed.
+6. Quit your terminal app completely (<kbd>⌘</kbd>+<kbd>Q</kbd>). Reopen it, then run `tmux attach -t lab`.
+
+</Exercise>
+
+<Expect>
+
+The `sleep 300` is still counting down, exactly where you left it, even though you quit the terminal app. The tmux session lives in a background process that doesn't depend on any window.
+
+</Expect>
+
+<IfNot>
+
+- **`tmux attach` says "no sessions":** you probably typed `exit` inside tmux instead of detaching. `exit` ends the session. Detach is prefix then <kbd>d</kbd>.
+- **Nothing happens when you press prefix then d:** press <kbd>Ctrl</kbd>+<kbd>b</kbd>, release **both** keys, then press <kbd>d</kbd> on its own.
+
+</IfNot>
+
+<Exercise id="tmux-2" title="Build the layout you'll use all course" time="15 min">
+
+1. Inside `lab`, rename the current window to `server`: prefix, <kbd>,</kbd>, type the name, <kbd>Enter</kbd>.
+2. Create a second window (prefix, <kbd>c</kbd>) and rename it `agent`.
+3. Create a third window and rename it `review`.
+4. Press prefix, <kbd>w</kbd> to see all three listed by name. Jump between them with prefix and <kbd>0</kbd>, <kbd>1</kbd>, <kbd>2</kbd>.
+5. In `server`, split into two panes with prefix, <kbd>%</kbd>. Run `date` in one pane and `ls` in the other. Move between them with prefix and the arrow keys.
+6. Detach, then reattach, and confirm all three windows are still there.
+
+</Exercise>
+
+<Expect>
+
+Three named windows that survive detaching. Named windows matter: with several agents running, "window 3" tells you nothing, while `agent-api` tells you everything.
+
+</Expect>
+
+<Breaks title="Exit instead of detach">
+  <BreakPart label="What happens">
+
+  You finish checking on an agent and type `exit` out of habit. That ends the shell inside tmux, and with it the agent that was halfway through a task. There's no undo.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Make "prefix, <kbd>d</kbd>" your only way out of tmux, and practise it until it's automatic. Later you'll also keep agent work on branches, so an accidentally killed agent never loses anything that matters.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="tmux-q1" q="You started a long agent task inside tmux and need to leave. What should you do?" options={["Close the terminal window: tmux keeps it running", "Type `exit` in the agent's window", "Press prefix then `d` to detach", "Press Ctrl+C to pause the agent"]} answer={2}>
+  <p>Detaching (prefix, then <kbd>d</kbd>) leaves everything running and is the intended way out. Closing the window also works, since the session survives, but detaching is the deliberate habit. <code>exit</code> ends the shell and whatever was running in it, and <kbd>Ctrl</kbd>+<kbd>C</kbd> interrupts the agent.</p>
+</Quiz>
+
+<Terms ids={['tmux', 'tmux-session', 'detach', 'tmux-window', 'pane', 'prefix']} />

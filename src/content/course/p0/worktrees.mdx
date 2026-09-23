@@ -1,0 +1,109 @@
+---
+title: git worktrees, extra desks for one filing cabinet
+summary: Check out several branches of the same repository into separate folders, so parallel agents can never overwrite each other.
+order: 2
+kind: lesson
+code: '0.2'
+tier: 1
+time: 50 min
+competencies: [operate, orchestrate]
+---
+
+<Analogy>
+  <p>Normally a repository is one desk with one document open. Switching documents means clearing the desk. A worktree gives you extra desks for the same filing cabinet: three documents open on three desks at once, all filed in the same place.</p>
+</Analogy>
+
+## The problem worktrees solve
+
+A normal git repository has **one working folder**, and it has **one branch checked out** at a time. If two agents work in the same folder at the same time, they edit the same files on disk. One agent's save silently overwrites the other's, and both report success.
+
+A **worktree** is an extra working folder attached to the same repository. Each worktree has its own branch checked out and its own files, but they all share one history. Agent A works in one folder, agent B in another, and they physically cannot touch each other's files.
+
+<Figure caption="Every folder shares the same history, but each has its own branch and its own files. You review in the main folder while agents edit in theirs.">
+  <WorktreeTree />
+</Figure>
+
+## The four commands
+
+```bash
+git worktree add ../lab-api -b api-work   # new folder ../lab-api on a new branch api-work
+git worktree list                          # every worktree and its branch
+git merge api-work                         # (from the main folder) bring the work back
+git worktree remove ../lab-api             # delete the folder when you're done
+```
+
+`-b api-work` creates a new branch. Leave it out to check out a branch that already exists.
+
+<Exercise id="wt-1" title="Prove two folders are independent" time="25 min" predict="If you edit a file in the worktree folder, will `git status` in the main folder show the change?">
+
+1. In your lab repo, make sure there's at least one commit:
+
+   ```bash
+   cd ~/shipyard/lab
+   echo "# Lab" > README.md && git add README.md && git commit -m "first commit"
+   ```
+
+2. Create a worktree: `git worktree add ../lab-api -b api-work`
+3. Run `ls ..`. You'll see `lab` and `lab-api` side by side.
+4. Edit a file in the worktree and look at both folders:
+
+   ```bash
+   cd ../lab-api
+   echo "api notes" >> README.md
+   git status          # shows README.md modified
+   cd ../lab
+   git status          # clean: this folder never saw the change
+   ```
+
+5. Commit in the worktree, merge from the main folder, then clean up:
+
+   ```bash
+   cd ../lab-api && git commit -am "api notes" && cd ../lab
+   git merge api-work
+   git worktree remove ../lab-api
+   git branch -d api-work
+   ```
+
+</Exercise>
+
+<Expect>
+
+The main folder stays clean while the worktree has changes. After the merge, the main folder has the commit, and after removal `git worktree list` shows only the main folder.
+
+</Expect>
+
+<IfNot>
+
+- **"fatal: invalid reference":** the repo has no commits yet. Do step 1 first.
+- **`git worktree remove` refuses:** the worktree has uncommitted changes. Commit or discard them first, or use `--force` if you truly want them gone.
+
+</IfNot>
+
+## Claude Code does this for you
+
+You'll do worktrees by hand first so you understand them. After that, Claude Code can create them:
+
+- `claude --worktree api-auth` starts a session in a new worktree at `.claude/worktrees/api-auth/`, on a branch named `worktree-api-auth`.
+- A custom subagent with `isolation: worktree` always runs in its own worktree (Part 4).
+- A file called `.worktreeinclude` lists untracked files, such as `.env`, to copy into every new worktree.
+
+Add `.claude/worktrees/` to your `.gitignore` so those folders don't show up as untracked files.
+
+<Breaks title="Two isolated folders, one broken database">
+  <BreakPart label="What happens">
+
+  Two agents in two worktrees each add a database migration. Their files never collide, so both merge cleanly. Then the migration tool reports two conflicting "latest" migrations and refuses to run.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Worktrees stop agents overwriting each other's **files**. They don't stop two agents making conflicting **decisions**. That takes ownership rules, such as "only one agent creates migrations", which you'll set up in Part 4.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="wt-q1" q="Two agents need to work on the same repository at the same time. What does giving each its own worktree guarantee?" options={["Their changes will merge without conflicts", "They can't overwrite each other's files while working", "They'll agree on shared decisions like the database schema", "Their tests won't interfere with each other"]} answer={1}>
+  <p>Worktrees isolate files on disk, nothing more. Changes can still conflict at merge time, agents can still make incompatible decisions, and tests that share a database or port can still collide. Each of those needs its own fix, which the course covers in Parts 4 and 5.</p>
+</Quiz>
+
+<Terms ids={['worktree', 'branch', 'merge']} />

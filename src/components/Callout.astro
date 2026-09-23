@@ -1,0 +1,9 @@
+---
+interface Props { type?: 'tip' | 'warn' | 'note' | 'brass'; label?: string }
+const { type = 'tip', label } = Astro.props;
+const defaults = { tip: 'Good to know', warn: 'Careful', note: 'Note', brass: 'Rule of thumb' };
+---
+<aside class={`block callout ${type}`}>
+  <div class="block-label">{label ?? defaults[type]}</div>
+  <slot />
+</aside>

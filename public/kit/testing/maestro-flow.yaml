@@ -1,0 +1,17 @@
+# flows/add-expense.yaml: a Maestro end-to-end flow for Pocket Ledger.
+# Run with: maestro test flows/add-expense.yaml   (an emulator must be running)
+appId: com.example.pocket_ledger
+---
+- launchApp:
+    clearState: true
+- tapOn: "Sign up"
+- tapOn: "Email"
+- inputText: "e2e@example.com"
+- tapOn: "Password"
+- inputText: "correct horse battery"
+- tapOn: "Create account"
+- tapOn: "Add expense"
+- inputText: "250"
+- tapOn: "Food"
+- tapOn: "Save"
+- assertVisible: "₹250"

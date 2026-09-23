@@ -1,0 +1,11 @@
+---
+interface Props { label?: string }
+const { label = "If you don't see that" } = Astro.props;
+---
+<div class="ifnot">
+  <div class="block-label">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+    {label}
+  </div>
+  <slot />
+</div>

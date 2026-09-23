@@ -1,0 +1,4 @@
+# Untracked files copied into every new Claude Code worktree (gitignore syntax).
+.env
+api/.env
+app/.env

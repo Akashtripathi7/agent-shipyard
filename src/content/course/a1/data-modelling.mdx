@@ -1,0 +1,83 @@
+---
+title: Modelling data
+summary: The data model outlives every screen and every service. Learn entities, relationships, keys and constraints, and the handful of decisions that are painful to undo.
+order: 3
+kind: arch
+code: 'A1.3'
+tier: 2
+time: 70 min
+competencies: [architecture]
+---
+
+<Analogy>
+  <p>A library's catalogue. Books get re-shelved, the building gets renovated, the website gets redesigned, but the catalogue (what a book is, how it relates to authors and borrowers) stays. Get the catalogue wrong and every part of the library suffers for years.</p>
+</Analogy>
+
+## Why data comes first
+
+Screens change every few months. Code gets rewritten. But data sticks around, and every migration of real data is slow and risky. That's why the data model is often the most load-bearing decision in a product. Time spent here is repaid many times over.
+
+## The vocabulary
+
+| Term | Plain meaning | In Pocket Ledger |
+|---|---|---|
+| **Entity** | A kind of thing you store | User, Expense, Category |
+| **Table** | Where one entity's records live | `expenses` |
+| **Primary key (PK)** | The unique id of each row | `expenses.id` |
+| **Foreign key (FK)** | A column pointing at another table's row | `expenses.user_id` → `users.id` |
+| **Relationship** | How entities connect | One user has many expenses |
+| **Constraint** | A rule the database itself enforces | `amount_paise > 0`, unique email |
+| **Index** | A lookup shortcut that makes some queries fast | `(user_id, spent_on)` for monthly totals |
+| **Migration** | A versioned script that changes the schema | "add a `note` column" |
+
+<Figure caption="Pocket Ledger's model. Each arrow is a one-to-many relationship. The constraints and the index are part of the design, not afterthoughts.">
+  <LedgerERD />
+</Figure>
+
+## Decisions that are painful to undo
+
+These are worth deciding deliberately, because changing them later means migrating real data.
+
+1. **How money is stored.** Never as floating-point numbers: `0.1 + 0.2` isn't exactly `0.3` in a float. Store the smallest unit as an integer (`amount_paise bigint`), or use an exact decimal type. Decide the currency story now, even if it's "rupees only".
+2. **Ids.** Sequential numbers (`1, 2, 3`) are simple but reveal how many records exist and are easy to guess. Random UUIDs avoid both. Either is fine; switching later is painful.
+3. **Deleting.** A **hard delete** removes the row. A **soft delete** sets `deleted_at` and hides it. Soft deletes allow undo and audits, but every query must remember to filter them out.
+4. **Time.** Store timestamps in UTC with time zone (`timestamptz`). Store "the day something happened" as a plain `date`. Mixing these up causes off-by-one-day bugs at midnight.
+5. **Who owns what.** Every user-owned row carries `user_id`, and every query filters by it. This is the foundation of your security, not just your data.
+
+## Let the database enforce rules
+
+Put rules in the database as constraints, not only in code. Code has bugs and many entry points; the database is the last line of defence. `CHECK (amount_paise > 0)`, `UNIQUE (user_id, name)` and `NOT NULL` cost nothing and catch mistakes that tests miss, including mistakes agents make.
+
+<Exercise id="a1-3" title="Model Pocket Ledger, then defend it" time="40 min" predict="Which decision in your model will the agent challenge first?">
+
+1. On paper or in a file, write the tables for Pocket Ledger: columns, types, primary and foreign keys, constraints and indexes. Use the diagram as a starting point, then decide for yourself: soft or hard delete? UUIDs or numbers? What happens to a user's expenses if they delete a category?
+2. For each of the five "painful to undo" decisions, write one line: your choice and why.
+3. Ask your agent to challenge it: *"Here's my data model for a personal expense tracker. Challenge it: find what breaks at 100,000 expenses per user, what allows bad data, and any decision I'll regret. Explain each; don't rewrite it."*
+4. Change what you agree with, and write down what you kept despite the challenge, and why.
+
+</Exercise>
+
+<Expect>
+
+A model you can defend line by line. The deleted-category question has no single right answer (block it, move expenses to "Uncategorised", or delete them), but you must have chosen one on purpose. Keep this for Project L1.
+
+</Expect>
+
+<Breaks title="Floats for money">
+  <BreakPart label="What happens">
+
+  An agent stores amounts as `float`. Totals are off by a paisa here and there. Nobody notices until a user's monthly report is ₹0.01 off from their bank statement, and fixing it means migrating every stored amount.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  Decide money storage in the data model before any code exists, write it as a product rule in AGENTS.md, and back it with a database type that makes floats impossible.
+
+  </BreakPart>
+</Breaks>
+
+<Quiz id="a1-3-q" q="Why add `CHECK (amount_paise > 0)` in the database when the API already validates amounts?" options={["It's faster than API validation", "The database is the last line of defence: it catches bad data from any path, including bugs and scripts", "PostgreSQL requires it", "It isn't needed if the API validates"]} answer={1}>
+  <p>Data can arrive through many paths: a new endpoint someone forgot to validate, a data-fix script, a bug. A constraint enforces the rule for all of them, forever.</p>
+</Quiz>
+
+<Terms ids={['entity', 'primary-key', 'foreign-key', 'constraint', 'index', 'migration', 'soft-delete']} />

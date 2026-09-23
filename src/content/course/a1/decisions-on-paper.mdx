@@ -1,0 +1,148 @@
+---
+title: Decisions on paper, ADRs and C4
+summary: Write each load-bearing decision as a short record, draw the system at the right zoom level, and give every agent the same picture of the architecture.
+order: 4
+kind: arch
+code: 'A1.4'
+tier: 2
+time: 60 min
+competencies: [architecture, decide, brief]
+kit: [adr-template]
+---
+
+<Analogy>
+  <p>The minutes of a planning meeting. Six months later, nobody remembers why the building's entrance faces north. The minutes say: "north, because the south side floods; considered east, rejected for noise". Without them, someone "fixes" it and the lobby floods.</p>
+</Analogy>
+
+## Architecture Decision Records
+
+An **Architecture Decision Record** (ADR) is a short file recording one significant decision: what you decided, why, what else you considered, and what it costs you. They live in the repo, numbered: `docs/decisions/0001-use-postgresql.md`.
+
+ADRs matter even more with agents than with people. An agent starting a fresh session has no memory of your reasoning. Without the record, it may "improve" a decision you made deliberately. With it, the agent can read *why*, and respect it or argue with it properly.
+
+<CodeFile title="docs/decisions/0001-store-money-as-integer-paise.md">
+
+```markdown
+# 0001 · Store money as integer paise
+
+Status: Accepted · 2026-09-20
+
+## Context
+Expense amounts are summed into monthly totals and compared with bank
+statements. Floating-point numbers can't represent most decimal amounts
+exactly, so sums drift by a paisa here and there.
+
+## Decision
+Store every amount as a bigint number of paise (₹1 = 100 paise).
+Convert to rupees only when displaying. The database enforces amount_paise > 0.
+
+## Alternatives considered
+- NUMERIC(12,2): exact too, but slower to sum and easy to mix with floats in app code.
+- Float: rejected; rounding errors are guaranteed.
+
+## Consequences
++ Totals are exact.
+- Every client must convert for display; the API documents amounts as paise.
+- Supporting other currencies later needs a currency column (a new ADR).
+```
+
+</CodeFile>
+
+Keep them short: a screen or less. Write one whenever a decision is expensive to change, whenever you rejected an obvious alternative, or whenever an agent would plausibly undo it. When a decision changes, write a new ADR that *supersedes* the old one. Never edit history.
+
+## C4: draw at the right zoom level
+
+Architecture diagrams usually fail by mixing zoom levels: a user, a database table and a microservice in one drawing. The **C4 model** fixes that with four zoom levels, like a map:
+
+| Level | Shows | Audience |
+|---|---|---|
+| **1 · Context** | Your system as one box, the people who use it, and the outside systems it talks to | Everyone |
+| **2 · Containers** | The separately running parts: app, API, database, queue | Engineers and agents |
+| **3 · Components** | The main parts inside one container: routes, services, repositories | Whoever works on that container |
+| **4 · Code** | Classes and functions | Rarely worth drawing by hand |
+
+For most of this course, levels 1 and 2 are enough. The Pocket Ledger sketch in lesson A1.1 was a level 2 diagram. Diagrams can also live in the repo as text, using Mermaid, which renders in GitHub and which agents can read and update:
+
+```text
+flowchart LR
+  user([User]) --> app[Flutter app]
+  app -- HTTPS JSON --> api[FastAPI]
+  api -- SQL --> db[(PostgreSQL)]
+```
+
+<Exercise id="a1-4" title="Write your first two ADRs" time="40 min" predict="Which alternative will be hardest to write a fair case for?">
+
+1. Create `docs/decisions/` in your lab repo.
+2. Write **ADR 0001** for Pocket Ledger's data store (PostgreSQL, or your choice), with at least two genuine alternatives and honest consequences, including the downsides.
+3. Write **ADR 0002** for one decision from lesson A1.3: soft vs hard delete, or UUIDs vs numbers.
+4. Ask your agent to act as a sparring partner: *"Read these two ADRs. For each, argue for the strongest alternative I rejected. Then tell me whether my consequences section is honest. Don't soften it."*
+5. Revise, then compare your ADR 0001 with the model below.
+
+</Exercise>
+
+<Reveal id="a1-4-model" title="Model ADR 0001, for comparison" button="Show the model ADR">
+
+```markdown
+# 0001 · Use PostgreSQL as the only data store
+
+Status: Accepted
+
+## Context
+Pocket Ledger stores users, expenses and categories with strict relationships
+and needs exact monthly totals. One developer, low traffic at launch, managed
+hosting preferred.
+
+## Decision
+PostgreSQL, run locally in Docker and managed in production.
+
+## Alternatives considered
+- SQLite: simplest, but awkward with several app servers and managed hosts.
+- MongoDB: flexible documents, but our data is relational, and totals need joins
+  and constraints that are natural in SQL.
+- Firebase: fastest to start, but business rules would move into the client or
+  cloud functions, and leaving later is painful.
+
+## Consequences
++ Constraints, transactions and exact aggregates out of the box.
++ One well-known tool that agents write very well.
+- Needs a running database for local development and tests (Docker).
+- Schema changes need migrations (Alembic).
+```
+
+Notice: each alternative is rejected for a reason tied to *this* product's context, and the consequences include real costs.
+
+</Reveal>
+
+<KitPiece id="adr-template" />
+
+<Breaks title="The agent that 'fixed' a decision">
+  <BreakPart label="What happens">
+
+  You chose soft deletes so users can undo. A month later, an agent tidying the code notices the `deleted_at` filters everywhere, decides they're clutter, and switches to hard deletes. Undo breaks silently.
+
+  </BreakPart>
+  <BreakPart label="The fix">
+
+  An ADR, plus one line in AGENTS.md: "Read docs/decisions before changing anything load-bearing; propose a new ADR rather than silently changing a decision."
+
+  </BreakPart>
+</Breaks>
+
+<Drill id="a1-d1" scenario="A friend asks you to build a small internal tool for their 12-person office: staff log which room they booked. They want it working this week, with no long-term commitment. Which decisions deserve an ADR?" fields={[
+  { label: "Which deserve an ADR?", options: ["The data store", "The button colours", "Hosting provider", "How staff log in", "The page layout"], multi: true },
+  { label: "Why those?" }
+]}>
+
+**Expert answer: the data store and how staff log in. Possibly hosting.**
+
+The test is "expensive to change". The data store holds data you'd have to migrate. Login touches security and every page; switching from a shared password to proper accounts later means touching everything. Hosting is borderline: for a tiny tool it's usually easy to move, so a one-line note is enough. Colours and layout are cheap to change and never need a record.
+
+Notice how few decisions are load-bearing even in a real product. Most of your attention should go to those few.
+
+</Drill>
+
+<Quiz id="a1-4-q" q="A decision recorded in ADR 0003 turns out to be wrong. What do you do?" options={["Edit ADR 0003 to say the new decision", "Delete ADR 0003", "Write a new ADR that supersedes 0003, explaining what changed and why", "Leave it and change the code quietly"]} answer={2}>
+  <p>ADRs are a history. The new record explains what you learned; the old one stays, marked as superseded, so the next person (or agent) can see how the thinking evolved instead of repeating the old mistake.</p>
+</Quiz>
+
+<Terms ids={['adr', 'c4', 'mermaid']} />
