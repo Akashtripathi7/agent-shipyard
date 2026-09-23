@@ -1,0 +1,104 @@
+---
+title: Handoffs, shared state and collisions
+summary: What actually goes wrong when two agents work at once, and the four mechanisms that prevent all of it.
+order: 6
+kind: lesson
+code: '4.6'
+tier: 3
+time: 75 min
+competencies: [orchestrate, build]
+kit: [worktreeinclude, handoff-template]
+---
+
+<Analogy>
+  <p>A hospital shift change. The night nurse does not rely on memory; there is a written chart at the end of the bed. And two surgeons never operate on the same patient without agreeing who holds the scalpel.</p>
+</Analogy>
+
+## Three failures, four mechanisms
+
+Agents working in parallel go wrong in predictable places. They **disagree about how the pieces connect**, they **edit the same file**, or they **lose information passing work along**. Four mechanisms handle all three.
+
+### 1. A written contract is the source of truth
+
+`SCHEMA.md` and `API_CONTRACT.md` — or better, an OpenAPI file — that every agent reads. Generate the client from the OpenAPI file, so the app physically cannot drift from the server. A contract an agent has to remember is not a contract.
+
+### 2. Each builder works in its own worktree
+
+Start one with `claude --worktree api-auth`; Claude Code creates it under `.claude/worktrees/api-auth/` on a branch named `worktree-api-auth`. Or add `isolation: worktree` to a subagent's file. Add `.claude/worktrees/` to `.gitignore`, and list files like `.env` in `.worktreeinclude` so they are copied into every new worktree.
+
+<CodeFile title=".worktreeinclude">
+
+```
+.env
+api/.env
+```
+
+</CodeFile>
+
+### 3. Every shared resource has one owner
+
+Especially **database migrations**, **lockfiles** and **generated code**. Agent teams do not put teammates in separate worktrees, so there you must split files by owner explicitly.
+
+### 4. Handoffs are written, not retold
+
+Anthropic found that passing everything through the lead agent works like a game of telephone: detail is lost at each step. Agents should **write results to files and pass the path**. End every builder's turn with a short handoff note.
+
+<CodeFile title="A handoff note, at the end of a builder's turn">
+
+```
+HANDOFF · backend-builder · branch worktree-api-auth
+Changed:   POST /auth/register, POST /auth/login (api/routes/auth.py)
+Verified:  pytest -q, 18 passed; curl /auth/login returns 200 with a token
+Contract:  matches API_CONTRACT.md v3, no changes
+Not done:  rate limiting on login (tracked in PLAN.md)
+```
+
+</CodeFile>
+
+<Exercise id="hand-1" title="Cause a migration collision on purpose" time="40 min" predict="Will two worktrees prevent the clash? Commit to an answer before you run it.">
+
+1. In Pocket Ledger's API, which uses Alembic for migrations, open two terminals and start `claude --worktree add-category` and `claude --worktree add-note`.
+2. Ask each session to add one new column with an Alembic migration.
+3. Merge both branches into `main`, then run `alembic heads`.
+4. You will see **two heads**: two migrations that each claim to come next.
+5. Fix it with `alembic merge heads -m "merge"`, then add to AGENTS.md: *"Only the database owner creates migrations."*
+
+</Exercise>
+
+<Expect>
+
+The worktrees kept the file edits apart perfectly, and the project still broke. **Isolation stops agents overwriting each other's files; it does not stop two agents making conflicting decisions.** That is what ownership is for, and it is the single most useful thing this lesson teaches.
+
+</Expect>
+
+<IfNot>
+
+If `alembic heads` shows one head, the second migration probably chained off the first because the branches were created at different times. Reset both worktrees to the same starting commit and run it again — the collision needs a genuine fork point.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    Two teammates in an agent team, without worktrees, both edit `api/models.py`. The second save wins, the first agent's change vanishes, and both report success.
+  </BreakPart>
+  <BreakPart label="Why">
+    Nothing detected the clash. Both agents were working from a snapshot taken before the other wrote, so each believed its own result.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Worktrees for builders, or strict file ownership per teammate when worktrees are not available. And never take "done" from an agent that had no way to notice it was overwritten.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="hand-q1"
+  q="Two agents in separate worktrees each add a database migration. What happens?"
+  options={[
+    "Git refuses the second merge, so the problem is caught",
+    "The file edits stay separate, but the migration history forks and breaks",
+    "Nothing; worktrees isolate migrations completely",
+    "The second migration silently overwrites the first"
+  ]}
+  answer={1}
+/>
+
+<Terms ids={['contract']} />

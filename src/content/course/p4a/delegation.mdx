@@ -1,0 +1,108 @@
+---
+title: Delegation done right
+summary: Before you add a second agent, fix how you brief the first one. Three mistakes account for most bad agent work, and all three are yours to make.
+order: 1
+kind: lesson
+code: '4.1'
+tier: 3
+time: 50 min
+competencies: [brief, orchestrate]
+kit: [brief-template]
+---
+
+<Analogy>
+  <p>Handing work to a capable new colleague. "Print these 200 pages" gets you 200 pages, single-sided, at 2:59pm. "I need these for the 3pm board meeting, ten copies, double-sided" gets you something you can actually use — and they will tell you the printer is jammed instead of silently delivering nothing.</p>
+</Analogy>
+
+## Adding agents multiplies your briefing, mistakes included
+
+Everything in this tier rests on one thing: how well you hand work over. With one agent, a vague brief costs you a re-run. With five, it costs you five, and you will not notice until they disagree with each other.
+
+So the crew starts here, not with configuration. Kun Chen names three delegation mistakes, and they map exactly onto what goes wrong with agents.
+
+### Mistake one: asking for actions instead of outcomes
+
+"Add a loading spinner to the expense list" is an **action**. You have already decided the solution, so the agent cannot tell you it is the wrong one. "The list feels frozen for a second on slow networks; make that feel handled" is an **outcome**. Now it can propose a skeleton screen, optimistic updates or caching, and you get to choose.
+
+### Mistake two: leaving out the why
+
+Without the reason, every judgment call downstream is a coin flip. "Amounts in paise" gets followed literally. "Amounts in paise, because floats drift and we are dealing with money" gets followed everywhere it matters, including the places you forgot to mention.
+
+### Mistake three: taking back control the moment it errs
+
+The agent gets something wrong, you sigh and fix it yourself. Understandable, and it costs you twice: you are now the bottleneck, and you have lost the chance to find out which part of your instructions was ambiguous. Hand it back with the evidence instead — "the total is wrong for expenses on the last day of the month, here is the failing case, find out why."
+
+### One more thing to state: how much effort this deserves
+
+Anthropic found their agents would spend enormous effort on trivial questions until the brief said how much to spend. Say it plainly: "this is a five-minute change, do not redesign anything", or "take your time here, this is the data model".
+
+## Weak and strong, side by side
+
+| Weak brief | Strong brief | What changed |
+|---|---|---|
+| Add caching to the expenses endpoint | The expenses list takes 1.8s on my phone and should feel instant. Anything cached must never show a stale total after adding an expense. | Outcome, plus the constraint that actually matters |
+| Fix the failing test | This test started failing after the timezone change. Find out why it fails, tell me the cause, then fix the cause rather than the test. | Diagnosis required; the test is protected |
+| Make the API faster | Nothing is slow enough to matter yet. Measure the three slowest endpoints under 100 concurrent users and report, change nothing. | Effort capped; measurement before action |
+
+<Callout type="note" label="This is the same brief you already know">
+  <p>The brief template from lesson 1.8 already has outcome, why, boundaries, effort and required proof. Nothing new is needed for a crew — a crew simply punishes a bad brief harder.</p>
+</Callout>
+
+<KitFile id="brief-template" />
+
+<Exercise id="deleg-1" title="Rewrite three of your own briefs" time="35 min" predict="Which of the three mistakes do you make most? Guess before you look.">
+
+1. Open your shell history or your notes and find the last **ten** things you asked an agent to do.
+2. Mark each one: did it ask for an action or an outcome? Did it say why? Did it cap the effort?
+3. Pick the three weakest. Rewrite each as an outcome with a reason and an effort level.
+4. Run one of the rewritten briefs against the original task in a fresh session and compare what comes back.
+
+</Exercise>
+
+<Expect>
+
+Most people find the same mistake in eight of ten briefs — usually asking for actions, because that is how you think when you already know the codebase. The rewritten brief typically produces a first attempt you would have accepted, and sometimes a question you had not thought of.
+
+</Expect>
+
+<IfNot>
+
+If the rewritten brief produced the same mediocre result, the problem is usually the "why". Check that your reason explains a *constraint* ("because floats drift and this is money") rather than restating the task ("because we need caching").
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    You brief an agent to "clean up the auth module". It rewrites the session handling, which was fine, and misses the duplicated validation, which was the actual mess. You spend an hour reverting.
+  </BreakPart>
+  <BreakPart label="Why">
+    "Clean up" is neither an outcome nor a boundary. The agent picked the most visible thing to change because nothing told it what "clean" meant here.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Name the outcome and the boundary: "The validation logic appears in three places and they have drifted. Consolidate it. Do not touch session handling."
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="deleg-q1"
+  q="An agent repeatedly makes a judgment call you disagree with, in places you never mentioned. Which delegation mistake is most likely?"
+  options={[
+    "Asking for an action instead of an outcome",
+    "Leaving out the why",
+    "Taking back control too early",
+    "Not capping the effort"
+  ]}
+  answer={1}
+/>
+
+<Checklist
+  id="deleg-check"
+  title="Before you brief anyone, human or agent"
+  items={[
+    "The brief names an outcome, not a solution I already picked",
+    "It says why, in terms of a constraint that survives cases I forgot to mention",
+    "It states how much effort this deserves",
+    "It says what proof I want back",
+    "When it errs, my first move is to hand it back with evidence, not to fix it myself"
+  ]}
+/>

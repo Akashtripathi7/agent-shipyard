@@ -1,0 +1,89 @@
+---
+title: Captain and crew, talking to one agent
+summary: The cheapest crew is one agent that delegates for you. Before you write a single subagent file, learn what a lead can do on its own.
+order: 4
+kind: lesson
+code: '4.4'
+tier: 3
+time: 50 min
+competencies: [orchestrate, operate]
+---
+
+<Analogy>
+  <p>You do not hire a department to redecorate a room. You hire one builder you trust, and they bring in an electrician for the afternoon. You keep one conversation; they handle the coordination.</p>
+</Analogy>
+
+## You already have a crew
+
+Before you define any specialists, the agent in front of you can already delegate. Ask it to search a large codebase and it can spawn a subagent to do the reading and hand back a summary, keeping the noise out of your conversation. That is the orchestrator pattern, with zero configuration.
+
+This matters because the most common mistake in this tier is building a crew for work that one captain could have coordinated. Every subagent file you write is a thing to maintain, keep in step with the codebase, and debug when it misbehaves.
+
+## What the captain is good at
+
+| The captain handles | Because |
+|---|---|
+| Deciding what to delegate and when | It has the whole conversation, so it knows what depends on what |
+| Keeping the plan | The plan lives in your files, and the captain is the one reading them |
+| Integrating results | Someone has to reconcile what comes back, and it should be one someone |
+| Talking to you | One conversation, one place to interrupt, one place to correct course |
+
+## When one captain stops being enough
+
+Move to defined roles when you can answer **yes** to at least one:
+
+- **Different tools.** A reviewer must not be able to edit; a builder must. Only separate roles can enforce that.
+- **Different models.** You want a different model reviewing than the one that wrote the code.
+- **Different context.** The builder is carrying 100k tokens of implementation detail that the reviewer must not inherit, or must not be charged for.
+- **Genuinely parallel surfaces.** Backend and app, with a fixed contract between them.
+
+If none of those apply, stay with the captain.
+
+<Callout type="warn" label="The honest default">
+  <p>For most single-codebase features, one captain plus a fresh review session is the whole crew you need. The next three lessons exist because L2, L3 and L4 outgrow that — not because you should outgrow it today.</p>
+</Callout>
+
+<Exercise id="cap-1" title="Let the captain delegate, and watch it happen" time="35 min" predict="Will the search results come back into your context, or just the summary?">
+
+1. In a repo with real size to it, start a session and run `/context` to note your starting usage.
+2. Ask for something read-heavy: "Find every place we construct a database session outside the request lifecycle. Summarise what you find as a list of file paths and one line each. Use a subagent for the search."
+3. When it finishes, run `/context` again.
+4. Now do the same thing in a fresh session **without** asking for a subagent, and compare the context usage.
+
+</Exercise>
+
+<Expect>
+
+The delegated version costs you a fraction of the context, because only the summary comes back into your conversation. The direct version fills your window with file contents you will never look at again — and everything you do afterwards in that session is more expensive and more distracted for it.
+
+</Expect>
+
+<IfNot>
+
+If both cost about the same, the search probably found very little, so there was nothing to keep out. Try a broader query, such as every place that reads an environment variable.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    You write six subagent files for a project with one backend and one screen. Half of them never get used, two disagree with AGENTS.md after a refactor, and you spend an afternoon debugging a handoff that a single session would never have needed.
+  </BreakPart>
+  <BreakPart label="Why">
+    The crew was built for an imagined scale rather than the actual work. Configuration has a maintenance cost that only pays back above a certain size.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Add a role the first time you feel its absence — the first time you want a reviewer that genuinely cannot edit, or a second surface that genuinely runs in parallel. Not before.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="cap-q1"
+  q="Which of these is the weakest reason to define a separate subagent?"
+  options={[
+    "The reviewer must not be able to edit files",
+    "The work would feel more organised with named roles",
+    "The builder's context is huge and the reviewer should start fresh",
+    "You want a different model reviewing than building"
+  ]}
+  answer={1}
+/>

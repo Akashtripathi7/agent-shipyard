@@ -1,0 +1,134 @@
+---
+title: Building your crew, one job per agent
+summary: Specialists defined in files, each with only the tools its job needs. This is where least privilege stops being theory.
+order: 5
+kind: lesson
+code: '4.5'
+tier: 3
+time: 75 min
+competencies: [orchestrate, security, build]
+kit: [agent-backend, agent-app, agent-code-reviewer]
+---
+
+<Analogy>
+  <p>A film crew. The director does not hold the boom mic, and the sound engineer does not rewrite the script. Each role has its own job and its own equipment, and nobody touches someone else's.</p>
+</Analogy>
+
+## A subagent is a Markdown file
+
+A custom subagent lives in `.claude/agents/` for this project, or `~/.claude/agents/` for every project. Its **frontmatter** sets the name, a description Claude uses to decide when to hand work over, the tools it may use, the model, and limits such as `maxTurns` or `isolation: worktree`. The body is its instructions.
+
+The most important field is **`tools`**. Give each role only what its job needs. Reviewers cannot edit. Builders cannot push. This is **least privilege**: a mistake — or a successful prompt injection — can only do as much damage as the role's tools allow.
+
+## A crew that covers a real product
+
+| Role | Its job | Tools | Notes |
+|---|---|---|---|
+| `product-spec` | Turns an idea into PLAN.md with acceptance criteria | Read, Write | Writes documents only |
+| `architect` | Data model, API contract, decision records | Read, Grep, Glob, Write | Never touches app code |
+| `backend-builder` | Builds the API against the contract, test-first | Read, Edit, Write, Bash | `isolation: worktree` |
+| `app-builder` | Screens from the designs | Read, Edit, Write, Bash, UI MCP | `isolation: worktree` |
+| `security-reviewer` | Threats, scanners, dependency checks | Read, Grep, Glob, Bash | Never edits |
+| `code-reviewer` | Fresh-eyes review for bugs and contract drift | Read, Grep, Glob | A different model from the builder when possible |
+| `qa-tester` | Integration and end-to-end tests, screenshots | Read, Edit, Write, Bash | Edits test folders only |
+| `gate-driver` | Runs the review gate, applies mechanical fixes | Read, Bash | A small, cheap model |
+
+<Callout type="tip" label="The cheap-reviewer split">
+  <p>Jason Ku's money-saving trick: the builder carries an enormous context by the end of its work. Instead of letting it run the review, have it write a <b>short handoff</b>, and let a fresh, small, cheap agent drive the review gate from there. You pay for the review at a fraction of the builder's per-token cost, and the reviewer gets fresh eyes as a side effect.</p>
+</Callout>
+
+## What the file looks like
+
+<CodeFile title=".claude/agents/security-reviewer.md">
+
+```markdown
+---
+name: security-reviewer
+description: Security review of the current branch. Use proactively after any
+  change to auth, payments, input handling, secrets, dependencies or
+  infrastructure. Never edits code.
+tools: Read, Grep, Glob, Bash
+model: opus
+maxTurns: 30
+---
+Review this branch's diff against main.
+
+1. Run `gitleaks git --no-banner` and `semgrep scan --config auto --error`.
+2. For every new dependency, confirm it exists on the official registry,
+   is maintained, and is the package the code meant to use.
+3. For every new or changed endpoint, ask: can user A read or change
+   user B's data?
+4. Report each finding as: severity, file and line, what an attacker
+   would do, and the fix.
+
+You have Bash only for scanners and read-only git commands. Do not
+modify files. If you find nothing, say so plainly.
+```
+
+</CodeFile>
+
+<Callout type="warn" label="Two honest limits">
+  <p><b>`tools` cannot say "edit only the test folder"</b>, and <b>Bash can technically write files</b>. A role's tool list is a strong fence, not a sealed box. Back it with permission rules in <code>settings.json</code>, or a <code>PreToolUse</code> hook that rejects writes outside the paths that role owns.</p>
+</Callout>
+
+<KitPiece id="agent-code-reviewer" />
+
+<Exercise id="crew-1" title="Build three roles and prove the fence holds" time="55 min" predict="What exactly will happen when you ask the reviewer to fix something it found?">
+
+1. Copy `agent-backend`, `agent-app` and `agent-code-reviewer` from your kit into `.claude/agents/`.
+2. Read each file before using it. Change the descriptions to match your project — the description is what Claude matches against, so a vague one gets the wrong role picked.
+3. Give `backend-builder` a small real task in your Pocket Ledger API.
+4. When it finishes, run `code-reviewer` on the branch.
+5. Now ask `code-reviewer` directly: "fix the second finding yourself."
+
+</Exercise>
+
+<Expect>
+
+In step 5 it cannot. It has no Edit or Write tool, so it will tell you what to change rather than changing it. That refusal is the whole point: an agent whose job is judging work must not also be able to alter it, or it will quietly grade its own homework.
+
+</Expect>
+
+<IfNot>
+
+If it did edit a file, check the frontmatter actually parsed — a stray indent in YAML silently drops the `tools` line, and a subagent with no `tools` field inherits everything. Run `/agents` to see what Claude thinks the role is allowed to do.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    You write eight beautiful role files. Two weeks later the API moves to a new folder layout, four of the roles still describe the old one, and the builder starts putting files in the wrong place with great confidence.
+  </BreakPart>
+  <BreakPart label="Why">
+    Role files are instructions, and instructions rot exactly like documentation. Nothing failed loudly when they drifted.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Keep role files short and point at the real source: "follow the layout in AGENTS.md" beats restating the layout. The fewer facts a role file duplicates, the less there is to rot.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="crew-q1"
+  q="Why give the code-reviewer role only Read, Grep and Glob?"
+  options={[
+    "To make it run faster",
+    "So it cannot fix what it finds, keeping judging and building separate",
+    "Because reviewers do not need to read files",
+    "To reduce the token cost of the review"
+  ]}
+  answer={1}
+/>
+
+<Terms ids={['least-privilege', 'frontmatter']} />
+
+<Checklist
+  id="crew-check"
+  title="Before a role file goes into the repo"
+  items={[
+    "Its description says when to use it, specifically enough to pick it over its neighbours",
+    "Its tools list is the minimum the job needs",
+    "Anything that judges work cannot edit work",
+    "It points at AGENTS.md rather than restating facts that will drift",
+    "Builders that run in parallel have isolation: worktree"
+  ]}
+/>

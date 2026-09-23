@@ -46,21 +46,23 @@ with agents.
 
 ## Current state — read this first
 
-**48 pages are written and playable end to end**, covering Tiers 1 and 2 in full:
-Start here, Part 0 (Groundwork), Part 1 (One agent, understood), Architecture A1 and A2,
-Part 2 (The feature loop), Part 3 (When things go wrong), and Project L1 (Pocket Ledger).
+**55 pages are written and playable end to end.** Tiers 1 and 2 are complete — Start here,
+Part 0 (Groundwork), Part 1 (One agent, understood), Architecture A1 and A2, Part 2 (The
+feature loop), Part 3 (When things go wrong) and Project L1 (Pocket Ledger) — and Tier 3 has
+begun with Part 4 (A crew on one product), all seven lessons.
 
-**Tiers 3 and 4 are planned but not yet written.** All 24 sections and their order are
-decided and shown on the site, but their pages do not exist. The site says so everywhere it
-matters: those sections render as dashed, unclickable cards marked *being written*, and any
-glossary term or tool belonging to an unwritten lesson is shown as a label rather than a dead
-link. `npm run verify` enforces this — it fails the build on a single dead internal link.
+**The rest of Tiers 3 and 4 is planned but not yet written.** All 24 sections and their order
+are decided and shown on the site, but those pages do not exist yet. The site says so
+everywhere it matters: unwritten sections render as dashed, unclickable cards marked *being
+written*, and any glossary term or tool belonging to an unwritten lesson is shown as a label
+rather than a dead link. `npm run verify` enforces this — it fails on a single dead internal
+link.
 
 Nothing here pretends to be finished that is not.
 
 | | |
 | --- | --- |
-| Pages written | 48 (23 lessons, 7 architecture, 8 project milestones, 3 drills, 3 reviews, 3 setup, 1 overview) |
+| Pages written | 55 (30 lessons, 7 architecture, 8 project milestones, 3 drills, 3 reviews, 3 setup, 1 overview) |
 | Sections planned | 24 across 4 tiers |
 | Guided projects | 6 |
 | Glossary | 98 precise definitions, plus 73 terms explained in plain language with an everyday analogy |
@@ -109,7 +111,7 @@ The course argues that a change is not done until something other than the agent
 This is that something for this repo. Run it after `npm run build`; it exits non-zero on any
 failure, so it works as a pre-push or CI gate. It checks:
 
-- every internal link and asset reference resolves (currently 3424 links across 55 pages);
+- every internal link and asset reference resolves (currently 4286 links across 62 pages);
 - every page has exactly one `<h1>`, a `<title>`, and no skipped heading levels;
 - every kit file listed in the data exists in the build, is non-empty, and is not a dotfile
   that static hosts would silently refuse to serve;

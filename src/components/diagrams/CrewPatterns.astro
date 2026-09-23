@@ -1,0 +1,95 @@
+---
+// Four coordination shapes, drawn small enough to compare at a glance.
+// Colours come from the tier tokens so both themes work without a second copy.
+---
+
+<div class="patterns">
+  <figure>
+    <svg viewBox="0 0 220 120" role="img" aria-labelledby="pat-orch-t">
+      <title id="pat-orch-t">A lead agent hands tasks to three workers, which report summaries back. Workers do not talk to each other.</title>
+      <rect class="node lead" x="80" y="6" width="60" height="26" rx="7" />
+      <text class="lbl" x="110" y="23" text-anchor="middle">Lead</text>
+      {[20, 85, 150].map((x) => (
+        <>
+          <path class="edge" d={`M110 32 C110 55, ${x + 35} 55, ${x + 35} 76`} />
+          <rect class="node" x={x} y={76} width="70" height="26" rx="7" />
+          <text class="lbl sm" x={x + 35} y="93" text-anchor="middle">Worker</text>
+        </>
+      ))}
+      <text class="note" x="110" y="116" text-anchor="middle">task down · summary up</text>
+    </svg>
+    <figcaption><b>Orchestrator and workers.</b> A lead hands out tasks and combines the summaries. Good for independent pieces with one integrator. The lead waits for the slowest worker.</figcaption>
+  </figure>
+
+  <figure>
+    <svg viewBox="0 0 220 120" role="img" aria-labelledby="pat-pipe-t">
+      <title id="pat-pipe-t">Build, review, test and merge in a line, with a failure arrow sending work back to build.</title>
+      {['Build', 'Review', 'Test', 'Merge'].map((s, i) => (
+        <>
+          <rect class={`node ${i === 3 ? 'lead' : ''}`} x={6 + i * 53} y="34" width="46" height="26" rx="7" />
+          <text class="lbl sm" x={29 + i * 53} y="51" text-anchor="middle">{s}</text>
+          {i < 3 && <path class="edge arrow" d={`M${52 + i * 53} 47 h7`} />}
+        </>
+      ))}
+      <path class="edge back" d="M188 60 C188 84, 29 84, 29 62" />
+      <text class="note" x="110" y="100" text-anchor="middle">a failure sends it back</text>
+    </svg>
+    <figcaption><b>Pipeline.</b> Each stage passes work on; a failure sends it back. Predictable and easy to debug, but it only moves one stage at a time.</figcaption>
+  </figure>
+
+  <figure>
+    <svg viewBox="0 0 220 120" role="img" aria-labelledby="pat-hier-t">
+      <title id="pat-hier-t">A lead manages two sub-leads, each of which manages two builders.</title>
+      <rect class="node lead" x="85" y="4" width="50" height="22" rx="7" />
+      <text class="lbl sm" x="110" y="19" text-anchor="middle">Lead</text>
+      {[[40, 'API'], [130, 'App']].map(([x, n]) => (
+        <>
+          <path class="edge" d={`M110 26 C110 40, ${Number(x) + 25} 40, ${Number(x) + 25} 50`} />
+          <rect class="node mid" x={Number(x)} y="50" width="50" height="22" rx="7" />
+          <text class="lbl sm" x={Number(x) + 25} y="65" text-anchor="middle">{n} lead</text>
+          {[0, 28].map((dx) => (
+            <>
+              <path class="edge" d={`M${Number(x) + 25} 72 C${Number(x) + 25} 84, ${Number(x) + dx + 11} 84, ${Number(x) + dx + 11} 92`} />
+              <rect class="node" x={Number(x) + dx - 3} y="92" width="28" height="20" rx="6" />
+            </>
+          ))}
+        </>
+      ))}
+      <text class="note" x="110" y="120" text-anchor="middle">detail is retold at each level</text>
+    </svg>
+    <figcaption><b>Hierarchy.</b> Leads manage sub-leads. Scales to big products, but each level retells the brief and some detail is lost each time.</figcaption>
+  </figure>
+
+  <figure>
+    <svg viewBox="0 0 220 120" role="img" aria-labelledby="pat-board-t">
+      <title id="pat-board-t">Four agents claim tasks from one shared board and post results back to it.</title>
+      <rect class="node lead" x="65" y="46" width="90" height="28" rx="7" />
+      <text class="lbl" x="110" y="64" text-anchor="middle">Task board</text>
+      {[[14, 10], [162, 10], [14, 88], [162, 88]].map(([x, y]) => (
+        <>
+          <rect class="node" x={x} y={y} width="44" height="22" rx="6" />
+          <text class="lbl sm" x={Number(x) + 22} y={Number(y) + 15} text-anchor="middle">Agent</text>
+          <path class="edge" d={`M${Number(x) + 22} ${Number(y) < 50 ? Number(y) + 22 : Number(y)} C${Number(x) + 22} 60, ${Number(x) < 100 ? 65 : 155} 60, ${Number(x) < 100 ? 65 : 155} 60`} />
+        </>
+      ))}
+      <text class="note" x="110" y="116" text-anchor="middle">claim · post back</text>
+    </svg>
+    <figcaption><b>Shared board.</b> Agents claim tasks from one list and post results back. Adding workers is easy, but two agents can grab related tasks and collide.</figcaption>
+  </figure>
+</div>
+
+<style>
+  .patterns { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin: 1.6em 0; }
+  figure { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l); padding: 14px 16px 16px; }
+  .patterns figure svg { width: 100%; height: auto; display: block; min-width: 0; }
+  .node { fill: var(--surface-2); stroke: var(--line-strong); stroke-width: 1.2; }
+  .node.lead { fill: color-mix(in srgb, var(--accent) 18%, var(--surface)); stroke: var(--accent); }
+  .node.mid { fill: color-mix(in srgb, var(--sky) 16%, var(--surface)); stroke: var(--sky); }
+  .lbl { fill: var(--ink); font: 650 11px var(--font-sans); }
+  .lbl.sm { font-size: 9.5px; }
+  .note { fill: var(--ink-faint); font: 600 8px var(--font-mono); }
+  .edge { fill: none; stroke: var(--line-strong); stroke-width: 1.2; }
+  .edge.back { stroke-dasharray: 3 3; stroke: var(--coral); }
+  figcaption { margin-top: 10px; color: var(--ink-soft); font-size: 0.88rem; line-height: 1.5; }
+  figcaption b { color: var(--ink); }
+</style>

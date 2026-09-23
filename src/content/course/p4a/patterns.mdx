@@ -1,0 +1,115 @@
+---
+title: Coordination patterns
+summary: Six shapes for organising several agents, what each is good at, and which one your situation actually needs.
+order: 3
+kind: lesson
+code: '4.3'
+tier: 3
+time: 75 min
+competencies: [orchestrate, decide]
+---
+
+<Analogy>
+  <p>The different ways people organise work: a head chef shouting orders, an assembly line, a company org chart, a rail of order tickets anyone can grab. Same people, very different results.</p>
+</Analogy>
+
+## Somebody has to decide who does what
+
+When several agents work together, something has to decide who does what and how results come back together. That is **orchestration**. There are a handful of standard shapes, and each one draws different lines between agents. The lines are what matter — they decide what can go wrong.
+
+Four of the six shapes are below. The other two — evaluator-and-optimizer and scripted fan-out — are variations on the pipeline and the board.
+
+<CrewPatterns />
+
+## The six, and when each earns its place
+
+| Pattern | Everyday version | In Claude Code | Use it for | Watch out for |
+|---|---|---|---|---|
+| **Orchestrator + workers** | Head chef and line cooks | Subagents | Independent pieces, one integrator | The lead waits for the slowest worker |
+| **Pipeline** | Assembly line | A gate, or subagents in sequence | Quality checks on every change | Slow if used for parallel work |
+| **Evaluator and optimizer** | Writer and editor | A builder plus a read-only critic, with a round limit | Work with clear pass criteria | Endless rounds without a limit |
+| **Hierarchy** | Company org chart | Nested subagents, up to three levels | Multi-service products | Detail lost at each level; cost multiplies |
+| **Peer-to-peer** | A band improvising | Agent teams (experimental, off by default) | Exploratory work | Chatter and loops |
+| **Shared board** | Kitchen ticket rail | An agent team's shared task list | Many small independent tasks | Two agents grab related tasks |
+| **Scripted fan-out** | A foreman with a checklist | Dynamic workflows, or a batch of worktree agents | Big audits and migrations | Overkill for small jobs |
+
+<Callout type="tip" label="Start with two">
+  <p>Almost everything worth doing in this tier is <b>orchestrator + workers</b> for building and a <b>pipeline</b> for checking. Reach for hierarchy only when one lead genuinely cannot hold the whole product, and treat peer-to-peer as an experiment rather than a plan.</p>
+</Callout>
+
+## Why the evaluator pattern needs a limit
+
+A builder and a critic can improve work in rounds — write, critique, revise. Without a **round limit** they will happily go forever, because there is always one more nit. Two or three rounds captures most of the gain. State the limit in the brief, and state what "good enough to stop" looks like.
+
+<Exercise id="pat-1" title="Build a writer-and-editor loop from two subagents" time="45 min" predict="How many rounds until the critic stops finding real problems, rather than nits?">
+
+1. In your lab repo, create two subagent files.
+
+   `.claude/agents/implementer.md`:
+
+   ```markdown
+   ---
+   name: implementer
+   description: Writes one small function, test-first, from a written spec.
+   tools: Read, Edit, Write, Bash
+   ---
+   Write the smallest correct implementation that satisfies the spec and its
+   tests. Do not expand scope. Stop when the tests pass.
+   ```
+
+   `.claude/agents/critic.md`:
+
+   ```markdown
+   ---
+   name: critic
+   description: Reviews one function against its spec. Never edits.
+   tools: Read, Grep, Glob
+   ---
+   You did not write this. Check it against the spec only.
+   Report: correctness, missed edge cases, tests that assert nothing.
+   Say "no substantive findings" when that is true. Do not invent work.
+   ```
+
+2. Write a one-paragraph spec for a small pure function with real edge cases — parsing a duration string like `1h30m`, say.
+3. Run `implementer`, then `critic`, then hand the findings back to `implementer`. Do three rounds.
+4. Record what the critic found on each round.
+
+</Exercise>
+
+<Expect>
+
+Round one finds real bugs. Round two finds one or two. Round three usually finds only style opinions — which is exactly why the limit goes in the brief rather than being left to the critic's judgment.
+
+</Expect>
+
+<IfNot>
+
+If the critic finds "problems" on round three that are really preferences, your spec is underspecified: it is judging against its own taste because the spec gave it nothing to judge against. Tighten the spec and re-run.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    You pick a hierarchy because the product has three services. Three levels of lead each rewrite the brief in their own words. The bottom builder implements something nobody asked for, and the token bill is four times what you expected.
+  </BreakPart>
+  <BreakPart label="Why">
+    Every level is a lossy retelling — the telephone game Anthropic warns about. Depth multiplies both the loss and the cost.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Flatten it. One lead, workers that read the same written contract rather than a retold brief. Add a level only when you can name what the extra lead decides that the top lead cannot.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="pat-q1"
+  q="You have thirty independent files that each need the same mechanical migration. Which shape fits best?"
+  options={[
+    "Hierarchy, so leads can supervise groups of files",
+    "Peer-to-peer, so agents can negotiate who takes what",
+    "Scripted fan-out, one agent per file with a fixed instruction",
+    "Evaluator and optimizer, revising until it is right"
+  ]}
+  answer={2}
+/>
+
+<Terms ids={['orchestration', 'orchestrator', 'agent-teams', 'dynamic-workflow']} />

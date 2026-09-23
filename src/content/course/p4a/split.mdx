@@ -1,0 +1,85 @@
+---
+title: When to split work, and when not to
+summary: More agents is not more progress. Here is the test for what can genuinely run in parallel, and the cost of getting it wrong.
+order: 2
+kind: lesson
+code: '4.2'
+tier: 3
+time: 45 min
+competencies: [orchestrate, decide]
+---
+
+<Analogy>
+  <p>One cook can make breakfast. A banquet needs a whole kitchen brigade. But a brigade making a single slice of toast just gets in each other's way.</p>
+</Analogy>
+
+## Three things get better, three get harder
+
+Splitting work across agents makes three things better:
+
+- **Independent pieces happen at the same time.**
+- **Noisy work stays out of your main context** — a search across a huge codebase can burn its tokens somewhere else and hand back a summary.
+- **A fresh agent catches what the author cannot see.** This is the single most reliable win, and it needs no parallelism at all.
+
+It makes three things harder: **coordination**, **merging**, and **cost**.
+
+## The numbers, honestly
+
+Anthropic published figures from their multi-agent research system. The multi-agent version beat a single agent by **90.2%** on their internal research evaluation — and used about **15×** the tokens of a normal chat, where a single agent uses about 4×.
+
+They also found multi-agent setups a poor fit for work where every agent needs the same shared context, or where the pieces depend heavily on one another. **A lot of coding looks exactly like that.**
+
+<Callout type="warn" label="Read that second sentence twice">
+  <p>The 90.2% is real and so is the 15×. Research is close to the best case for a crew: many independent searches, results that combine cleanly. Building one feature in one codebase is close to the worst case. Do not carry a research benchmark into your feature work and expect the same curve.</p>
+</Callout>
+
+That is why Kun Chen splits along **independent surfaces** — backend versus app — and only **after the contract between them is fixed**.
+
+## The test
+
+Split a piece of work off only when it is:
+
+- **independent** of what other agents are changing, or
+- **heavy on reading but light on result**, like searching a large codebase, or
+- **better with fresh eyes**, like reviewing someone else's change.
+
+Otherwise, keep it in one agent.
+
+<Exercise id="split-1" title="Find what can actually run in parallel" time="30 min" predict="How many of your tasks do you think can start today, in parallel? Write the number down first.">
+
+1. List ten tasks from your own backlog, or from the Vault plan you will build in Project L2.
+2. For each task, write which other tasks must finish before it can start.
+3. Draw the dependency graph on paper. Circle every task with no arrows pointing into it.
+4. Only the circled ones can start in parallel today. Compare with your guess.
+
+</Exercise>
+
+<Expect>
+
+Fewer parallel tasks than you guessed — usually two or three out of ten. The contract and the data model block almost everything, which is exactly why they come first in the loop.
+
+</Expect>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    Two agents build the login screen and the login endpoint at the same time, with no agreed request format. Each invents one. Joining them up takes longer than building both one after the other would have.
+  </BreakPart>
+  <BreakPart label="Why">
+    The work was sequential wearing a parallel costume. The contract was the real first task, and nobody did it.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Agree the contract first — you will do this properly in lesson 4.6 — then split. Anything that has to agree with something else is one task until the agreement is written down.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="split-q1"
+  q="Which of these is the strongest candidate to split off to its own agent?"
+  options={[
+    "Building the app screen and the endpoint it calls, at the same time",
+    "Reviewing a branch that another agent just wrote",
+    "Adding two fields to the same data model",
+    "Renaming a function used across the codebase"
+  ]}
+  answer={1}
+/>

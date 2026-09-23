@@ -1,0 +1,128 @@
+---
+title: Security from the first commit
+summary: Five layers, each catching what the one before misses, and the principle that decides which of them you can actually trust.
+order: 7
+kind: lesson
+code: '4.7'
+tier: 3
+time: 90 min
+competencies: [security, orchestrate]
+kit: [agent-security, pre-commit]
+---
+
+<Analogy>
+  <p>Wiring a house to code while the walls are still open, versus cutting holes in finished walls after the inspection fails.</p>
+</Analogy>
+
+## Five layers
+
+Security built in costs a little every day. Security added at the end costs a lot, once. Each layer below catches what the one before it misses.
+
+1. **When you write the spec**, spend ten minutes on a threat model: what is valuable here, who would want it, and what is the worst realistic misuse? Check your own agents against the lethal trifecta from A2 while you are there.
+2. **Around the agent**: the sandbox, deny rules, no secrets in context, limited network access. For agents that run unattended, put each one in its own container.
+3. **In the pipeline, mechanically**: `gitleaks` for secrets, Semgrep for insecure code patterns, and dependency checks.
+4. **An agent reviewer**: the `security-reviewer` role from the last lesson, plus a dedicated security review on sensitive changes.
+5. **A human** on anything touching auth, payments, encryption or infrastructure.
+
+## Why dependency checks matter more with agents
+
+Agents invent believable package names. Attackers register those names with malware inside. This is **slopsquatting**, and it is a supply-chain attack aimed specifically at generated code — in January 2026 a hallucinated npm package spread through 237 repositories via AI-generated skill files.
+
+The defence is boring and effective: for every new dependency, confirm it exists on the official registry, is maintained, and is the package the code actually meant to use.
+
+## The agentic risks, named
+
+OWASP's Top 10 for Agentic Applications, published in December 2025, lists the risks that come from agents themselves: goal hijacking, tool misuse, identity and privilege abuse, supply-chain compromise, unexpected code execution, memory and context poisoning, and cascading failures. This course covers a defence for each.
+
+<Callout type="warn" label="The principle worth memorising">
+  <p><b>An instruction is a request; a hook, a CI check or a branch protection rule is a law.</b> Asking an agent in AGENTS.md not to commit secrets is a request it will usually honour and occasionally forget. A pre-commit hook is a law it cannot forget. Security gates must be laws.</p>
+</Callout>
+
+<CodeFile title=".pre-commit-config.yaml — then run: pre-commit autoupdate && pre-commit install">
+
+```yaml
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: vX.Y.Z          # filled in by pre-commit autoupdate
+    hooks:
+      - id: gitleaks
+  - repo: https://github.com/semgrep/pre-commit
+    rev: vX.Y.Z
+    hooks:
+      - id: semgrep
+        args: ["--config", "auto", "--error"]
+```
+
+</CodeFile>
+
+A law with a documented bypass is a request again, so close the bypass:
+
+<CodeFile title='.claude/settings.json · add to "deny"'>
+
+```json
+"Bash(git commit --no-verify *)",
+"Bash(git push --no-verify *)"
+```
+
+</CodeFile>
+
+<KitPiece id="pre-commit" />
+
+<Exercise id="sec-1" title="Make the gate a law, then try to break it" time="50 min" predict="When you ask the agent to hardcode a key 'just for now', what stops it — the instruction or the hook?">
+
+1. In Pocket Ledger, install pre-commit (`brew install pre-commit`), add the config above, and run `pre-commit autoupdate && pre-commit install`.
+2. Ask the agent to add a feature and "just put the API key directly in the code for now". Watch gitleaks block the commit.
+3. Now ask the agent to commit with `--no-verify`. Watch the deny rule stop it.
+4. Ask the agent which package it would use to format rupee amounts. Before installing anything, check that package exists on the registry and look at its download count and last publish date.
+
+</Exercise>
+
+<Expect>
+
+In step 2 the commit fails with gitleaks naming the file and line. In step 3 the deny rule refuses before the shell runs. In step 4 there is a reasonable chance the suggested package does not exist, or exists with a handful of downloads — which is exactly the shape of a slopsquatting target.
+
+</Expect>
+
+<IfNot>
+
+If the commit went through in step 2, `pre-commit install` probably did not run in this repo — check `.git/hooks/pre-commit` exists. Hooks are per-clone, which also means **every new worktree needs them installed too**.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    Your gate is perfect on `main`, and an agent working in a fresh worktree commits a secret without resistance.
+  </BreakPart>
+  <BreakPart label="Why">
+    Git hooks live in `.git/hooks`, which is per-worktree. A new worktree starts with no hooks installed.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Set <code>core.hooksPath</code> to a tracked directory so every worktree shares the same hooks, and keep the same checks in CI — CI is the law that no local setup can skip.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="sec-q1"
+  q="Which of these is a law rather than a request?"
+  options={[
+    "A line in AGENTS.md saying never to commit secrets",
+    "A subagent instructed to check for secrets",
+    "A required CI check that runs gitleaks before merge",
+    "A comment in the code warning not to hardcode keys"
+  ]}
+  answer={2}
+/>
+
+<Terms ids={['slopsquatting']} />
+
+<Checklist
+  id="sec-check"
+  title="Security gates for a crew"
+  items={[
+    "gitleaks and a static analyser run on every commit, via a hooks path every worktree shares",
+    "--no-verify is denied in settings.json",
+    "The same checks run in CI, so no local setup can skip them",
+    "Every new dependency is confirmed to exist and be maintained before install",
+    "A human reviews anything touching auth, payments, encryption or infrastructure"
+  ]}
+/>
