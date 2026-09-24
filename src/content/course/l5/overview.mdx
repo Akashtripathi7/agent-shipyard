@@ -1,0 +1,48 @@
+---
+title: Support Copilot, project overview
+summary: An AI support agent inside Book-a-Slot, built while that product keeps running — your first feature where a mistake reaches a customer unreviewed.
+order: 1
+kind: overview
+code: 'L5'
+tier: 4
+time: 18–24 hours over 3 weeks
+competencies: [architecture, verify, fleet, security]
+---
+
+## What you're building
+
+Customers of a clinic ask questions: *"Can I move my appointment to Thursday?"*, *"What happens if I cancel late?"*, *"Am I booked for the 14th?"* Support Copilot answers them from the clinic's own policies and the customer's own bookings — and knows when to stop and fetch a human.
+
+It is a feature **inside a product that is already live**, which is the other half of the lesson.
+
+## Why this project, at this point
+
+Two things arrive together, deliberately:
+
+- **Part 5's fleet reality.** Book-a-Slot is in maintenance and still has users. You are adding a significant feature to a running product while not letting it rot — the exact situation lesson 5.2 described.
+- **Architecture A5.** This is the first time your software's output reaches a customer without you reading it first.
+
+| A5 lesson | Where it lands here |
+|---|---|
+| Shapes of AI features | Almost all of this is retrieval, not an agent loop |
+| Retrieval | Clinic policies, measured with recall@5 before anything else |
+| Evals and guardrails | A CI gate on prompt changes; refusals enforced in code |
+| Cost and latency | A per-request budget that survives real traffic |
+
+## The shape of the product
+
+Deliberately small, deliberately bounded:
+
+- **Answers questions** from clinic policy documents and from the customer's own bookings.
+- **Looks up** a booking — read-only, authorised as the customer.
+- **Hands over** to a human, with the conversation attached.
+- **Never** cancels, reschedules, refunds, or gives medical advice. Those are on the do-not-decide list, enforced in code.
+
+## Done when
+
+- Recall@5 on a 30-question set is measured, improved and recorded.
+- An eval set of 40 cases runs in CI on every prompt, model or retrieval change.
+- The copilot refuses what it must refuse, proven by cases in the eval set.
+- A prompt injection in a support ticket does not change its behaviour.
+- Cost per conversation is inside budget at real traffic, with a per-user daily ceiling in code.
+- It is behind a flag, was rolled out gradually, and Book-a-Slot's existing alerts stayed quiet.

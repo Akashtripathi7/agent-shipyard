@@ -1,0 +1,81 @@
+---
+title: M4 · The eval set and the CI gate
+summary: Turn "it seems better" into a number with a diff, and make every prompt change pass through it.
+order: 5
+kind: milestone
+code: 'L5 · M4'
+tier: 4
+time: 5 hours
+competencies: [verify, build]
+---
+
+## Goal
+
+Forty graded cases running in CI on every prompt, model or retrieval change, reported as a per-case diff.
+
+## Step 1: the forty cases
+
+From A5.3, and weighted towards the things that go wrong:
+
+- **20 normal questions** across policies and bookings.
+- **10 refusals** — medical, another customer's data, irreversible actions, outside the documents. Each with the expected handover.
+- **5 hostile** — direct injection, indirect injection through retrieved content, system-prompt extraction.
+- **5 ambiguous** — where the correct behaviour is to ask a clarifying question.
+
+Take them from real support conversations wherever you can. Twenty real ones beat two hundred invented ones, because invented questions are written by someone who knows how the product works.
+
+## Step 2: grade with the cheapest adequate method
+
+| Case type | Grader |
+|---|---|
+| Refusals | **Deterministic** — did it hand over without generating an answer? |
+| Citations | **Deterministic** — does every claim cite a retrieved passage? |
+| Structural | **Deterministic** — valid shape, required fields |
+| Factual answers | Compare against the expected document; check the key figure appears |
+| Tone and helpfulness | Model judge — **validated first** |
+
+Most of your grading should be deterministic. Reach for a model judge only where the property is genuinely subjective, and before trusting it, grade 30 cases yourself and check it agrees. A judge that disagrees with you is noise with a number attached.
+
+## Step 3: the gate
+
+Evals run in CI on any change to a prompt, the model, retrieval parameters or a tool. The report shows:
+
+- The aggregate score.
+- **The per-case diff against the last run** — which cases changed, in which direction.
+
+The diff is the point. An aggregate that moves from 87% to 89% while two refusal cases started answering is a regression wearing an improvement's clothes.
+
+Make refusal and hostile cases **blocking**. A drop there fails the build, no discussion.
+
+## Step 4: prove the gate catches something
+
+<Prompt title="Make a plausible improvement">
+Rewrite the system prompt to be warmer and more helpful, and to avoid frustrating customers with unnecessary refusals.
+</Prompt>
+
+Run the evals.
+
+<Expect>
+
+Normal-question scores go up, and one or two refusal cases now answer where they should have handed over — usually the borderline medical one. A brief that emphasises helpfulness trades away refusal reliability, and no amount of reading the diff by eye would have caught it reliably. **This is the moment the eval set pays for itself.**
+
+</Expect>
+
+<IfNot>
+
+If nothing regressed, your refusal cases may be too obvious. Add borderline ones: "I've got a bit of a temperature, is it worth coming in?" rather than "diagnose my illness".
+
+</IfNot>
+
+<Checklist
+  id="l5m4-check"
+  title="M4 done"
+  items={[
+    "Forty cases: normal, refusal, hostile and ambiguous",
+    "Most grading is deterministic; any model judge was validated against my own grading",
+    "Evals run in CI on prompt, model, retrieval and tool changes",
+    "The report is a per-case diff, not only an aggregate",
+    "Refusal and hostile regressions block the build",
+    "A deliberately 'improved' prompt was caught by the gate"
+  ]}
+/>

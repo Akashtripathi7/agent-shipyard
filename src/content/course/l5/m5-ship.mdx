@@ -1,0 +1,75 @@
+---
+title: M5 · Shipping into a live product
+summary: A gradual rollout inside a product that already has users, watching cost and the existing alerts as closely as the new feature.
+order: 6
+kind: milestone
+code: 'L5 · M5'
+tier: 4
+time: 4 hours
+competencies: [operate, fleet, verify]
+---
+
+## Goal
+
+The copilot live behind a flag, rolled out gradually, inside budget — and Book-a-Slot no worse than before.
+
+## Step 1: the flag, and why it is not optional
+
+An AI feature is the strongest case for a feature flag there is. Quality problems appear only with real users and real questions, and the ability to turn it off **without a deploy** is the difference between a bad morning and a bad week.
+
+Flag it per clinic, so you can enable one friendly clinic first.
+
+## Step 2: roll out in stages, with a stop rule for each
+
+| Stage | Who | Watch | Stop if |
+|---|---|---|---|
+| 1 | Internal only | Every conversation, read by you | Anything on the refusal list is answered |
+| 2 | One clinic, staff-facing — drafts a reply, staff send it | Staff edit rate | Staff rewrite more than half |
+| 3 | One clinic, customer-facing | Handover rate, complaints, cost | Handover rate climbs, or any data leak |
+| 4 | All clinics | The dashboard | Budget or quality alert |
+
+Stage 2 is the one worth insisting on. Staff-facing drafting gives you real questions and real quality signal with a human between the model and the customer — and the **edit rate is the most honest quality metric you will get**, better than any eval score, because it is people voting with their time.
+
+## Step 3: watch two products at once
+
+This is a Part 5 milestone as much as an A5 one. You are changing a live product, so watch both:
+
+**The new feature:** cost per conversation, p95 latency, handover rate, fallback rate, refusal rate.
+
+**Book-a-Slot itself:** its existing alerts, its p99, its error rate. A new feature that quietly slows the booking API is a regression in a product that was working.
+
+Add to `fleet-log.md` daily during rollout.
+
+<Callout type="warn" label="Cost behaves differently with real users">
+  <p>Your evals asked 40 tidy questions once. Real users ask long rambling ones, paste screenshots-worth of text, and follow up five times. Expect cost per conversation to exceed your estimate at stage 3, and have the per-user daily ceiling already in code rather than reaching for it afterwards.</p>
+</Callout>
+
+<Exercise id="l5m5-1" title="Roll out, and let a stop rule stop you" time="over a week" predict="Which stage will you actually pause at?">
+
+1. Flag the feature per clinic.
+2. Run stage 1 for two days, reading every conversation yourself.
+3. Stage 2 for three days. Record the staff edit rate.
+4. Stage 3 for one clinic, watching cost and handover rate daily.
+5. If a stop rule fires, **stop**. Fix, then resume from the previous stage.
+
+</Exercise>
+
+<Expect>
+
+Most people stop at stage 2 or 3 at least once, usually on cost or on a refusal case that reality produced and the eval set did not. Every real stop becomes a new eval case — that is the loop that makes the product improve rather than drift.
+
+</Expect>
+
+<Checklist
+  id="l5m5-check"
+  title="M5 done"
+  items={[
+    "The feature is behind a per-clinic flag and can be disabled without a deploy",
+    "Rollout went through staff-facing drafting before customer-facing",
+    "Staff edit rate was recorded as a quality signal",
+    "Cost per conversation is inside budget at real traffic",
+    "A per-user daily cost ceiling is enforced in code",
+    "Book-a-Slot's own metrics and alerts are no worse than before",
+    "Every stop-rule event became a new eval case"
+  ]}
+/>

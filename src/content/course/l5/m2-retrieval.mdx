@@ -1,0 +1,71 @@
+---
+title: M2 · Retrieval you have actually measured
+summary: Build the pipeline, measure recall before you write a single prompt, and fix the half that decides everything.
+order: 3
+kind: milestone
+code: 'L5 · M2'
+tier: 4
+time: 5 hours
+competencies: [build, verify, architecture]
+---
+
+## Goal
+
+A retrieval pipeline over clinic policies with a measured recall@5, improved deliberately, and a regression test that re-runs on every re-index.
+
+## Step 1: the question set comes first
+
+Thirty real questions, in customers' words, each with the document that answers it. Write them **before** building the pipeline, so you cannot tune the questions to the system.
+
+Include: paraphrases, a typo or two, questions about specific numbers ("how many hours before?"), and five the documents genuinely do not answer.
+
+## Step 2: build the pipeline, then measure retrieval alone
+
+Ingest, chunk, embed, retrieve. Then — before writing any answer prompt — run A5.2's measurement:
+
+<Prompt title="Retrieval only, no generation">
+For each of the 30 questions in evals/retrieval.jsonl, run retrieval and report whether the expected document appears in the top 5. Output a table of question, expected document, rank found, and the recall@5 total. Do not generate any answers.
+</Prompt>
+
+Record the baseline. **This number, not the answer quality, is what you improve first.**
+
+## Step 3: improve it in the order that pays
+
+Apply one change at a time, re-measuring after each:
+
+1. **Chunk on structure**, keeping the heading path with each chunk. Clinic policies are heavily structured — sections and sub-sections — and a chunk that says "Cancellation › Late cancellations › ..." retrieves far better than a bare paragraph.
+2. **Add keyword search alongside vectors** and combine the rankings. This is what finds "24 hours" and "₹500".
+3. **Add reranking** over the combined top 20.
+4. **Store neighbours** and supply the adjacent chunks.
+
+<Expect>
+
+Baseline is usually 60–75%. Structural chunking with heading paths is the biggest single jump on policy documents, and hybrid search is what finally catches the number questions. Getting above 90% is a day's work done in this order, and weeks of prompt tuning in any other.
+
+</Expect>
+
+## Step 4: make it a regression test
+
+Wire the 30-question set into CI so it runs on every re-index and every retrieval-parameter change. A5.2's Breaks box is the failure this prevents: answers quietly degrading over months because the index aged while nobody was looking.
+
+Track **index age** as a metric and alert when it exceeds your re-index interval.
+
+<IfNot>
+
+If recall stayed low after all four changes, look at the documents themselves rather than the pipeline. Policy documents written as prose with implied context are genuinely hard to retrieve from — sometimes the correct fix is editing the source, adding the headings that were only implied.
+
+</IfNot>
+
+<Checklist
+  id="l5m2-check"
+  title="M2 done"
+  items={[
+    "Thirty questions in customers' words, written before the pipeline",
+    "Five of them are unanswerable from the documents",
+    "Recall@5 measured before any answer prompt existed",
+    "Chunks carry their heading path",
+    "Hybrid search and reranking are in place, each measured separately",
+    "The question set runs in CI on re-index",
+    "Index age is a tracked metric with an alert"
+  ]}
+/>

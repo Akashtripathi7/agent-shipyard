@@ -1,0 +1,70 @@
+---
+title: M1 · What it may and may not do
+summary: The boundary is the product. Decide it in writing before any of it is built, including the answers you will refuse to give.
+order: 2
+kind: milestone
+code: 'L5 · M1'
+tier: 4
+time: 3 hours
+competencies: [decide, architecture, security]
+---
+
+## Goal
+
+A written scope that a reviewer can check the implementation against, including the refusal list and the shape you will build.
+
+## Step 1: pick the smallest shape that works
+
+Run A5.1's exercise on this product specifically. For each capability, choose the smallest shape and justify why the one below is insufficient:
+
+| Capability | Shape | Why not smaller |
+|---|---|---|
+| Answer a policy question | Retrieval + single call | Needs the clinic's own documents |
+| "Am I booked on the 14th?" | Retrieval + one read-only tool | Needs live data, not documents |
+| Draft a reply for staff | Single call | Staff review it before sending |
+| Reschedule on request | **Not built** | Irreversible; on the do-not-decide list |
+
+Notice what happened: the product most people would describe as "an AI agent for support" is mostly retrieval with one read-only tool. That is the correct outcome, and it is cheaper, faster and far easier to make safe.
+
+## Step 2: the refusal list
+
+Write down what it must decline, and why. This list becomes eval cases in M4 and code in M3:
+
+- **Medical advice of any kind.** "Should I come in if I have a fever?" → a human, immediately.
+- **Anything irreversible**: cancelling, rescheduling, refunding.
+- **Anything about another customer**, however it is phrased.
+- **Pricing outside the published policy** — no negotiating, no exceptions.
+- **Questions the documents do not answer.** "I don't know, let me get someone" is a correct answer and must be treated as a success, not a failure.
+
+That last one deserves emphasis. A support product that never says "I don't know" is not more helpful; it is less trustworthy, and its errors are invisible.
+
+## Step 3: what a failure costs
+
+For each capability, write the worst realistic failure and who it lands on:
+
+| Failure | Cost |
+|---|---|
+| Wrong cancellation policy quoted | A customer charged unexpectedly; a complaint |
+| Another customer's booking revealed | A data breach |
+| Medical question answered | Potentially serious harm; liability |
+| Says "I don't know" too often | Mildly annoying; a human picks it up |
+
+Reading that column decides your guardrails. The bottom row is what "safe" looks like when things go wrong — and building towards that failure mode rather than away from it is the whole design stance.
+
+<Expect>
+
+The scope shrinks as you write it. Most teams start wanting an agent that handles everything and finish wanting a careful answerer that hands over quickly — because they have looked at the cost column honestly.
+
+</Expect>
+
+<Checklist
+  id="l5m1-check"
+  title="M1 done"
+  items={[
+    "Each capability has the smallest adequate shape, with a written reason",
+    "The refusal list is written and includes 'the documents do not answer this'",
+    "Each capability has its worst realistic failure and who it lands on",
+    "Nothing irreversible is in scope",
+    "A human handover path exists for everything refused"
+  ]}
+/>

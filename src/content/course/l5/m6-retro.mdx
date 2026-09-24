@@ -1,0 +1,67 @@
+---
+title: M6 · Retro — two products, one you
+summary: What the fleet actually cost, what the AI feature actually costs, and which of your beliefs the evidence contradicts.
+order: 7
+kind: milestone
+code: 'L5 · M6'
+tier: 4
+time: 3 hours
+competencies: [decide, fleet, verify]
+---
+
+## Goal
+
+A retro written from numbers you collected rather than impressions you formed, covering both the feature and the fleet.
+
+## Step 1: the feature, in numbers
+
+- **Eval score over time**, and which changes moved it. Did it improve, or just change?
+- **Handover rate.** Falling is not automatically good — it could mean the copilot is answering things it should hand over.
+- **Staff edit rate** from stage 2.
+- **Cost per conversation**, estimated versus actual.
+- **What reached a customer that should not have**, and which guardrail was missing.
+
+## Step 2: the fleet, in numbers
+
+From `fleet-log.md` across these three weeks:
+
+- How much time did Book-a-Slot's maintenance actually take while you were building this?
+- Did anything in maintenance degrade while your attention was elsewhere?
+- How many context switches did you make, and what did lesson 5.5's measurement say each costs?
+
+## Step 3: the questions worth asking an agent
+
+<Prompt title="With the evidence in front of it">
+Here are my eval history, cost metrics, handover and edit rates, fleet log and incident notes for the last three weeks. Answer using only this evidence: which change most improved the copilot, and which change I believed helped but did not? What did maintaining Book-a-Slot actually cost me while building this? Where did I spend effort that the numbers say did not matter? Do not be encouraging.
+</Prompt>
+
+The second question is the valuable one. Most people have one or two confident beliefs about what improved their AI feature that the eval history does not support.
+
+## Step 4: the honest summary of Tier 4 so far
+
+Two sentences, written down:
+
+1. **What I can now do that I could not before Tier 4.**
+2. **What I am still not confident about.**
+
+The second sentence is what Part 6 and Part 7 are for. If it is blank, you are not looking hard enough — and the mastery exam will find it instead.
+
+<Expect>
+
+The most common finding: prompt engineering felt like the main activity and retrieval quality was the main cause. The second most common: the maintenance project cost two to three times what you would have estimated, which is exactly why lesson 5.2 insists on only one project in "building" at a time.
+
+</Expect>
+
+<Checklist
+  id="l5m6-check"
+  title="Support Copilot, shipped and reviewed"
+  items={[
+    "Eval score history exists and is attributed to specific changes",
+    "Cost per conversation, estimated versus actual, is recorded",
+    "Handover and staff edit rates are recorded and interpreted",
+    "Everything that reached a customer wrongly has a named missing guardrail",
+    "The fleet log shows what maintenance actually cost during the build",
+    "One belief the evidence contradicted is written down",
+    "What I am still not confident about is written down"
+  ]}
+/>
