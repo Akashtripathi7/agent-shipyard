@@ -1,0 +1,81 @@
+---
+title: Native, cross-platform, or web
+summary: A decision that is expensive to revisit, made mostly on team and product grounds rather than technical ones.
+order: 2
+kind: arch
+code: 'A6.2'
+tier: 4
+time: 60 min
+competencies: [architecture, decide, ui]
+---
+
+<Analogy>
+  <p>Building one shop with two front doors, or two shops on the same street. Both work. One costs less to run and always feels slightly like a compromise at one of the doors.</p>
+</Analogy>
+
+## The honest comparison
+
+| | Native per platform | Cross-platform | Web / PWA |
+|---|---|---|---|
+| **Feel** | Best; platform conventions for free | Very good; occasional seams | Adequate; clearly a website on iOS |
+| **Cost** | Highest — two codebases, two skill sets | One codebase, some platform work | Lowest |
+| **Platform features** | Immediate access | Waits for a plugin, or you write one | Limited; notifications and background work are weakest |
+| **Distribution** | App stores, with review | App stores, with review | Instant; no review, no store cut |
+| **Hiring** | Two specialisms | One | Easiest |
+
+By lesson 6.1's test this is **near-irreversible**: it shapes your team, your hiring and your UI code for years. It deserves an ADR and a night's sleep.
+
+## The questions that actually decide it
+
+1. **What does the product need from the device?** Background location, Bluetooth, deep camera work and widgets push towards native. Forms, lists and simple media do not.
+2. **Who is building it, for the next two years?** One person maintaining two native codebases is two half-maintained apps.
+3. **How often must both platforms change together?** Frequent lockstep changes favour one codebase.
+4. **Does it need to be an app at all?** A great many products are a website people bookmark. Ask before accepting the premise.
+
+Note what is absent: raw performance. For the overwhelming majority of products, cross-platform performance is indistinguishable from native, and where it is not, the difference is usually in one screen you can write natively.
+
+<Callout type="tip" label="The hybrid that usually wins">
+  <p>Cross-platform for the app, with native modules for the two or three things that genuinely need them. You get one codebase for the 95% that is lists, forms and navigation, and full platform access exactly where the product demands it — without paying for two codebases everywhere else.</p>
+</Callout>
+
+## What agents changed here
+
+Less than people expect. An agent writing Swift and Kotlin does not halve the cost of two native codebases, because the expensive part was never typing — it is two sets of conventions to review, two release processes, two sets of platform bugs, and twice the surface where a change can be forgotten in one place.
+
+Where agents genuinely help: **keeping two codebases in step**. "Implement this feature in the Kotlin app to match what we just did in Swift, following the existing conventions there" is a task agents are good at, and it reduces the drift that makes two codebases painful. That moves the needle, but it does not change the category.
+
+## Releases are the part people forget
+
+Server code deploys in a minute. An app takes review time and then lives on users' phones for months (A3.5's L3 milestone). Decide before you ship:
+
+- **How many app versions the API supports**, and enforce it in contract tests.
+- **How to force an update** when a version is genuinely broken.
+- **How to turn a feature off remotely**, because you cannot recall a release.
+
+<Exercise id="plat-1" title="Decide it properly, once" time="50 min" predict="Does your product actually need to be an app?">
+
+1. List everything your product needs from the device. Mark each essential or convenient.
+2. Answer the four questions honestly, especially the second.
+3. Write the trade-off format from 6.3, including the falsifier.
+4. Ask an agent for options and which constraint is doing the most work — without stating your preference.
+5. Write the ADR, including the release policy.
+
+</Exercise>
+
+<Expect>
+
+The "does it need to be an app" question is the one that surprises people. A meaningful share of products that were built as apps needed a fast website plus push notifications — and the app existed because nobody asked the question at the start.
+
+</Expect>
+
+<Quiz
+  id="plat-q1"
+  q="Why do agents not substantially reduce the cost of maintaining two native codebases?"
+  options={[
+    "Agents write platform-specific code poorly",
+    "The cost is review, releases, platform bugs and drift — not typing",
+    "Native languages are harder to generate",
+    "App store review prevents automation"
+  ]}
+  answer={1}
+/>

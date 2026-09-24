@@ -1,0 +1,95 @@
+---
+title: Privacy and compliance, designed in
+summary: The handful of obligations that shape architecture, and the ones that are just paperwork — told apart honestly.
+order: 4
+kind: arch
+code: 'A6.4'
+tier: 4
+time: 70 min
+competencies: [architecture, security, decide]
+---
+
+<Analogy>
+  <p>Fire regulations. Most are paperwork you complete once. A few — where the exits are, which way the doors open — decide the shape of the building, and cannot be added after it is built.</p>
+</Analogy>
+
+## Which obligations are architectural
+
+This lesson is not legal advice, and the rules differ by jurisdiction and industry. What is stable is **which kinds of obligation change your design**, and those are worth knowing before you build.
+
+| Obligation | Architectural? | What it forces |
+|---|---|---|
+| **Deletion on request** | **Yes** | Knowing every place a person's data lives, including backups, logs and analytics |
+| **Data export** | **Yes** | A complete, machine-readable view per person |
+| **Data residency** | **Yes** | Where data is stored and processed; often region-partitioned infrastructure |
+| **Consent before processing** | **Yes** | Consent state that gates code paths, with an audit trail |
+| **Breach notification** | Partly | Logging good enough to know what was accessed |
+| **Records of processing** | No | Documentation |
+| **Cookie banners** | No | Frontend work |
+
+The top four are load-bearing. They are also, by lesson 6.1's test, **irreversible** — retrofitting deletion onto a system that copied personal data into six places is one of the most expensive tasks in software.
+
+## Four decisions worth making early
+
+**1. Know where personal data lives.** Keep a written inventory: which tables, which log fields, which third parties, which backups. Without it, "delete my data" is unanswerable. Add a line to AGENTS.md:
+
+> New fields holding personal data must be recorded in `docs/DATA_INVENTORY.md` in the same change.
+
+**2. Minimise.** The cheapest data to protect, export and delete is data you never collected. Every field is a permanent obligation — question each one.
+
+**3. Separate identity from behaviour.** Keep identifiable data in one place, referenced by an opaque id elsewhere. Deletion then means removing one row and letting the rest become anonymous, rather than a migration across your whole estate.
+
+**4. Decide retention per data type, and enforce it.** Automatic deletion, not a policy document. Logs, backups and analytics all need their own answer — these are where personal data quietly persists long after the record was deleted.
+
+<Callout type="warn" label="Logs and backups are where deletion fails">
+  <p>A tidy deletion of a user row means little if their email is in six months of application logs and a year of backups. Decide in advance: do not log personal data at all (much the easiest), and let deletion reconcile with backups through documented retention windows rather than pretending backups do not exist.</p>
+</Callout>
+
+## Agents and personal data
+
+Two specific risks this course has created for you:
+
+- **Personal data in prompts.** Retrieval and support features send real customer data to a model provider. That is a processing relationship: know what is sent, what is retained, and whether it is in an acceptable region. Redact what the feature does not need.
+- **Agents reading production data.** Convenient and rarely justifiable. Use realistic synthetic data (A3.5's rule against copying production into staging, again), and if an agent must touch real data, it does so through the same authorisation as any user.
+
+<Exercise id="comp-1" title="Answer a deletion request end to end" time="55 min" predict="How many places does one person's data actually live?">
+
+1. Write `docs/DATA_INVENTORY.md` for Book-a-Slot: every field holding personal data, everywhere — tables, logs, analytics, third parties, backups.
+2. Pick a real test customer. **Delete them completely.**
+3. Now search for them everywhere: database, logs, analytics, payment provider, email provider, backups.
+4. Write down each place they survived.
+5. Fix the top three, then automate the whole deletion path and add a test.
+
+</Exercise>
+
+<Expect>
+
+They survive in at least three places, almost always including logs and the payment provider. Most teams discover their deletion is a database operation that leaves personal data scattered across systems nobody thought of as storage.
+
+</Expect>
+
+<Quiz
+  id="comp-q1"
+  q="Which choice most reduces the cost of honouring deletion requests later?"
+  options={[
+    "A detailed privacy policy",
+    "Keeping identifiable data in one place, referenced by an opaque id elsewhere",
+    "Encrypting the database at rest",
+    "A consent banner on first visit"
+  ]}
+  answer={1}
+/>
+
+<Checklist
+  id="comp-check"
+  title="Before real personal data arrives"
+  items={[
+    "A data inventory lists every place personal data lives, including logs and backups",
+    "Personal data is not written to application logs",
+    "Identity is separated from behaviour by an opaque id",
+    "Retention is defined per data type and enforced automatically",
+    "Deletion and export are automated and tested end to end",
+    "What is sent to model providers is known, minimised and region-appropriate",
+    "Agents never touch production personal data outside normal authorisation"
+  ]}
+/>

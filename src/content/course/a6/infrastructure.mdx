@@ -1,0 +1,99 @@
+---
+title: Infrastructure as code
+summary: Making the environment something you can read, review and recreate — and why that matters more once agents can change it.
+order: 3
+kind: arch
+code: 'A6.3'
+tier: 4
+time: 70 min
+competencies: [architecture, operate, security]
+---
+
+<Analogy>
+  <p>The difference between a recipe and a dish someone made from memory. You can review a recipe, share it, and make the same thing next year. The remembered dish exists once, and dies with the memory.</p>
+</Analogy>
+
+## The test
+
+**Could you recreate your entire production environment from an empty account, using only what is in the repository?**
+
+If the answer is no, you have configuration that exists only in a console and in someone's memory. That is where staging drifts from production (A3.5's Breaks box), where the undocumented environment variable lives, and where a recovery turns into archaeology.
+
+## What you get, beyond disaster recovery
+
+- **Review.** An infrastructure change arrives as a diff. A firewall rule opening a port to the world is visible in a pull request rather than discovered in an audit.
+- **Environments that genuinely match.** Same template, different values.
+- **A history.** Who changed the database size, when, and why — with a commit message.
+- **Repeatability.** A new environment for a customer, a region or a test is a parameter, not a project.
+
+## Where agents change the stakes
+
+Agents can write infrastructure code well — it is declarative, well-documented and pattern-heavy. That is genuinely useful and it raises the stakes, because **the blast radius of infrastructure is total**. A mistaken application change breaks a feature; a mistaken infrastructure change deletes a database.
+
+Three rules:
+
+1. **Agents propose; the plan is reviewed; a human applies.** Never give an agent credentials that can apply to production. This is the clearest case in the whole course for a permission deny rule.
+2. **Always read the plan output**, specifically for anything that says *destroy* or *replace*. A resource being replaced rather than updated is how a database gets recreated empty.
+3. **Protect stateful resources** with deletion protection and lifecycle rules that refuse destruction, at the provider level. Make the dangerous thing impossible rather than discouraged — a law, not a request.
+
+<Callout type="warn" label="The two-word review">
+  <p>In a plan, <b>replace</b> means destroy and create. On a stateless service that is routine; on a database, a disk or a queue it means the data is gone. Search every plan for <code>replace</code> and <code>destroy</code> before approving, and treat their appearance on a stateful resource as a stop.</p>
+</Callout>
+
+## State and secrets
+
+- **State goes in shared, locked, versioned remote storage.** Local state means two people — or two agents — can apply conflicting changes with no warning.
+- **Secrets never go in the templates.** Reference a secret manager; commit the reference, not the value. Your pre-commit gate from lesson 4.7 already checks this, and infrastructure files are exactly where a secret slips in unnoticed.
+
+## Start small and useful
+
+You do not need to codify everything at once. Order by pain:
+
+1. The things you recreate most often — environments, containers, databases.
+2. The things that are most dangerous to get wrong — networking, permissions.
+3. The things nobody understands any more.
+
+That last category is the real prize. Anything only one person understands is a risk, and writing it down as code is how it stops being one.
+
+<Exercise id="iac-1" title="Recreate an environment from nothing" time="60 min" predict="What will be missing when you try?">
+
+1. Codify your staging environment for one project.
+2. Destroy staging entirely.
+3. Recreate it from the code. **Time it.**
+4. Write down everything you had to do by hand — that list is your drift.
+5. Codify the list. Add deletion protection to every stateful resource.
+6. Give an agent read-only credentials, have it propose a change, and read its plan without applying.
+
+</Exercise>
+
+<Expect>
+
+Two or three manual steps appear, typically a DNS record, an environment variable set by hand months ago, or a permission granted during an incident. Each one was invisible until the environment was gone — which is exactly the situation you do not want to discover during a real recovery.
+
+</Expect>
+
+<Quiz
+  id="iac-q1"
+  q="An infrastructure plan says a database will be replaced. What should happen?"
+  options={[
+    "Apply it; replace is a normal operation",
+    "Stop — replace means destroy and create, and the data would be lost",
+    "Apply it during a maintenance window",
+    "Take a backup, then apply"
+  ]}
+  answer={1}
+/>
+
+<Checklist
+  id="iac-check"
+  title="Infrastructure worth trusting"
+  items={[
+    "Production could be recreated from the repository alone",
+    "State is remote, locked and versioned",
+    "No secret values appear in any template",
+    "Agents have read-only infrastructure credentials; humans apply",
+    "Every plan is read for replace and destroy before approval",
+    "Stateful resources have deletion protection at the provider level",
+    "Staging and production come from one template with different values"
+  ]}
+/>

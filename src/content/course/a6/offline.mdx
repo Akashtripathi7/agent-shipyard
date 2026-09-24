@@ -1,0 +1,107 @@
+---
+title: Offline-first and sync
+summary: Designing for a network that is missing, slow or lying — and what it costs to let two devices edit the same thing.
+order: 1
+kind: arch
+code: 'A6.1'
+tier: 4
+time: 75 min
+competencies: [architecture, decide]
+---
+
+<Analogy>
+  <p>Two people editing the same paper diary, in different cities, both certain theirs is current. The hard part was never the writing. It is the afternoon they compare.</p>
+</Analogy>
+
+## Offline-first is a product decision first
+
+"Works offline" ranges from trivial to a research project, and the range is entirely about **writes**:
+
+| Level | What it means | Cost |
+|---|---|---|
+| **Read cache** | Last-seen data visible offline; writes need the network | Low |
+| **Queued writes** | Writes queue and send when connected | Moderate — needs idempotency and ordering |
+| **Full offline** | Everything works offline indefinitely; devices reconcile | High — conflicts become a permanent feature |
+
+Most products need the first two. Pick the highest level you genuinely need and no more, because level three changes your data model permanently.
+
+## The parts you cannot skip at level two
+
+- **A local store** that is the app's source of truth for display, so the UI never waits on the network to render.
+- **An outbox**: pending writes, durably stored, retried with backoff.
+- **Idempotency**, exactly as in A3.3 — the client generates a stable id per operation so a retry cannot duplicate it. This is the single most important detail.
+- **Visible state**: pending, synced, failed. A change that silently has not reached the server is a lie the interface is telling.
+
+<Callout type="warn" label="Client clocks are not trustworthy">
+  <p>Device clocks are wrong, sometimes by hours, sometimes deliberately. Never resolve conflicts with a client timestamp alone. Use server time on arrival, or a logical counter per record — a version number that increments — so ordering does not depend on anyone's clock being honest.</p>
+</Callout>
+
+## Conflicts: choose your policy explicitly
+
+Two devices edited the same record. Someone must decide, and pretending otherwise just means it gets decided accidentally.
+
+| Policy | Behaviour | Right for |
+|---|---|---|
+| **Last write wins** | Newest version replaces | Single-user data where loss is tolerable |
+| **Field-level merge** | Per-field, newest wins | Records where fields are independent |
+| **Append-only** | Never edit; add entries | Logs, ledgers, messages — *conflict-free by construction* |
+| **CRDTs** | Converge automatically | Collaborative text; genuinely complex |
+| **Ask the user** | Show both, let them choose | Rare, valuable, irreversible data |
+
+**The best conflict strategy is a data model that cannot conflict.** An append-only ledger where the balance is derived has no conflicts at all — the same insight as A3.4's "keep the raw data". Reach for that before reaching for CRDTs.
+
+## Sync protocol, minimum viable
+
+Pull changes since a cursor, push the outbox, handle rejections, repeat. Three details decide whether it works:
+
+1. **A cursor, not a timestamp.** A monotonic sequence the server owns. Timestamps have ties and clock skew; cursors do not.
+2. **Deletes are tombstones.** A deleted record must sync as a deletion — a record that simply vanishes from a response is indistinguishable from one the server did not send.
+3. **The server may reject.** Permissions changed, the record is gone, the version is stale. The client needs a path for every rejection, and "silently drop it" is not one.
+
+<Exercise id="off-1" title="Break sync on purpose, three ways" time="60 min" predict="Which of the three leaves the worst state behind?">
+
+1. Add a local store and an outbox to Pocket Ledger, with visible pending state.
+2. **Duplicate test**: go offline, add an expense, restore the network, force the outbox to send twice. Exactly one expense should exist.
+3. **Conflict test**: edit the same expense on two devices while both are offline. Bring both online. What happens? Is it what your policy says?
+4. **Delete test**: delete on device A while device B is offline for a day. Reconnect B. Does the record disappear, or come back?
+5. **Clock test**: set one device's clock back two hours and repeat the conflict test.
+
+</Exercise>
+
+<Expect>
+
+The delete test is usually the one that fails — without tombstones, device B re-uploads the record it still has and the deletion is silently undone. The clock test is a close second: last-write-wins with client timestamps means the device with the wrong clock always wins, permanently.
+
+</Expect>
+
+<IfNot>
+
+If the duplicate test produced two expenses, the idempotency key is being generated at send time rather than when the user acted. It must be created with the operation and stored in the outbox, so every retry carries the same one.
+
+</IfNot>
+
+<Quiz
+  id="off-q1"
+  q="Why resolve conflicts with a server-assigned version rather than a client timestamp?"
+  options={[
+    "Versions are smaller to transmit",
+    "Device clocks are unreliable, so the wrongest clock would always win",
+    "Timestamps cannot express ordering",
+    "Versions are easier to index"
+  ]}
+  answer={1}
+/>
+
+<Checklist
+  id="off-check"
+  title="Before shipping offline support"
+  items={[
+    "The offline level is chosen deliberately and written down",
+    "Idempotency keys are created with the operation, not at send time",
+    "Pending, synced and failed states are visible to the user",
+    "Conflict policy is explicit and matches what the code does",
+    "Deletes sync as tombstones",
+    "Ordering never depends on a client clock",
+    "Every server rejection has a client-side path"
+  ]}
+/>
