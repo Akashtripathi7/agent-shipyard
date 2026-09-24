@@ -1,0 +1,104 @@
+---
+title: Cost and latency, by design
+summary: An AI feature has a per-request bill and a per-request wait. Both are architecture decisions, and both are easier to fix before launch than after.
+order: 4
+kind: arch
+code: 'A5.4'
+tier: 4
+time: 65 min
+competencies: [architecture, decide, operate]
+---
+
+<Analogy>
+  <p>A taxi meter. Every feature you add is another minute running. You would not design a route without knowing the fare — and you certainly would not let the passenger choose an unlimited one.</p>
+</Analogy>
+
+## Two budgets, decided before you build
+
+Write these numbers down first, the same way A4.4 made you write a latency budget:
+
+- **Cost per request**, and per user per day. Work back from what the feature is worth: if a support answer saves five minutes of staff time, it can justify a few pence — and not more.
+- **Latency budget.** What the user is waiting for, end to end, at p95.
+
+Both come from the product, not from the technology.
+
+## Where the cost actually goes
+
+Usually not where people assume. The largest input is almost always **the context you send**, not the answer you get back:
+
+| Lever | Typical effect | Cost to you |
+|---|---|---|
+| **Send fewer retrieved chunks** | Large | Free; often *improves* quality |
+| **Use a smaller model for easy cases** | Large | Routing logic and an eval set to prove it is safe |
+| **Cache repeated prefixes** | Large on chatty systems | Minor plumbing |
+| **Cache whole answers to common questions** | Very large | Invalidation, as in A3.4 |
+| **Shorten the system prompt** | Moderate | Some rewriting |
+| **Reduce maximum output length** | Small to moderate | Product decision |
+
+**Routing is the biggest structural win.** Most questions are easy. Classify cheaply, send the easy ones to a small fast model, escalate the rest — and prove with your eval set that the small model is adequate for the class you route to it, rather than assuming.
+
+## Latency is a product problem
+
+You cannot make a model instant, so design the wait:
+
+- **Stream the response.** The perceived wait is time-to-first-token, not total time, and streaming often changes an unacceptable feature into a comfortable one without making anything faster.
+- **Do retrieval in parallel** with anything else you need.
+- **Say what is happening.** "Looking through your booking history…" beats a spinner, and it is honest.
+- **Have a timeout and a fallback** — a handover to a human, or a cached answer. A provider outage must degrade the feature, not the product.
+
+## Watch the right numbers
+
+Per feature, tracked like any other service (A4.6): **cost per request**, **tokens in and out**, **p50/p95/p99 latency**, **cache hit rate**, **error and timeout rate**, and **fallback rate**.
+
+Alert on cost per user per day exceeding the budget, and on fallback rate climbing — a rising fallback rate is usually the first sign that something upstream is unwell.
+
+<Callout type="warn" label="The runaway loop">
+  <p>An agent loop with no iteration cap and a tool that can fail will retry until something stops it. In development that is an afternoon's spend; in production, with concurrent users, it is a bill that arrives before the alert does. <b>Cap iterations, cap tokens per request, cap spend per user per day</b> — all three, in code.</p>
+</Callout>
+
+<Exercise id="a5c-1" title="Halve the cost without losing quality" time="55 min" predict="Which lever will give the biggest reduction? Guess before measuring.">
+
+1. Instrument your feature: tokens in, tokens out, cost and latency per request.
+2. Run your eval set and record baseline cost, p95 latency and quality score.
+3. Apply one lever at a time, re-running the evals after each: fewer chunks; prefix caching; routing easy cases to a smaller model.
+4. Plot cost against quality after each change.
+5. Stop at the point where quality starts to fall.
+
+</Exercise>
+
+<Expect>
+
+Sending fewer retrieved chunks usually cuts cost substantially **and** improves quality, because irrelevant context distracts the model. That is the counter-intuitive result worth internalising: for retrieval, more context is often worse as well as more expensive.
+
+</Expect>
+
+<IfNot>
+
+If quality fell as soon as you cut chunks, your reranking is weak — you are relying on quantity to make sure the right passage is somewhere in the pile. Fix ranking first, then cut.
+
+</IfNot>
+
+<Quiz
+  id="a5c-q1"
+  q="A support answer feature costs three times its budget. What do you try first?"
+  options={[
+    "Switch every request to the smallest available model",
+    "Reduce the number of retrieved chunks sent as context",
+    "Shorten the maximum output length",
+    "Cache every answer for 24 hours"
+  ]}
+  answer={1}
+/>
+
+<Checklist
+  id="a5c-check"
+  title="Before an AI feature ships"
+  items={[
+    "Cost per request and per user per day are budgeted from product value",
+    "A p95 latency budget exists and is measured",
+    "Iterations, tokens per request and daily spend per user are capped in code",
+    "Responses stream, and the wait is explained honestly",
+    "There is a timeout and a fallback that degrades the feature, not the product",
+    "Cost, latency, cache hit rate and fallback rate are on a dashboard with alerts"
+  ]}
+/>

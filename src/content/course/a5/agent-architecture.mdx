@@ -1,0 +1,88 @@
+---
+title: Designing a product that contains an agent
+summary: Everything so far used agents to build software. This is about shipping software that contains one — a different job, with different failure modes.
+order: 1
+kind: arch
+code: 'A5.1'
+tier: 4
+time: 75 min
+competencies: [architecture, decide]
+---
+
+<Analogy>
+  <p>The difference between hiring a skilled assistant and putting one behind your reception desk. Privately, their occasional mistake costs you a moment. Facing customers, it is your reputation, your liability, and it happens at three in the morning while nobody is watching.</p>
+</Analogy>
+
+## The flip
+
+Until now the agent was your tool, you reviewed its output, and a mistake cost you time. Now the agent is **inside your product**, a customer sees its output unreviewed, and a mistake is a support ticket or a refund.
+
+That changes the whole design problem. Three things you had are gone:
+
+- **You are no longer in the loop.** Nothing catches the bad answer before a user reads it.
+- **The input is hostile.** Users will try to make it misbehave, and some will succeed.
+- **It must be affordable and fast, per request**, at whatever volume you have.
+
+## Four shapes, from cheapest to most capable
+
+Most AI features people build as agents should not be agents. Work down this list and stop at the first that fits:
+
+| Shape | What it is | Good for | Cost and risk |
+|---|---|---|---|
+| **A single call** | One prompt, one response | Summarise, classify, rewrite, extract | Lowest; predictable |
+| **A chain** | Fixed sequence of calls | Multi-step with known steps | Low; still predictable |
+| **Retrieval-augmented** | Fetch facts, then answer | Answering from *your* documents | Moderate; retrieval is the hard part |
+| **An agent** | Model chooses tools in a loop | Open-ended tasks with real actions | Highest; unbounded paths |
+
+**The question to ask: does the model need to decide what to do next, or do I already know?** If you know the steps, a chain is cheaper, faster, far easier to test, and cannot surprise you. Reserve the agent loop for genuinely open-ended work.
+
+<Callout type="warn" label="Support Copilot is a retrieval product, not an agent">
+  <p>L5 answers customer questions from your documentation. That is retrieval plus a single call. It becomes an agent only for the few actions it may take — looking up a booking, raising a ticket — and those get handled as tools with hard limits, not as free rein.</p>
+</Callout>
+
+## The boundary that matters
+
+Draw the trust boundary the same way you did in A2, then notice where it now sits:
+
+- **Model output is untrusted input.** Never execute it, never interpolate it into SQL or a shell command, never trust it to have respected an instruction. If the model returns an id, authorise that id as if a user had typed it.
+- **Every tool the agent may call is an API you are exposing to a partially-controlled caller.** Apply A3.2's permission check inside the tool, with the *end user's* identity — not the service's.
+- **Retrieved documents are untrusted too.** A document containing "ignore previous instructions" is a prompt injection with your own knowledge base as the delivery mechanism.
+
+That last one surprises people. If users can add content that later gets retrieved, your knowledge base is an input channel.
+
+## What must not be decided by a model
+
+Write this list for your product before you build:
+
+- Anything **irreversible**: refunds, cancellations, deletions, sending money.
+- Anything **regulated**: medical, legal or financial advice.
+- Anything **about authorisation**. The model may not decide who can see what, ever.
+
+These get a human confirmation step, or they are not features.
+
+<Exercise id="a5a-1" title="Pick the smallest shape that works" time="50 min" predict="How many of your AI feature ideas actually need an agent loop?">
+
+1. List five AI features you might add to Book-a-Slot: summarise a customer's history, draft a reply, answer a policy question, reschedule on request, flag unusual bookings.
+2. For each, choose the smallest shape from the table and write why the shape below it is insufficient.
+3. For any you marked "agent", list exactly which tools it needs and what each one can do at its most damaging.
+4. Mark which features touch the do-not-decide list.
+
+</Exercise>
+
+<Expect>
+
+Usually one of the five genuinely needs an agent loop, and it is the rescheduling one — because it must take an action. Everything else is retrieval or a single call. Building all five as agents would have cost several times as much and introduced failure modes none of them needed.
+
+</Expect>
+
+<Quiz
+  id="a5a-q1"
+  q="A model returns a booking id and your code fetches that booking. What must you do?"
+  options={[
+    "Nothing; the model only sees the user's own bookings",
+    "Authorise the id against the end user, as if they had typed it",
+    "Validate the id's format",
+    "Log the id for auditing"
+  ]}
+  answer={1}
+/>

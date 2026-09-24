@@ -1,0 +1,108 @@
+---
+title: Evaluations and guardrails
+summary: How you know a change made the product better rather than different, and what stands between a bad generation and your customer.
+order: 3
+kind: arch
+code: 'A5.3'
+tier: 4
+time: 80 min
+competencies: [verify, architecture, security]
+---
+
+<Analogy>
+  <p>A restaurant kitchen. The tasting spoon is the evaluation — you check before it leaves. The allergy check is the guardrail — it runs on every dish, no exceptions, however busy service gets.</p>
+</Analogy>
+
+## Without evals you are guessing
+
+Change a prompt and some answers get better and some get worse. Without measurement you will notice the improvements, because you were looking for them, and miss the regressions. **This is the single biggest difference between an AI feature that improves over time and one that drifts.**
+
+An eval set is the test suite for behaviour you cannot assert exactly.
+
+### Building one that is worth having
+
+- **Start with 30–50 real cases.** From actual users where possible. Twenty real questions beat two hundred invented ones.
+- **Include the hard ones deliberately**: ambiguous questions, questions your product *cannot* answer, hostile inputs, and questions whose correct answer is "I don't know".
+- **Grade what matters**, and pick the cheapest adequate method per case:
+
+| Method | Use for | Cost |
+|---|---|---|
+| **Exact / structural checks** | Format, valid JSON, required fields, citation present | Free, run always |
+| **Deterministic rules** | Refused when it should, cited a real passage, no PII | Cheap |
+| **Model as judge** | Helpfulness, tone, whether it answered the question | Moderate; needs its own validation |
+| **Human review** | A sample, always | Expensive; irreplaceable |
+
+<Callout type="warn" label="Validate the judge">
+  <p>A model grading model output is convenient and quietly unreliable. Before trusting it, have a human grade 30 cases and check the judge agrees. If it does not agree with you, its scores are noise with a number attached — and you will optimise towards the noise.</p>
+</Callout>
+
+### Run them like tests
+
+Evals belong in CI on any change to a prompt, a model, a retrieval parameter or a tool. Report the score and the **diff against the last run** — which cases changed, in which direction. The regressions are the point; the aggregate score hides them.
+
+## Guardrails: what runs on every single request
+
+Evals tell you about quality in aggregate. Guardrails protect *this* user, right now.
+
+**On the way in:**
+- Length and rate limits, per user.
+- Reject or strip obvious injection attempts — and do not rely on this catching everything.
+- Never put secrets in the prompt. The system prompt is not confidential; assume it will be extracted.
+
+**On the way out:**
+- Structural validation. If you expect JSON, parse it — never regex it out of prose.
+- Check citations resolve to real retrieved passages.
+- Scan for personal data and for content your product must not emit.
+- **Confirm before anything irreversible.** The do-not-decide list from A5.1, enforced in code rather than requested in the prompt.
+
+**Around it:**
+- A timeout and a fallback answer. A model provider outage must degrade the feature, not the product.
+- A cost ceiling per user per day.
+- Log the prompt, the retrieved context, the output and the decision — you cannot debug what you did not record.
+
+<Callout type="tip" label="The framing that keeps this simple">
+  <p>An instruction in a prompt is a <b>request</b>. Code that checks the output is a <b>law</b>. Lesson 4.7's principle again: guardrails are laws, so they live in your application, not in your system prompt.</p>
+</Callout>
+
+<Exercise id="a5e-1" title="Build an eval set and catch a regression with it" time="70 min" predict="Will the 'better' prompt actually score higher?">
+
+1. Collect 40 cases: 25 normal, 10 that should be refused or answered "I don't know", 5 hostile.
+2. Write graders — structural and rule-based first; use a model judge only where you must, and validate it against your own grading on 30 cases.
+3. Record a baseline.
+4. Make a prompt change you believe is an improvement.
+5. Re-run. Read the per-case diff, not the aggregate.
+
+</Exercise>
+
+<Expect>
+
+The "improvement" helps some cases and breaks others — very often the refusals, because a prompt that encourages helpfulness makes the model answer things it should decline. Without the eval set you would have shipped that, noticed the better answers, and never seen the new over-confidence.
+
+</Expect>
+
+<Quiz
+  id="a5e-q1"
+  q="Where does the rule 'never refund without human confirmation' belong?"
+  options={[
+    "In the system prompt, stated firmly",
+    "In application code that gates the refund tool",
+    "In the eval set, as a case to check",
+    "In the documentation for the support team"
+  ]}
+  answer={1}
+/>
+
+<Checklist
+  id="a5e-check"
+  title="Before an AI feature faces customers"
+  items={[
+    "An eval set of at least 30 real cases, including refusals and hostile inputs",
+    "Evals run in CI on any prompt, model, retrieval or tool change",
+    "Results are reported as a per-case diff, not only an aggregate",
+    "Any model judge has been validated against human grading",
+    "Output is structurally validated, and citations are verified to exist",
+    "Irreversible actions require confirmation, enforced in code",
+    "There is a timeout, a fallback and a per-user cost ceiling",
+    "Prompt, context, output and decision are logged"
+  ]}
+/>
