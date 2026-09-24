@@ -1,0 +1,65 @@
+---
+title: M4 · Sync, built by the crew
+summary: Two builders, two worktrees, one contract — your first genuinely parallel run, and the first time you measure your own interventions.
+order: 5
+kind: milestone
+code: 'L2 · M4'
+tier: 3
+time: 4 hours
+competencies: [orchestrate, build, verify]
+---
+
+## Goal
+
+Push and pull working end to end, built by `api-builder` and `crypto-builder` in parallel, with a log of every time you had to step in.
+
+## Why measure your interventions
+
+A crew is worth it only if it costs you less attention than doing the work serially. The only way to know is to count. Keep a file open — `docs/crew-log.md` — and write one line every time you intervene: what happened, and which failure mode from lesson 4.11 it was.
+
+## Step 1: brief both builders from the contract
+
+Each builder gets an outcome, the contract path, boundaries and required proof — and **neither gets told about the other's internals**. That is the point of the contract.
+
+<Prompt title="api-builder, in its worktree">
+Build push and pull in the sync service, exactly to docs/api/openapi.yaml. The server stores opaque ciphertext and must never attempt to interpret it. Test-first, with integration tests against a real Postgres in Docker. Include the cross-account test: user A cannot read user B's items by id. End with a handoff note. Do not modify the OpenAPI file — if it is wrong, stop and tell me.
+</Prompt>
+
+The last sentence is the contract-ownership rule from lesson 4.11 made explicit. Expect it to be tested at least once.
+
+## Step 2: let them run, and resist
+
+While they work, your job is to *not* fix things. When a builder errs, hand it back with evidence — the third delegation mistake from lesson 4.1. Log each one.
+
+## Step 3: integrate
+
+Merge both branches and run the full check script plus the contract tests. This is where the failures from 4.11 show up if they are going to:
+
+| Symptom | Likely cause | Where to look |
+|---|---|---|
+| Contract tests fail | Someone edited the contract, or built against a stale copy | `git log docs/api/openapi.yaml` |
+| Both branches green, integration red | Each tested against its own assumptions | The generated client versus the server schema |
+| A change from earlier is missing | Silent overwrite | Compare each handoff against the actual diff |
+
+## Step 4: read your log
+
+Count the interventions and sort them. Three or fewer, mostly ambiguity in your brief, means the crew is paying for itself. Ten, mostly the same failure repeating, means you have a missing gate rather than a bad agent.
+
+<Expect>
+
+Most people's first parallel run costs four to six interventions, and at least one is the contract being edited by a builder. The log turns that from a frustration into the specific next gate to add.
+
+</Expect>
+
+<Checklist
+  id="l2m4-check"
+  title="M4 done"
+  items={[
+    "Push and pull work end to end against the real server",
+    "The database contains only ciphertext, and I have looked at a row to confirm",
+    "A cross-account test proves user A cannot read user B's items",
+    "Both builders ended with a handoff note that matches their actual diff",
+    "docs/crew-log.md lists every intervention and its failure mode",
+    "Contract tests pass against the generated client"
+  ]}
+/>

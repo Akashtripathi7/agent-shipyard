@@ -1,0 +1,74 @@
+---
+title: M3 · The crypto core
+summary: The one slice that gets the full GA treatment, built test-first against known answers rather than against its own output.
+order: 4
+kind: milestone
+code: 'L2 · M3'
+tier: 3
+time: 4 hours
+competencies: [security, build, verify]
+---
+
+## Goal
+
+A device-side library that turns a master password into a key, encrypts and decrypts items, and has been proven correct against test vectors that no agent in this project wrote.
+
+## Why this is the GA slice
+
+Your WORKFLOW.md has depth levels. This is the one that gets every layer: spec, test-first build, verification with evidence, second-model review, and a human read of every line. If you only read one diff carefully in this whole project, read this one.
+
+## Step 1: test vectors first
+
+This is the defence against cascading hallucination from lesson 4.11. If the agent writes both the implementation and the tests, they will agree with each other and may both be wrong.
+
+<Prompt title="Before any implementation">
+Write failing tests for the crypto core using published test vectors from the algorithm specifications — the official RFC or reference vectors for Argon2id and for the AEAD cipher we chose. Cite the source of each vector in a comment. Do not write any implementation. If you cannot find an authoritative vector for something, say so rather than inventing one.
+</Prompt>
+
+Vectors with a citation you can check are the fixed point that makes the rest trustworthy. **Verify two of the citations yourself.**
+
+## Step 2: develop against the ADR
+
+`/clear`, then develop the implementation until the vector tests pass. Then add behaviour tests:
+
+1. Encrypting the same plaintext twice produces different ciphertext (unique nonces).
+2. Tampering with one byte of ciphertext causes decryption to **fail**, not return garbage.
+3. The wrong master password fails to unlock, with the same error and the same timing as any other failure.
+4. Changing the master password re-wraps the data key without re-encrypting every item.
+5. The derived key never appears in a log, an error message or a stack trace.
+
+## Step 3: verify with evidence
+
+`/clear`, then verify criterion by criterion with real output. For criterion 5, the evidence is a grep over logs after a full run, not an assurance.
+
+## Step 4: security review, different model
+
+<Prompt title="Fresh session, different model if possible">
+Review this crypto core against docs/adr/0002-crypto.md. You did not write it. Check every parameter against the ADR. Check for: reused nonces, keys kept in memory longer than needed, non-constant-time comparisons, anything custom, and any path where a decryption failure is distinguishable from a wrong password. Report severity, file and line, what an attacker does with it, and the fix.
+</Prompt>
+
+<Expect>
+
+The review finds something — most often a key held in a variable longer than necessary, or an error path that distinguishes "wrong password" from "corrupt data", which tells an attacker whether a guess was close. Both are real, both are easy to fix once named.
+
+</Expect>
+
+<IfNot>
+
+If the review found nothing at all, it probably reviewed against general good practice rather than against your ADR. Re-run it with the ADR pasted in and ask it to check parameter by parameter.
+
+</IfNot>
+
+<Checklist
+  id="l2m3-check"
+  title="M3 done"
+  items={[
+    "Tests use published vectors, cited, and I checked two citations myself",
+    "Tampered ciphertext fails to decrypt rather than returning garbage",
+    "Nonces are unique per encryption and that is tested",
+    "A password change re-wraps the data key without touching item ciphertext",
+    "No key, password or plaintext appears in any log, verified by grep",
+    "A different model reviewed it against the ADR and its findings are resolved",
+    "I have read every line of this diff myself"
+  ]}
+/>

@@ -1,0 +1,62 @@
+---
+title: M5 · The app, and the honest unlock
+summary: An interface where the security model is visible rather than hidden, and where the worst moment is designed rather than stumbled into.
+order: 6
+kind: milestone
+code: 'L2 · M5'
+tier: 3
+time: 4 hours
+competencies: [ui, build, verify]
+kit: [ui-tokens]
+---
+
+## Goal
+
+A Flutter app that unlocks, lists, adds and copies — with tokens, an evidenced UI, and a designed answer to "I forgot my master password".
+
+## Step 1: tokens before screens
+
+Lesson 4.10's rule applies from the first screen. Add `LedgerTokens`-style design tokens and the AGENTS.md line making raw values a review finding, then build the components — field, list row, button — before assembling any screen.
+
+## Step 2: the unlock screen
+
+Three requirements that are easy to get wrong and expensive to get wrong:
+
+1. **Unlocking takes a moment, on purpose.** Argon2id is meant to be slow. Do not weaken the parameters to make it snappy — show progress and explain it. A deliberate second of work is a feature you can describe honestly to a user.
+2. **Wrong password fails identically every time.** Same message, same timing. Different timings leak whether a guess was close.
+3. **The vault locks itself** — on background, on timeout. Test that the decrypted contents are actually gone from memory, not just hidden behind a screen.
+
+## Step 3: the moment the product's promise costs something
+
+<Prompt title="Design the failure honestly">
+Design the "I forgot my master password" flow. The truth is that the data is unrecoverable, because that is the product's guarantee. Write the copy for this screen so it is honest and not cruel, and tell me where else in the product the user should have been warned so this moment is not a surprise. Do not invent a recovery mechanism.
+</Prompt>
+
+This is the most important screen in the product. A password manager that could recover your data would be a password manager whose operator could read it. The interface has to carry that trade-off, which means warning the user **at setup**, not at the moment of loss.
+
+## Step 4: prove it with evidence
+
+Ask for the four artefacts from lesson 4.10 — default screenshot, 320px, 200% text scale, and the accessibility check listing tap targets under 48dp — plus two specific to this product:
+
+- A screenshot of the app in the **locked** state, taken from the OS task switcher, showing that vault contents are not visible in the preview.
+- The clipboard clearing after the stated timeout, demonstrated.
+
+<Expect>
+
+The task-switcher preview is the one that fails. Most apps show a live snapshot of the last screen, which means a passwords list sits in the OS switcher for anyone who picks up the phone. Fixing it is a few lines; finding it needs someone to think of looking.
+
+</Expect>
+
+<Checklist
+  id="l2m5-check"
+  title="M5 done"
+  items={[
+    "All spacing, colour, radius and duration values come from tokens",
+    "Wrong password fails with identical message and timing",
+    "The vault locks on background and on timeout, and memory is cleared",
+    "The task-switcher preview does not show vault contents",
+    "Clipboard clears after a stated timeout, demonstrated",
+    "The forgotten-password flow is honest, and the warning appears at setup",
+    "Four UI evidence artefacts exist and I have looked at all four"
+  ]}
+/>

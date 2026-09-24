@@ -1,0 +1,74 @@
+---
+title: M2 · The contract and your crew
+summary: Fix the interface between the three surfaces, then define the roles that will build them. Both before any builder starts.
+order: 3
+kind: milestone
+code: 'L2 · M2'
+tier: 3
+time: 3 hours
+competencies: [orchestrate, architecture, brief]
+kit: [agent-backend, agent-app, agent-code-reviewer, agent-security, worktreeinclude]
+---
+
+## Goal
+
+An approved API contract, a generated client, and four role files in `.claude/agents/` — so that when builders start, there is nothing left to disagree about.
+
+## Why both, before anything is built
+
+Lesson 4.2 gave the test for splitting work: independent, and only **after the contract is fixed**. This milestone is that sentence turned into two hours of work. Skip it and you get the failure from 4.2's Breaks box — two builders inventing two incompatible request formats.
+
+## Step 1: the contract
+
+<Prompt title="Architect, fresh session">
+/architect the sync API for Vault. The server stores encrypted items it cannot read. Define in OpenAPI: register, log in, push items, pull items since a timestamp, and delete. Every item is an opaque ciphertext blob plus a nonce and a version. Decide how conflicts are represented when the same item changed on two devices. Write the OpenAPI file to docs/api/openapi.yaml. Do not design the client or the storage layer.
+</Prompt>
+
+Check the contract yourself before approving. The two things most often wrong:
+
+- **The server is accidentally given something it can read** — a plaintext title "so the list can be searched". That breaks the product's promise. If search matters, it happens on the device.
+- **Conflicts are undefined.** Two devices editing one item offline is normal, not exceptional. Decide now: last-write-wins with a version, or keep both and let the user choose. Write which, and why.
+
+Then generate the app's client from the file. From here, the app cannot drift from the server without a compile error.
+
+## Step 2: the crew
+
+Copy the four roles from your kit and edit each description to mention Vault specifically:
+
+| Role | Owns | Tools |
+|---|---|---|
+| `architect` | The contract, the ADRs | Read, Grep, Glob, Write |
+| `crypto-builder` | The device-side encryption core | Read, Edit, Write, Bash — `isolation: worktree` |
+| `api-builder` | The sync service | Read, Edit, Write, Bash — `isolation: worktree` |
+| `security-reviewer` | Checking implementation against the ADR | Read, Grep, Glob, Bash — **never edits** |
+
+Add one line to `AGENTS.md` that will earn its keep all project:
+
+> Cryptographic parameters come from `docs/adr/0002-crypto.md`. Any deviation, however small, is a blocking review finding.
+
+## Step 3: prove the fences
+
+Before trusting the crew, test it the way you did in lesson 4.5:
+
+1. Ask `security-reviewer` to fix something. It cannot — no Edit tool.
+2. Ask `api-builder` to change the OpenAPI file. It should refuse or ask; only the architect owns the contract.
+3. Start both builders in worktrees and confirm `.worktreeinclude` copied `.env` into each.
+
+<Expect>
+
+Each fence holds, or you find out now rather than during a feature. The third check catches the most common setup mistake: a builder in a fresh worktree that cannot connect to anything because its environment file never arrived.
+
+</Expect>
+
+<Checklist
+  id="l2m2-check"
+  title="M2 done"
+  items={[
+    "docs/api/openapi.yaml is approved by you and owned by the architect alone",
+    "The server never receives a field it could read",
+    "Conflict behaviour is decided and written down",
+    "The app's API client is generated from the contract, not hand-written",
+    "Four role files exist, each with the minimum tools",
+    "The reviewer cannot edit, and I have verified that by asking it to"
+  ]}
+/>

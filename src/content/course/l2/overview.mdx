@@ -1,0 +1,50 @@
+---
+title: Vault, project overview
+summary: A zero-knowledge password manager, built by your first small crew behind real security gates, where the server can never read what it stores.
+order: 1
+kind: overview
+code: 'L2'
+tier: 3
+time: 16–20 hours over 2–3 weeks
+competencies: [architecture, security, orchestrate, verify]
+---
+
+## What you're building
+
+Vault stores passwords for one person across their phone and their laptop. The point of the product is a promise: **the server can never read anything you store in it.** Everything is encrypted on the device with a key derived from your master password, which never leaves the device. The server holds ciphertext it cannot open.
+
+That promise is what makes this the right second project. It is a small product with an uncompromising constraint, and the constraint is the teacher.
+
+## Why this project, at this point
+
+L1 taught you the loop with one agent. Vault adds exactly two things:
+
+- **A crew.** Three genuinely independent surfaces — crypto core, sync API, app — with a contract between them. Small enough that coordination is learnable rather than overwhelming.
+- **Security that cannot be bolted on.** Get the key handling wrong and no amount of later review saves you. This is where A2's trust boundaries stop being theory.
+
+| Strand | What this project raises |
+|---|---|
+| **Architecture** | A trust boundary that runs *through* your own product; a data model where the server is deliberately ignorant |
+| **Security** | Key derivation, encryption at rest and in transit, a threat model you actually act on, secret scanning as a law |
+| **Workflow** | Your first crew: architect, two builders in worktrees, a security reviewer that cannot edit |
+| **UI & UX** | An unlock screen that is fast and honest; a locked state; clipboard that clears |
+| **Product** | What happens when someone forgets the master password — and why the answer must be "nothing we can do" |
+
+## The stack
+
+Flutter for the app, FastAPI and PostgreSQL for sync, and platform-native secure storage for the device key. Cryptography uses vetted libraries only — you will not be writing a cipher, and the lesson includes *why* that rule exists.
+
+## The shape of the work
+
+Six milestones. M1 and M2 are yours alone, because the decisions made there constrain everything after. From M3 the crew runs.
+
+<Callout type="warn" label="One rule for this project">
+  <p><b>Never invent cryptography, and never let an agent invent it either.</b> Agents will confidently produce plausible-looking crypto code. Use audited libraries, standard algorithms and documented parameters, and treat any custom construction as a review failure — however clever it looks.</p>
+</Callout>
+
+## Done when
+
+- A password saved on the phone appears on the laptop, and the server's database contains only ciphertext you can inspect and cannot read.
+- Losing the master password loses the data, demonstrably, and the interface says so before the user commits.
+- The security gate runs on every push, and you have the report from at least one finding it caught.
+- Your crew ran a full feature end to end with you intervening fewer than five times.

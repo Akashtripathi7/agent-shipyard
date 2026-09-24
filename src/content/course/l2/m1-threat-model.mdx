@@ -1,0 +1,80 @@
+---
+title: M1 · Threat model and crypto design
+summary: Decide what you are protecting, from whom, and exactly which algorithm does which job — before a line of code exists.
+order: 2
+kind: milestone
+code: 'L2 · M1'
+tier: 3
+time: 3 hours
+competencies: [security, architecture, decide]
+kit: [threat-model, adr-template]
+---
+
+## Goal
+
+A written threat model and a crypto ADR that any reviewer — human or agent — can check the implementation against. No application code this milestone.
+
+## Why this first
+
+Cryptographic decisions are the most expensive kind to change: they are baked into stored data. If you pick the wrong key derivation parameters and ship, every existing vault has to be re-encrypted on upgrade. Deciding deliberately now costs three hours; deciding by accident costs a migration and an apology.
+
+## Step 1: the threat model
+
+Use the template from your kit. Answer four questions in writing:
+
+1. **What is valuable here?** Master passwords, vault contents, and the metadata that reveals which services someone uses.
+2. **Who would want it, and what can they reach?** Someone who steals the phone. Someone who compromises the server. Someone on the network. You, the operator — this one matters most, because the product's promise is that you cannot read it.
+3. **What is the worst realistic misuse?** A database dump that turns out to be readable.
+4. **What are we explicitly not defending against?** Malware on an unlocked device, a user who writes the master password on a note, a state actor with device access. **Writing down what you are not protecting is as valuable as the rest** — it stops the scope creeping and stops you claiming more than you deliver.
+
+## Step 2: the crypto ADR
+
+<Prompt title="Fresh session, high effort">
+/architect the cryptography for a zero-knowledge password manager. The server must never be able to decrypt vault contents. Decide and justify: key derivation function and parameters, the encryption algorithm and mode, how the data encryption key relates to the key derived from the master password, how items are encrypted individually, and what the server stores. Use only standard, audited primitives — if you are tempted to combine primitives in a novel way, stop and tell me instead. List what an attacker with the full database can still learn.
+</Prompt>
+
+Expect the ADR to decide at least:
+
+- **Key derivation**: a memory-hard function (Argon2id) with stated parameters, and why those numbers.
+- **Encryption**: an authenticated mode (AES-GCM or XChaCha20-Poly1305), so tampering is detected rather than silently decrypted into garbage.
+- **Key hierarchy**: the master password derives a key-encryption key; a random data-encryption key is generated once and stored wrapped. This is what allows a password change without re-encrypting every item.
+- **Per-item encryption** with unique nonces, and what happens if a nonce ever repeats.
+- **What the server sees**: ciphertext, item ids, timestamps, sizes. Write that list down — it is the honest version of the promise.
+
+## Step 3: have it attacked
+
+`/clear`, then a fresh session with a different model if you can:
+
+<Prompt title="Adversarial review">
+Here is a crypto design ADR. You did not write it. Attack it. Where could an attacker with the full server database learn something the design claims they cannot? Where is a parameter weaker than current guidance? Where does the design depend on something being secret that will not stay secret? Cite the specific decision. Do not be agreeable.
+</Prompt>
+
+<Expect>
+
+The attack finds at least one real gap — commonly that metadata leaks more than intended (item count, sizes and update times reveal a great deal), or that the password-change path was not thought through. Fix the ADR, do not argue with it.
+
+</Expect>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    An agent produces beautiful, confident crypto code that encrypts with a key derived directly from the password, with a fixed salt.
+  </BreakPart>
+  <BreakPart label="Why">
+    It pattern-matched to tutorial code. Tutorials optimise for being short, and a fixed salt makes the example simpler.
+  </BreakPart>
+  <BreakPart label="The fix">
+    The ADR names the parameters, and the security reviewer checks the implementation against the ADR rather than against its own taste. This is why the document comes first.
+  </BreakPart>
+</Breaks>
+
+<Checklist
+  id="l2m1-check"
+  title="M1 done"
+  items={[
+    "docs/THREAT_MODEL.md names what is protected, from whom, and what is explicitly out of scope",
+    "An ADR fixes the KDF, its parameters, the cipher and the key hierarchy, with reasons",
+    "The ADR lists what the server can still learn from a full database dump",
+    "A fresh adversarial review has attacked the design and its findings are resolved",
+    "No cryptographic primitive in the design is custom or combined in a novel way"
+  ]}
+/>

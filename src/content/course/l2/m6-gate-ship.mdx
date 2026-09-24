@@ -1,0 +1,78 @@
+---
+title: M6 · The gate, and shipping it
+summary: Turn every rule you have been asking agents to follow into a law, then ship and write the retro that decides what Tier 3 taught you.
+order: 7
+kind: milestone
+code: 'L2 · M6'
+tier: 3
+time: 3 hours
+competencies: [security, verify, operate, decide]
+kit: [pre-commit, ci-workflow, agent-gate]
+---
+
+## Goal
+
+A pipeline that makes the project's rules unskippable, a deployed sync service, and a retro grounded in the numbers you collected.
+
+## Step 1: laws, not requests
+
+Lesson 4.7's principle, applied to everything this project depends on:
+
+| The rule you have been asking for | Its law |
+|---|---|
+| Never commit secrets | gitleaks in pre-commit **and** in CI |
+| Crypto parameters come from the ADR | A test asserting the parameters, failing CI if changed |
+| The app matches the contract | Contract tests against the generated client |
+| Only the architect edits the contract | CODEOWNERS on `docs/api/`, plus branch protection |
+| The reviewer sees every change | Required status check before merge |
+
+The middle one is worth dwelling on. A test that reads your ADR's parameters and asserts the code uses them turns a document into a gate. If someone — or something — weakens Argon2id's memory cost to make a test suite faster, CI says no.
+
+## Step 2: hooks that survive worktrees
+
+Set `core.hooksPath` to a tracked directory, so every worktree your builders create inherits the gate. This was the Breaks box in lesson 4.7, and in this project it is the difference between a promise and a leak.
+
+## Step 3: ship
+
+Staging first, with the pipeline from A3.5. Then production. Verify on the real deployment:
+
+1. Save an item on the phone; it appears on the laptop.
+2. Connect to the production database and look at a row. **Confirm with your own eyes that you cannot read it.**
+3. Time a rollback.
+
+Step 2 is the whole project in one action. A zero-knowledge product where the operator has never actually checked is a claim, not a guarantee.
+
+## Step 4: the retro
+
+Pull the real numbers rather than impressions:
+
+- **Interventions per feature**, from `docs/crew-log.md`. Is it falling?
+- **What the gate caught**, and how much of it was noise. Compare with the 15–30% first-month figure from lesson 4.8.
+- **Where the crew lost you time.** Be honest — some slices were slower than doing them alone, and knowing which kind is the skill.
+
+<Prompt title="Retro, with the evidence in front of you">
+Here is my crew log, my gate's findings and my commit history for this project. What pattern explains most of my interventions? Which single gate would have prevented the largest number of them? Where did the crew cost me more than it saved, and what do those slices have in common? Use only what is in the evidence.
+</Prompt>
+
+<Expect>
+
+One pattern usually explains half the interventions, and it is almost always an underspecified brief rather than an agent failing. The slices where the crew cost more are typically the ones that were never independent — the test from lesson 4.2, learned the expensive way.
+
+</Expect>
+
+## The Tier 3 gate, half-checked
+
+Tier 3's gate is: *a crew run finished without you reading every diff, because the gates caught what you would have caught.* After Vault you should be able to say that for a small feature. L3 and L4 are where it has to hold at real size.
+
+<Checklist
+  id="l2m6-check"
+  title="Vault, shipped"
+  items={[
+    "Secret scanning runs in pre-commit and in CI, via a hooks path every worktree shares",
+    "A test asserts the crypto parameters match the ADR",
+    "CODEOWNERS and branch protection stop anyone but the architect editing the contract",
+    "Sync is deployed, and I have looked at a production row and could not read it",
+    "Rollback has been practised and timed",
+    "The retro is written from the crew log and gate findings, not from memory"
+  ]}
+/>
