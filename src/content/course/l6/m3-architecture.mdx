@@ -1,0 +1,73 @@
+---
+title: M3 · The architecture, with falsifiers
+summary: Every load-bearing decision made deliberately, written down, and attacked before it is built on.
+order: 4
+kind: milestone
+code: 'L6 · M3'
+tier: 4
+time: 5 hours
+competencies: [architecture, decide]
+kit: [adr-template]
+---
+
+## Goal
+
+An architecture decided by your own judgment, with an ADR for every irreversible choice, each carrying a falsifier.
+
+## Step 1: sort the decisions first
+
+Before deciding anything, list the decisions and sort them with lesson 6.1's question — **what does it cost to undo?**
+
+| Almost always irreversible | Almost always reversible |
+|---|---|
+| The data model | Your web framework |
+| Stored data formats | Directory layout |
+| A published API or event shape | Library choices |
+| What you collect about people | Caching strategy |
+| Single or multi-tenant | UI layout |
+
+Everything in the right column gets a quick decision and a try. Everything in the left gets the ten-minute format from 6.3 and a night's sleep.
+
+## Step 2: the architecture strands you actually need
+
+Walk the six architecture parts and take only what applies:
+
+- **A1** — components, data model, boundaries. *Always.*
+- **A2** — threat model, auth, secrets. *Always, if there are users.*
+- **A3** — tenancy, roles, jobs, caching, environments. *If more than one user role or any background work.*
+- **A4** — services, events, consistency, load, real-time. *Almost certainly not. Resist.*
+- **A5** — retrieval, evals, guardrails, budgets. *Only if there is an AI feature.*
+- **A6** — offline, platform, infrastructure, compliance. *Usually just infrastructure and compliance.*
+
+Being able to say "A4 does not apply to a product with 8 users" is the Tier 4 skill. Applying it anyway is the Tier 4 failure.
+
+## Step 3: write the ADRs
+
+One per irreversible decision. Each with: the decision, what you are optimising for and in what order, two or three real options with honest costs, **what would change your mind**, and the consequence you accept.
+
+## Step 4: attack them before building
+
+<Prompt title="Adversarial architecture review, different model">
+Here are my architecture ADRs for a product with these constraints. You did not write them. For each: what breaks first as usage grows, what did I assume without checking, and which decision would be most expensive to reverse if wrong? Then tell me which single constraint is doing the most work across all of them. Do not be agreeable and do not suggest additions.
+</Prompt>
+
+Then the premortem from 6.5: *it is six months on and this architecture was the wrong call — write the postmortem.*
+
+<Expect>
+
+The "which constraint is doing the most work" answer usually names an assumption you inherited rather than measured — an expected user count, a latency requirement nobody tested, or an integration you assumed would be hard. Verify it now; it is cheap today and load-bearing forever.
+
+</Expect>
+
+<Checklist
+  id="l6m3-check"
+  title="M3 done"
+  items={[
+    "Decisions are sorted reversible and irreversible before any were made",
+    "Every irreversible decision has an ADR with a falsifier",
+    "Each architecture part is either applied or explicitly ruled out with a reason",
+    "A different model has attacked the ADRs",
+    "A premortem has been run",
+    "The constraint doing the most work has been identified and verified"
+  ]}
+/>

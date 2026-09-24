@@ -1,0 +1,78 @@
+---
+title: M5 · Ship, operate, and the month review
+summary: Put it in front of a real person, keep it running, and then face what the evidence says about how you work.
+order: 6
+kind: milestone
+code: 'L6 · M5'
+tier: 4
+time: 6 hours
+competencies: [operate, decide, verify]
+---
+
+## Goal
+
+A live product with someone else using it, a runbook, and a review that tells you something you did not already believe.
+
+## Step 1: ship it properly
+
+- Deployed through a pipeline, promoted from staging.
+- Alerts on user-visible symptoms, each with a runbook line.
+- A rollback you have practised and timed.
+- Deletion and export working, if you hold personal data.
+- A budget alert on the account.
+
+## Step 2: a real person uses it
+
+Not you. Watch them if you can, and say nothing while they struggle — the silence is where the learning is.
+
+Write down every place they hesitated. Hesitation is the cheapest usability signal there is, and agents cannot generate it for you.
+
+## Step 3: operate it for a week
+
+A week in maintenance, with lesson 5.2's returning test: **can you ship a small fix using only what is written down?** Whatever you had to remember is a gap in the runbook.
+
+## Step 4: the month review
+
+With every number in front of you:
+
+<Prompt title="The review that is worth having">
+Here are four weeks of metrics, my deviations log, my ADRs, my gate findings, my fleet log and the issues found after shipping. Using only this evidence:
+1. What caused most of my interventions, and did it change over the month?
+2. Which of my workflow rules never caught anything?
+3. Which deviation from my own process was the right call, and which was tiredness?
+4. Which architecture decision does the evidence say I got wrong?
+5. What am I doing out of habit that the numbers say does not matter?
+Do not be encouraging. I want the pattern.
+</Prompt>
+
+Then answer, in your own words and in writing:
+
+- **One thing my workflow does that the evidence says is unnecessary.** Remove it.
+- **One thing it is missing.** Add it.
+- **One belief about how I work that turned out to be wrong.**
+
+That third one is the capstone's real output. If you cannot fill it in, you have not looked hard enough at the log.
+
+## Step 5: the Tier 4 gate
+
+> *You can defend a workflow and an architecture choice to someone who disagrees with you.*
+
+Test it. Take your most significant architecture decision and your most significant workflow rule, and have a fresh session argue against both as hard as it can. Then defend them — out loud, or in writing, with the evidence.
+
+If your defence is "it is best practice" or "it felt right", you have not cleared the gate yet. If it is "I optimised for X over Y because of this constraint, here is what would change my mind, and here is the measurement", you have.
+
+The mastery exam is the same test on problems you have not seen.
+
+<Checklist
+  id="l6m5-check"
+  title="Capstone complete"
+  items={[
+    "Live, with a pipeline, alerts, a runbook and a practised rollback",
+    "Someone other than me has used it, and their hesitations are written down",
+    "A week of maintenance passed the returning test",
+    "Four weeks of metrics reviewed against the deviations log",
+    "One rule removed, one added, both for recorded reasons",
+    "One belief about how I work, written down as disproven",
+    "My biggest architecture and workflow decisions survived an adversarial defence"
+  ]}
+/>

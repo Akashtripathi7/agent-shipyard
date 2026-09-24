@@ -1,0 +1,53 @@
+---
+title: Capstone, project overview
+summary: A product you choose and a workflow you design, run and measure for a month — with nobody telling you what the right answer is.
+order: 1
+kind: overview
+code: 'L6'
+tier: 4
+time: 30–40 hours over 4 weeks
+competencies: [decide, architecture, orchestrate, verify, fleet]
+---
+
+## What makes this different
+
+Every project so far came with a stack, a shape and a crew. This one comes with nothing. **You choose the product, design the architecture, and run the workflow you wrote in Part 7** — and the only measure of success is evidence you collected yourself.
+
+That is the point. Tiers 1 to 3 taught you to execute. Tier 4 is about judgment, and judgment cannot be assessed on a problem where someone has already told you the answer.
+
+## Choosing your product
+
+The constraints matter more than the idea:
+
+- **Real enough to have consequences.** Someone other than you should want it to work — even one person.
+- **Small enough to ship in four weeks** alongside everything else alive in your fleet.
+- **At least two of these**, or you will not exercise Tier 4: more than one user role, data that must not leak between users, a background job, an AI feature, an offline requirement, or a second client.
+- **Something you will keep running afterwards.** Maintenance is where most of what you learned actually lands.
+
+<Callout type="warn" label="The most common capstone failure">
+  <p>Choosing something too big, then spending four weeks on architecture that never meets a user. <b>A small shipped product teaches more than a large unshipped one</b> — and the whole course has been arguing that. If you cannot describe it in two sentences, it is too big.</p>
+</Callout>
+
+## What you must produce, beyond the product
+
+- **A workflow design**, written before you build, and a record of every time you deviated from it.
+- **Two numbers**, weekly: interventions per feature and escapes.
+- **Architecture decisions** written as ADRs, each with a falsifier.
+- **A shipped, running product**, with alerts that reach you and a runbook.
+- **A month review** grounded in the numbers rather than in how it felt.
+
+## How this is assessed
+
+By you, honestly, against the Tier 4 gate:
+
+> *You can defend a workflow and an architecture choice to someone who disagrees with you.*
+
+The mastery exam that follows will test exactly that on problems you have not seen. The capstone is where you earn it.
+
+## Done when
+
+- The product is live and someone other than you has used it.
+- Four weeks of metrics exist, and you can explain what moved them.
+- Every load-bearing decision has an ADR with a falsifier.
+- You have deviated from your own workflow at least once and written down why.
+- You can state one thing about your workflow that the evidence proved wrong.

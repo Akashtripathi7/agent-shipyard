@@ -1,0 +1,76 @@
+---
+title: M4 · Build it, measuring as you go
+summary: Three weeks of running your own workflow on your own product, collecting the evidence that the review will need.
+order: 5
+kind: milestone
+code: 'L6 · M4'
+tier: 4
+time: 20 hours over 3 weeks
+competencies: [build, verify, orchestrate, fleet]
+---
+
+## Goal
+
+A working product, built through your own loop, with three weeks of honest metrics and a deviations log.
+
+## The weekly rhythm
+
+**Monday** — pick the week's slices, assign a depth to each from your M2 table, write the briefs.
+
+**Through the week** — run the loop. One line in the metrics file per intervention. One line in the deviations log every time you skip your own process.
+
+**Friday, ten minutes** — fill in the two numbers, and one sentence on what caused most of the interventions.
+
+That Friday ritual is the whole measurement system. It survives because it is small.
+
+## What to watch for in yourself
+
+Four patterns that show up in nearly every capstone:
+
+1. **Depth inflation.** Everything drifts towards GA because it feels responsible. Check your M2 table weekly — an admin tool you alone use does not need a second-model review.
+2. **Silent rung climbing.** You add a subagent, then a gate, then a second worktree, none of it decided. Each addition should be a sentence in the deviations log.
+3. **Skipping the stage that is tedious.** Usually verification. Note it rather than fixing it immediately — whether you skip it three weeks running is the data.
+4. **Building for the user count you wish you had.** Reread your M1 constraints when you feel the urge to add a queue.
+
+## Using the fleet discipline
+
+This product is now in your fleet, and your other projects have not stopped. Apply Part 5:
+
+- One project in **building** — this one. Everything else in maintenance or dormant.
+- The daily fleet log, one line per project.
+- A stopping point and a handoff line before you switch away.
+
+If the capstone drags on past four weeks, the usual cause is not the product. It is another project quietly still in *building*.
+
+<Callout type="tip" label="Ship something in week one">
+  <p>Deploy the smallest possible version — even one endpoint and one screen — in the first week, behind a flag if you like. A product that has never been deployed hides an entire class of problems until the moment you have least time for them.</p>
+</Callout>
+
+<Exercise id="l6m4-1" title="The Friday ten minutes" time="10 minutes, weekly" predict="Which of the four patterns will you catch yourself in first?">
+
+1. Fill in interventions and escapes for the week.
+2. Sort the week's interventions by cause. Name the biggest.
+3. Read your deviations log. Was each deviation a good call or a tired one?
+4. Check your depth table — did anything drift?
+5. Write one sentence about what to change next week. Change **one** thing.
+
+</Exercise>
+
+<Expect>
+
+Depth inflation is the most common, and the intervention log is almost always dominated by underspecified briefs — the same finding as every previous project, which by now should be persuasive rather than surprising.
+
+</Expect>
+
+<Checklist
+  id="l6m4-check"
+  title="M4 done"
+  items={[
+    "Something was deployed in week one",
+    "Three weeks of interventions and escapes are recorded",
+    "Every deviation from my workflow is logged with a reason",
+    "Depths match the M2 table, or the drift is recorded",
+    "Only this project was in 'building' throughout",
+    "One workflow change was made per week, no more"
+  ]}
+/>

@@ -1,0 +1,61 @@
+---
+title: M1 · Choose, and cut it down
+summary: Pick the product, then remove most of it — deliberately, with the reasoning written down.
+order: 2
+kind: milestone
+code: 'L6 · M1'
+tier: 4
+time: 4 hours
+competencies: [decide, architecture]
+---
+
+## Goal
+
+A two-sentence product description, an explicit out-of-scope list, and the constraints that will shape everything after.
+
+## Step 1: write it in two sentences
+
+If you cannot, it is not one product yet. Two sentences: who it is for, and what it lets them do that they cannot do now.
+
+## Step 2: the out-of-scope list, which is longer
+
+This is the scope stage from Part 2, applied to a whole product. Write down what v1 explicitly does **not** do, and why. Expect it to be three times the length of the feature list.
+
+<Prompt title="Adversarial scoping, fresh session">
+Here is my product in two sentences. Challenge it. What is genuinely needed for a v1 that a real person would use, and what am I including out of enthusiasm? What am I assuming about my users that I have not checked? What is the smallest version that still delivers the core promise? Do not be agreeable, and do not suggest additions.
+</Prompt>
+
+The last clause matters. Ask an agent about a product idea without it and you will get features.
+
+## Step 3: name the two Tier 4 elements
+
+Which two from the overview list will this exercise, and where? Write them down — they are the reason this capstone teaches anything beyond Tier 2.
+
+## Step 4: the constraints that decide the architecture
+
+Before any design, write the numbers and facts that will drive it:
+
+- **Users** — how many in month one, honestly. Usually a single-digit number, and that should change your architecture.
+- **Data** — what is sensitive, what must never leak, what must be deletable.
+- **Availability** — what happens if it is down for an hour? For most capstones, the honest answer is "nothing much", and that is permission to keep it simple.
+- **Your time** — hours per week, alongside your fleet.
+- **Money** — what you are willing to spend monthly.
+
+<Expect>
+
+The adversarial scoping usually removes a third of what you planned. The constraints section is where most people realise they were about to build for an imagined scale — writing "8 users in month one" next to a plan for a message queue is a clarifying moment.
+
+</Expect>
+
+<Checklist
+  id="l6m1-check"
+  title="M1 done"
+  items={[
+    "Two sentences: who it is for, what it lets them do",
+    "An out-of-scope list longer than the feature list, with reasons",
+    "Two Tier 4 elements named, with where they appear",
+    "Honest month-one user count written down",
+    "Sensitive data identified, with what must be deletable",
+    "Time and money budgets stated"
+  ]}
+/>

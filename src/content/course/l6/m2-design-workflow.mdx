@@ -1,0 +1,73 @@
+---
+title: M2 · Design the workflow before you build
+summary: Choose your rung, your crew, your gates and your depths for this specific product — then commit to them in writing.
+order: 3
+kind: milestone
+code: 'L6 · M2'
+tier: 4
+time: 3 hours
+competencies: [decide, orchestrate]
+kit: [workflow-md]
+---
+
+## Goal
+
+A project-specific workflow, decided in advance, with the deviations you expect and the evidence you will collect.
+
+## Step 1: which rung, and why
+
+From lesson 6.2, with the pain named in the past tense. For a solo four-week capstone the honest answer is usually **rung 2**, climbing to 3 only if two genuinely independent surfaces appear.
+
+Write what would make you climb, and what would make you climb back down.
+
+## Step 2: the crew, if any
+
+Seven questions, answered for this product:
+
+1. Are there genuinely independent surfaces? (If no, you have one builder.)
+2. Does anything need a reviewer that cannot edit?
+3. Does anything need a different model reviewing than building?
+4. Is any work read-heavy enough to belong in a subagent?
+5. What must only you decide?
+6. What is the blast radius of the worst thing an agent could do here?
+7. What does each role's tool list need to be, at minimum?
+
+Question 5 is the one that pays. For most capstones the list is: the data model, anything touching personal data, and any irreversible decision.
+
+## Step 3: depths per area
+
+Not every part of one product deserves the same care. From your WORKFLOW.md:
+
+| Area | Depth | Why |
+|---|---|---|
+| Auth, personal data, payments | GA | Irreversible or dangerous |
+| Core product flow | Beta | Users depend on it |
+| Admin tools you alone use | Alpha | You are the only victim |
+| Spikes | Prototype | Being deleted |
+
+Writing this table now stops the two failures: treating everything as GA and shipping nothing, or treating everything as Alpha and shipping something that leaks.
+
+## Step 4: the gates, and what is law
+
+What runs on every commit, what blocks a merge, and what you would be upset to discover was skipped. Keep it small — a four-week solo project with ten gates is a project about gates.
+
+## Step 5: commit to the measurement
+
+Create `docs/metrics.md` now, with the two columns from lesson 7.2. Deciding to measure after you notice a problem is how you end up with no baseline.
+
+<Callout type="tip" label="Expect to deviate, and record it">
+  <p>You will break your own workflow at some point — skipping review at 11pm, merging without the contract test. <b>Write down every deviation and why.</b> That log is the most honest input to the month review, and far more useful than a workflow you claim to have followed perfectly.</p>
+</Callout>
+
+<Checklist
+  id="l6m2-check"
+  title="M2 done"
+  items={[
+    "The rung is chosen, with what would move me up or down",
+    "The seven crew questions are answered, including what only I decide",
+    "A depth is assigned per area of the product",
+    "Gates are chosen and each is marked request or law",
+    "docs/metrics.md exists before any feature is built",
+    "A deviations log is started"
+  ]}
+/>
