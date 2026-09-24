@@ -1,0 +1,115 @@
+---
+title: What to isolate, and what to share
+summary: The moment a second project is alive, the only question that matters is what must never cross between them.
+order: 1
+kind: lesson
+code: '5.1'
+tier: 4
+time: 60 min
+competencies: [fleet, operate, security]
+---
+
+<Analogy>
+  <p>Running two restaurants. Each has its own kitchen, its own till and its own keys. What they share is your recipe book and your standards.</p>
+</Analogy>
+
+## Two lists, and getting them the wrong way round is expensive
+
+A fleet fails in one of two ways. Share too little and you re-solve the same problem in every project, badly. Share too much and one project's mistake reaches another — the expensive direction.
+
+### Keep separate, always
+
+- **The repo and its worktrees.**
+- **Environment files and secrets.** No shared `.env`, ever.
+- **Databases, ports and container project names.** Two projects on port 5432 will eventually connect to each other's database.
+- **The git account and token**, chosen per repo from its remote.
+- **Cloud accounts and spend budgets**, so one runaway job cannot consume another product's money.
+- **Agent sessions.** *One session never spans two projects.* This is the rule people break first and regret most.
+- **MCP servers that can write**, configured per project.
+
+### Share deliberately
+
+- **Working conventions** in your global instructions file.
+- **Skills** — reviewing, test-first, debugging.
+- **Generic reviewer subagents** in your global agents folder.
+- **Installed tools and your terminal setup.**
+
+The pattern: **share things that encode judgment, isolate everything that encodes access.**
+
+<Callout type="warn" label="Why one session must never span two projects">
+  <p>Context is the leak. An agent that has read Project A's secrets, schema and conventions carries them into anything it does for Project B — into files, into commits and into its suggestions. It is also how you get Project A's architecture quietly imposed on Project B, which is a subtler and more permanent kind of damage.</p>
+</Callout>
+
+## The project passport
+
+Write each project's separate pieces on one page, committed in the repo, so neither you nor an agent has to guess:
+
+<CodeFile title="docs/PASSPORT.md">
+
+```
+PROJECT        book-a-slot
+repo           github.com/you/book-a-slot     account: personal
+ports          api 8110 · db 5442 · redis 6389
+compose name   bookaslot
+env            .env (never shared; .worktreeinclude copies it)
+cloud          project book-a-slot-prod · budget alert 2,000/month
+staging        staging.bookaslot.example
+runbook        docs/RUNBOOK.md
+```
+
+</CodeFile>
+
+The ports line alone saves an afternoon. When three projects are alive, "why is my API talking to the wrong database" is a question you will otherwise ask at least once.
+
+<Exercise id="iso-1" title="Write passports and find the collision" time="45 min" predict="How many ports or names collide across your current projects?">
+
+1. Write `docs/PASSPORT.md` for every project you currently have alive.
+2. Put all the ports, database names and compose project names in one list.
+3. Find the collisions.
+4. Assign each project a block — project one gets 81x0/54x2, project two 82x0/55x2 — and change them.
+5. Move anything that encodes judgment into your global config, and anything that encodes access out of it.
+
+</Exercise>
+
+<Expect>
+
+At least one collision, usually the database port, because every tutorial uses the default. The fix takes ten minutes now and saves an incident later — connecting to the wrong database is the kind of mistake that is invisible until it has written something.
+
+</Expect>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    You ask an agent in Project B to "set up auth the way we did in the other project". It writes plausible code referencing a schema, a library version and an environment variable that exist only in Project A.
+  </BreakPart>
+  <BreakPart label="Why">
+    The instruction invited cross-project context, and the agent filled the gap with recollection rather than fact.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Never reference another project by memory. Extract the reusable part into a skill or a template that lives in your global config, then use that by name. Judgment travels; specifics do not.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="iso-q1"
+  q="Which of these is safe to share across every project in a fleet?"
+  options={[
+    "One .env file, to avoid duplicating secrets",
+    "A review skill that encodes how you like changes checked",
+    "A single database container, with a schema per project",
+    "One agent session, switched between repos"
+  ]}
+  answer={1}
+/>
+
+<Checklist
+  id="iso-check"
+  title="Before a second project goes live"
+  items={[
+    "Every project has a passport with its ports, names and accounts",
+    "No port, database name or compose project name collides",
+    "Secrets are per project and never in a shared file",
+    "Each repo's git account is chosen from its remote",
+    "Each project has its own spend budget with an alert",
+    "No session ever spans two projects"
+  ]}
+/>

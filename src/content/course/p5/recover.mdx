@@ -1,0 +1,95 @@
+---
+title: When something breaks in another project
+summary: You are deep in project B and project A goes down. What to do, in what order, and how to return without losing the thread.
+order: 5
+kind: lesson
+code: '5.5'
+tier: 4
+time: 45 min
+competencies: [fleet, operate, decide]
+---
+
+<Analogy>
+  <p>A surgeon paged mid-operation. You do not abandon the patient in front of you. You stabilise, hand over cleanly, then go — and the handover is what makes it safe.</p>
+</Analogy>
+
+## Interruption has a cost, and context switching is most of it
+
+The instinct is to drop everything. That is usually wrong, because you lose the state you were holding for project B and will spend half an hour rebuilding it.
+
+Spend sixty seconds first:
+
+1. **Is it actually down, or is it an alert?** Check the symptom a user would feel.
+2. **Is anyone affected right now?** Maintenance-hours outage on a booking product is different from lunchtime.
+3. **Can it wait twenty minutes** while you reach a stopping point?
+
+If it can wait, reach a commit, write one line in `fleet-log.md` about where you were, and then go. That line is a handoff to yourself, and it is what lets you come back.
+
+## The order of work in an incident
+
+1. **Stop the bleeding.** Roll back, disable the feature flag, scale up. Fixing properly comes later.
+2. **Confirm recovery from the outside** — the symptom, not the dashboard.
+3. **Write down what you saw**, now, while it is fresh. Not later; later is a different, worse memory.
+4. **Only then** find the root cause, using the debugging discipline from Part 3.
+
+Reaching for the root cause first is the most common incident mistake. Users do not care why it broke while it is still broken.
+
+## Where agents help, and where they do not
+
+**Good uses during an incident:**
+- "Read these 500 log lines and tell me what changed at 14:32." Fast, read-only, genuinely useful.
+- "What did we deploy in the last two hours?" Summarising git and CI history.
+- "Compare this config with last week's." Diffing.
+
+**Bad uses during an incident:**
+- Letting an agent change production while you watch. Blast radius plus urgency plus reduced attention is the worst possible combination.
+- Asking it to guess the cause from a symptom. You will get a confident, plausible answer that sends you down the wrong path for twenty minutes.
+
+<Callout type="warn" label="The rule for incidents">
+  <p><b>Agents diagnose; you decide; the smallest possible action fixes.</b> During an incident, an agent's job is reading, summarising and diffing — not acting.</p>
+</Callout>
+
+## Returning to what you were doing
+
+The real cost of the interruption is the return. Use the handoff discipline from Part 3: before you leave, write goal, state, next step. When you come back, read that file before you read any code. You will be tempted to skip it because you "remember"; you do not.
+
+<Exercise id="rec-1" title="Run an incident during other work" time="45 min" predict="How long will it take to get back to full speed on the other project?">
+
+1. Start real work on project B and get properly into it.
+2. Have someone — or a scheduled script — break staging on project A.
+3. Follow the protocol: assess, reach a stopping point, write the handoff line, switch.
+4. Stabilise A. Write down what you saw before diagnosing.
+5. Return to B. **Time how long until you are actually productive again.**
+6. Then write A's incident note: symptom, cause, fix, what would have caught it.
+
+</Exercise>
+
+<Expect>
+
+The return takes far longer than expected — typically fifteen to thirty minutes even with a handoff, and much longer without. That number is the real argument for keeping only one project in "building" at a time, and it is more persuasive when it is your own measurement.
+
+</Expect>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    You fix A's outage, return to B, and two days later realise you left B half-migrated in a state that passes tests but is internally inconsistent.
+  </BreakPart>
+  <BreakPart label="Why">
+    You switched mid-change rather than at a stopping point, and the handoff line was not written.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Always reach a commit before switching, even a work-in-progress commit on a branch. An uncommitted half-change is the most fragile state a project can be in, and the one most easily forgotten.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="rec-q1"
+  q="Production is down. What comes first?"
+  options={[
+    "Find the root cause, so the fix is correct",
+    "Stop the bleeding — roll back or disable — then diagnose",
+    "Ask an agent to analyse the logs and propose a fix",
+    "Write the incident note while it is fresh"
+  ]}
+  answer={1}
+/>

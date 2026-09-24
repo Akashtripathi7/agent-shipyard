@@ -1,0 +1,78 @@
+---
+title: Part 5 decision drills
+summary: Fleet scenarios with no code. Commit to an answer, then compare with a worked one.
+order: 7
+kind: drill
+code: 'Drills 5'
+tier: 4
+time: 40 min
+competencies: [fleet, decide, operate]
+---
+
+These are the judgment calls a fleet actually produces. Commit to an answer before revealing, and write your reasoning in a sentence — the reasoning is what you are training.
+
+<Drill id="p5-d1" scenario="It's 23:00. You want to leave an agent migrating 30 API endpoints to a generated client overnight. The spec is written. The task is mechanical. You have a worktree ready and checks after each round. You have not set a token cap, because you do not know what a reasonable one would be." fields={[
+  { label: "Your move", options: ["Run it; the checks will catch problems", "Set a cap from an estimate and run it", "Run the first three endpoints yourself to get a rate, then set a cap", "Do not run it unattended"] },
+  { label: "Why?" }
+]}>
+
+**Expert answer: run three endpoints yourself first, then set a cap from the measured rate.**
+
+Four of the five conditions are met, and the missing one is not "a cap" — it is *knowing what a sensible cap is*. Guessing produces one of two bad outcomes: too low and the run stops at endpoint four having achieved nothing; too high and a loop burns the night.
+
+Twenty minutes of doing it yourself gives you the token cost per endpoint, which gives you a cap with a real margin. It also validates the spec against reality — if *you* hit an ambiguity in the first three, the spec was not ready, and you have found that out for the price of twenty minutes rather than a night.
+
+The general principle: **you cannot set a limit on a rate you have never measured.** This is the same reasoning as "measure before you cache" and "measure before you optimise".
+
+</Drill>
+
+<Drill id="p5-d2" scenario="You are three weeks into building project B. Project A, in maintenance, has a dependency with a published critical vulnerability. Exploiting it requires an authenticated user, and A has 40 users, all staff at one clinic. Your automated dependency update opened a PR, but its tests fail for an unrelated flaky reason." fields={[
+  { label: "Your move", options: ["Drop B, fix A today", "Merge the update, override the flaky test", "Fix the flaky test, then merge, this week", "Schedule it for when B reaches a milestone"] },
+  { label: "Why?" }
+]}>
+
+**Expert answer: fix the flaky test, then merge, this week — not today, not later.**
+
+The severity of a vulnerability is not its risk to *you*. Authenticated-only, 40 known users at one clinic is a genuinely different exposure from an internet-facing anonymous exploit. That judgment is yours to make, and making it explicitly is the skill.
+
+Not today, because a critical rating alone does not justify destroying a week's context on B for a threat this constrained. Not later, because "when B reaches a milestone" is how a month passes.
+
+Overriding the flaky test is the genuinely wrong answer. You would be establishing that this gate can be bypassed under time pressure, which is precisely when gates matter. **The flaky test is the actual problem** — it is blocking your security updates, which means it has been quietly degrading your maintenance posture for as long as it has existed. Fixing it fixes every future update too.
+
+Write the reasoning in the incident log. A decision to accept a risk is only legitimate if it is recorded.
+
+</Drill>
+
+<Drill id="p5-d3" scenario="You have four projects. One is building, two are in maintenance, one is dormant. You are consistently spending about two hours a day on the maintenance pair — dependency PRs, small fixes, user questions — and it is eating the building project's time." fields={[
+  { label: "Your move", options: ["Automate more of the maintenance work", "Move one maintenance project to dormant", "Batch maintenance into one afternoon a week", "Accept it; maintenance is the cost of shipping"] },
+  { label: "Why?" }
+]}>
+
+**Expert answer: batch it into one afternoon a week, then automate what remains.**
+
+Two hours a day is rarely two hours of work — it is twenty minutes of work and four context switches, and lesson 5.5's exercise measured what a switch costs. Batching converts the same work into a single block at a fraction of the total cost, and it does so this week rather than after a tooling project.
+
+Then automate, informed by the batch: after two or three batched afternoons you will know which tasks actually recur, and you will automate the right ones rather than the ones you imagined.
+
+Moving a project to dormant is a real option and should be on the table — but it is a **product** decision about whether it still deserves to be alive, not a scheduling fix. Making it for scheduling reasons is how products die by accident.
+
+Accepting it is wrong because the cost is not maintenance; it is fragmentation. The same work, batched, costs perhaps a third as much of you.
+
+</Drill>
+
+<Drill id="p5-d4" scenario="An overnight run finished. The summary says all 30 endpoints were migrated and all checks pass. The commits show 30 small changes. You are in a hurry." fields={[
+  { label: "Your move", options: ["Merge it; the checks passed and the commits look right", "Read the notes file, then merge", "Run the app, read three commits at random, then decide", "Read all 30 commits before merging"] },
+  { label: "Why?" }
+]}>
+
+**Expert answer: run the app, read three commits at random, and read the notes file — then decide.**
+
+The morning protocol exists because the summary is the agent's account of its own work, and checks passing means the checks passed, not that the product works. Running the app is the one check that was performed by something outside the run — the cascading hallucination defence from lesson 4.11.
+
+Three random commits is a sample, and sampling is the honest compromise when you are in a hurry. If all three are clean, the population is probably clean. If one is not, read all thirty.
+
+The notes file is where the failures live, and failures are where you learn what your spec left ambiguous — the most valuable output of the whole run.
+
+Reading all thirty is not wrong, just expensive. The skill is knowing when a sample suffices; for a mechanical migration with passing contract tests, it does. For a change touching auth or money, it does not.
+
+</Drill>

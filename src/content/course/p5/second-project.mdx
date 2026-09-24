@@ -1,0 +1,89 @@
+---
+title: Starting project B while A keeps running
+summary: The first project never stops needing you. Here is how a second one begins without the first one quietly rotting.
+order: 2
+kind: lesson
+code: '5.2'
+tier: 4
+time: 50 min
+competencies: [fleet, decide, operate]
+---
+
+<Analogy>
+  <p>A restaurant opening a second branch. The first one still needs deliveries, staffing and a manager on Friday night. Nobody pretends it runs itself just because attention moved.</p>
+</Analogy>
+
+## Every live project has a standing cost
+
+The mistake is treating a shipped project as finished. It is not; it is in **maintenance**, which is a smaller but real, recurring demand: dependency updates, alerts, user questions, the occasional incident.
+
+Name the state each project is in, because the state decides how much of you it gets:
+
+| State | What it needs weekly | Your attention |
+|---|---|---|
+| **Building** | Features, reviews, decisions | Most of it |
+| **Stabilising** | Bug fixes, real-user feedback | Daily, briefly |
+| **Maintenance** | Dependencies, alerts, small fixes | An hour a week |
+| **Dormant** | Security updates only | Monthly check |
+
+**You can only afford one project in *building* at a time.** Two is where quality falls in both, and the failure is not dramatic — it is a slow drift where neither gets the deliberate decisions it needed.
+
+## Before starting B, put A into a state it can survive in
+
+Four things, and they take an afternoon:
+
+1. **A runbook** — how to deploy, how to roll back, what the alerts mean, who to contact. Written for you in six months, who will have forgotten everything.
+2. **Alerts that reach you**, and none that do not matter. A project in maintenance with noisy alerts will be muted, and then it is unmonitored.
+3. **Dependency updates automated**, with tests as the gate. Security patches should not require your attention to be noticed.
+4. **The context restored on disk** — AGENTS.md current, ADRs up to date, the contract matching reality. This is the sync step from Part 2, and it is what lets you return to A in three months without re-learning it.
+
+<Callout type="tip" label="The returning test">
+  <p>Before declaring a project ready for maintenance, close everything, come back the next day and try to ship one small fix using only what is written down. Whatever you had to remember from your head is the gap — write that down, because in three months you will not have it.</p>
+</Callout>
+
+## Starting B properly
+
+Do not import A's architecture. The temptation is enormous — you have a working shape and it saved you weeks. But A's decisions were answers to A's constraints, and B's are different.
+
+What *should* carry over: your workflow, your skills, your review standards, your check script structure, your ADR habit. **Process transfers; architecture does not.**
+
+<Exercise id="sec-1" title="Put a project into maintenance, then prove it" time="45 min" predict="What will you need that is not written down?">
+
+1. Pick your most-finished project.
+2. Write its runbook: deploy, roll back, alert meanings, external dependencies, the budget.
+3. Turn off every alert that has fired in the last month without needing action.
+4. Turn on automated dependency updates with tests as the gate.
+5. Run the sync step: does AGENTS.md still match the code? Does the contract match the API?
+6. Tomorrow, ship one small fix using only what is written.
+
+</Exercise>
+
+<Expect>
+
+Step 6 exposes two or three things that lived only in your head — usually a deployment quirk or an environment variable nobody documented. That is the real output. A project you cannot re-enter from its documentation is not in maintenance; it is dependent on you remembering.
+
+</Expect>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    Six weeks into project B, project A's certificate expires. Nobody notices for two days because the alert went to a channel you stopped reading when you moved on.
+  </BreakPart>
+  <BreakPart label="Why">
+    The project moved into maintenance but its monitoring did not move with it. Alerts that were fine when you were looking daily are invisible when you are not.
+  </BreakPart>
+  <BreakPart label="The fix">
+    When a project changes state, re-decide where its alerts go and which ones still matter. A maintenance project should have very few alerts, and every one of them should be worth an interruption.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="sec-q1"
+  q="What should transfer from project A to project B?"
+  options={[
+    "The architecture, since it is proven",
+    "The workflow, skills and review standards",
+    "The database schema, adapted",
+    "The agent sessions, for context"
+  ]}
+  answer={1}
+/>

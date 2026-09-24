@@ -1,0 +1,108 @@
+---
+title: Watching the fleet
+summary: Four questions per project, answerable in one glance, so nothing stalls overnight without you knowing.
+order: 3
+kind: lesson
+code: '5.3'
+tier: 4
+time: 50 min
+competencies: [fleet, operate]
+---
+
+<Analogy>
+  <p>An air-traffic control board. Every flight, its status, and which ones need a controller right now — readable in one glance.</p>
+</Analogy>
+
+## Four questions, per project
+
+1. **What state is it in?** Working, idle, blocked, or needs me.
+2. **Did the gates pass?**
+3. **What is it costing?**
+4. **Is anything waiting on me?**
+
+| Question | Where to look |
+|---|---|
+| Working, idle, blocked, needs me? | Background sessions, `/tasks` inside a session, tmux window names |
+| Did the gates pass? | Your gate's results, CI status on each pull request |
+| What is it costing? | `/cost` or `/usage`; an OpenTelemetry export into a dashboard once cost really matters |
+| Is anything waiting on me? | Notification hooks for permission requests and finished tasks |
+
+The fourth is the one that actually costs you. An agent blocked on a permission prompt at 23:10 has done nothing by morning, and nothing alerted you — because from the machine's point of view, nothing failed.
+
+## Make every notification say which project it is from
+
+With one project, "Task finished" is enough. With four it is useless. Your notification hooks receive the session's working directory on stdin, so put the folder name at the front of every title:
+
+<CodeFile title="A notifier hook that names the project">
+
+```js
+const input = JSON.parse(require('fs').readFileSync(0, 'utf8'));
+const project = require('path').basename(input.cwd || 'unknown');
+notify(`[${project}] ${input.title ?? 'Needs you'}`, input.message ?? '');
+```
+
+</CodeFile>
+
+Ten minutes of work, and it changes a notification from an interruption into information.
+
+## The daily fleet review
+
+Ten minutes, one line per project, written down rather than remembered:
+
+<CodeFile title="fleet-log.md — one entry per day">
+
+```
+FLEET · Mon 14 Sep
+book-a-slot       maintenance · 2 PRs waiting (oldest 6h) · 180 since yesterday · nothing blocked
+support-copilot   building · agent blocked on a permission prompt since 23:10 · 420
+courier-live      stabilising · p99 up 15% since Friday · investigate
+```
+
+</CodeFile>
+
+The log matters more than any dashboard, because it shows **trends**. One PR waiting six hours is normal; the same PR waiting six hours every day for a week means you have a review bottleneck, and no single glance would have told you.
+
+<Exercise id="watch-1" title="Instrument the fleet, then run it for a week" time="40 min, then 10 minutes a day" predict="Which project will turn out to be quietly stalled?">
+
+1. Add the project name to every notification hook.
+2. Create `fleet-log.md` with one line per live project.
+3. For one week, spend ten minutes each morning filling it in: state, what is waiting, what it cost, anything blocked.
+4. On Friday, read the week rather than the day.
+
+</Exercise>
+
+<Expect>
+
+One project turns out to have been blocked for far longer than you realised, and one turns out to cost several times what you assumed. Both are invisible day to day and obvious across a week. That is what the log is for.
+
+</Expect>
+
+<IfNot>
+
+If every day looks the same and nothing surprises you, you likely have only one project genuinely alive — which is fine, and means the fleet machinery can wait until you actually need it.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    An overnight run stopped at 23:10 on a permission prompt. You find out at 09:00, having believed it worked all night.
+  </BreakPart>
+  <BreakPart label="Why">
+    Nothing failed, so nothing alerted. Blocked is a state that looks identical to working unless something checks for it.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Alert on <b>blocked</b>, not just on failed: a notification the moment a permission prompt appears, and a check for sessions idle beyond a threshold. Better still, pre-approve the permissions an unattended run needs — which is the next lesson.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="watch-q1"
+  q="Why is a daily written fleet log more useful than a live dashboard?"
+  options={[
+    "Dashboards are expensive to set up",
+    "It shows trends across days, which no single glance reveals",
+    "It cannot be wrong",
+    "It replaces alerting"
+  ]}
+  answer={1}
+/>

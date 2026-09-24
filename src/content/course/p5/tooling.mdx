@@ -1,0 +1,95 @@
+---
+title: Tooling the fleet
+summary: The small pieces of automation that make several live projects feel like one job, and the point at which each earns its place.
+order: 6
+kind: lesson
+code: '5.6'
+tier: 4
+time: 50 min
+competencies: [fleet, operate, build]
+---
+
+<Analogy>
+  <p>A workshop with the tools on a shadow board. Nothing clever — you just never spend three minutes looking for the 10mm spanner, twenty times a day.</p>
+</Analogy>
+
+## Build these only when the friction is real
+
+Every tool below solves a specific, felt frustration. Building them before you feel it is how you end up maintaining a personal platform instead of shipping products.
+
+| Tool | The friction it removes | Build it when |
+|---|---|---|
+| **A project switcher** | Remembering ports, paths and which account | Three or more live projects |
+| **A fleet status command** | Opening six terminals to see what is happening | You have missed something blocked overnight |
+| **Per-project notification prefixes** | Not knowing which project is asking | Two projects, immediately — it takes ten minutes |
+| **A shared skills library** | Rewriting the same review prompt per repo | The second time you copy a prompt |
+| **A new-project template** | Re-creating guardrails, check script and CI each time | Your second project |
+| **A cost report per project** | Not knowing where the money goes | Spend stops being trivial |
+
+## The switcher
+
+The highest-value fifteen lines you will write in this part. One command that, for a named project, opens its tmux session, moves to its directory, loads its passport and shows its status:
+
+<CodeFile title="~/bin/proj — open a project by name, with everything it needs">
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+name="${1:?usage: proj <name>}"
+root="$HOME/Documents/personal/$name"
+[ -d "$root" ] || { echo "no such project: $name" >&2; exit 1; }
+
+tmux has-session -t "$name" 2>/dev/null || tmux new-session -d -s "$name" -c "$root"
+tmux send-keys -t "$name" "cd '$root' && cat docs/PASSPORT.md" C-m
+tmux attach -t "$name"
+```
+
+</CodeFile>
+
+It is not clever. It removes the moment where you type a command in the wrong directory, which is the fleet's most common self-inflicted wound.
+
+## The new-project template
+
+By now you have a working shape: guardrails in settings, a check script, AGENTS.md, an ADR folder, CI, a passport. Extract it once into a template repository, and every future project starts with your standards rather than acquiring them gradually.
+
+This is also the natural precursor to packaging your workflow as a plugin, which is Part 7.
+
+<Exercise id="tool-1" title="Build the two that pay immediately" time="45 min" predict="Which of your current frictions is actually the most frequent?">
+
+1. For one week, keep a note every time you hit fleet friction — wrong directory, wrong port, unclear notification, a repeated prompt.
+2. Count them. The most frequent one is what to build first.
+3. Build the switcher and the per-project notification prefix regardless — they are cheap and they always pay.
+4. Extract your new-project template from the most recent project you started.
+5. Use the template to start a throwaway project and time it.
+
+</Exercise>
+
+<Expect>
+
+Starting a properly guarded project drops from an hour to a few minutes. And the friction count usually surprises you — the thing you would have automated first is rarely the thing you actually hit most.
+
+</Expect>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    You spend two days building fleet tooling for three projects, and one of them was about to become dormant anyway.
+  </BreakPart>
+  <BreakPart label="Why">
+    Tooling is satisfying and feels like progress, and it is the easiest thing to do when the actual products are hard.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Cap it. One tool per felt frustration, built after the frustration, timeboxed to an hour. If it needs longer than an hour, it is a product and should be treated as one.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="tool-q1"
+  q="When should you build a fleet status command?"
+  options={[
+    "Before starting the second project, to be prepared",
+    "After you have missed something that was blocked overnight",
+    "Never; a daily log is enough",
+    "As soon as you have more than one terminal open"
+  ]}
+  answer={1}
+/>

@@ -1,0 +1,106 @@
+---
+title: Letting an agent work while you sleep
+summary: The most impressive and most expensive thing in this course. What makes an overnight run safe rather than a bill.
+order: 4
+kind: lesson
+code: '5.4'
+tier: 4
+time: 50 min
+competencies: [fleet, operate, verify]
+---
+
+<Analogy>
+  <p>A slow cooker left on overnight. It is safe because it has a thermostat and a timer, not because you trust the stew. A pan on an open flame with the same food in it is a house fire.</p>
+</Analogy>
+
+## Five conditions, all five
+
+A task is safe to run unattended only when every one of these is true. Four out of five is not a pass.
+
+1. **Well specified.** A spec so clear that no decision arises at 2am. *If the agent would need to ask you something, it is not ready.*
+2. **Reversible.** It works on a branch in its own worktree. Nothing it does can reach main or production.
+3. **Gated.** Checks run after every round, so a bad round is caught by the machine rather than by you at breakfast.
+4. **Limited.** A hard cap on rounds and tokens, so a loop ends by itself.
+5. **Incremental.** Each round produces one small committed change, so the morning gives you a readable history rather than one enormous diff.
+
+The fifth is the one people skip, and it is what makes the morning bearable. Twelve small commits can be read and selectively kept. One 4,000-line commit can only be accepted or thrown away.
+
+## The memory file is the trick
+
+A long unattended run cannot rely on conversation, because each round starts fresh. So the run keeps **its own notes on disk**: what is done, what failed and why, what to try next.
+
+<CodeFile title="docs/overnight-notes.md — written by the run, read by the next round">
+
+```
+ROUND 7 · 02:14
+Done:     migrated 12 of 30 endpoints to the new client
+Failed:   /bookings/{id}/reschedule — generated client lacks the PATCH verb
+Learned:  the generator needs `--with-patch`; rounds 4-6 wasted on this
+Next:     regenerate client first, then continue from endpoint 13
+```
+
+</CodeFile>
+
+That file is what makes round twelve smarter than round two instead of repeating it. Without it, a long run rediscovers the same dead end all night.
+
+## The morning protocol
+
+Do this in order, and resist the temptation to start at the end:
+
+1. **Read the commits, in order.** Not the summary. The summary is the agent's account of its own work.
+2. **Run the app.**
+3. **Read the notes file**, especially the failures — that is where you learn what your spec left ambiguous.
+4. **Then** read the summary, as a claim to check rather than a report to accept.
+5. **Keep, revert or restart.** Reverting an overnight run is a normal outcome, not a disaster.
+
+<Callout type="warn" label="Cost is the other failure mode">
+  <p>An unattended agent with no token cap and a flaky test can spend a great deal of money achieving nothing. Set the cap, set a budget alert on the account, and check the cost before the diff — a cheap run that failed is a much better outcome than an expensive one that succeeded.</p>
+</Callout>
+
+<Exercise id="night-1" title="One overnight run, with all five conditions" time="30 min to set up, one night to run" predict="Which condition will turn out to be the weakest in your setup?">
+
+1. Pick a genuinely mechanical task: migrating endpoints to a generated client, adding a missing test per module, updating a deprecated API call throughout.
+2. Write the spec until you cannot find a decision left in it. Have an agent read it and list every ambiguity; resolve them all.
+3. Set it up in a worktree, on a branch, with checks after each round, a round cap and a token cap, and a notes file.
+4. Pre-approve the permissions it needs so it cannot block at 23:10.
+5. Run it. In the morning, follow the protocol in order.
+
+</Exercise>
+
+<Expect>
+
+The specification is almost always the weakest condition. The run stops early, or wanders, because a decision appeared that the spec did not cover — and the notes file tells you exactly which one. That is a cheap way to learn what "well specified" really means.
+
+</Expect>
+
+<IfNot>
+
+If the run produced one huge commit, the increment condition was not enforced. Require a commit per round in the loop itself rather than asking for it in the prompt — this is a law-versus-request situation.
+
+</IfNot>
+
+<Quiz
+  id="night-q1"
+  q="An overnight run produced one 4,000-line commit that passes all checks. What is the problem?"
+  options={[
+    "Nothing, if the checks pass",
+    "It is not incremental, so it can only be accepted or discarded wholesale",
+    "It ran too long",
+    "The checks must be wrong"
+  ]}
+  answer={1}
+/>
+
+<Checklist
+  id="night-check"
+  title="Before you start an unattended run"
+  items={[
+    "The spec contains no decision the agent would need to ask me about",
+    "It runs in a worktree on a branch; nothing can reach main",
+    "Checks run after every round",
+    "Round and token caps are set, and a budget alert exists",
+    "Each round commits one small change",
+    "A notes file carries learning between rounds",
+    "The permissions it needs are pre-approved so it cannot block silently"
+  ]}
+/>
