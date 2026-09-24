@@ -1,0 +1,94 @@
+---
+title: Agents as sparring partners
+summary: The highest-value use of an agent is not writing code. It is attacking your thinking before reality does.
+order: 5
+kind: decision
+code: '6.5'
+tier: 4
+time: 50 min
+competencies: [decide, brief]
+---
+
+<Analogy>
+  <p>A sparring partner who actually tries to hit you. One who lets you win teaches you nothing and sends you into the ring with false confidence.</p>
+</Analogy>
+
+## Agreeableness is the default, and it is useless
+
+Ask an agent what it thinks of your plan and you will usually get an improved version of your plan. That feels like help and is nearly worthless, because the failure mode you need to find is the one you cannot see.
+
+Getting genuine pushback requires three things in the brief:
+
+1. **A role that is not "assistant".** *"You are reviewing this to stop a bad decision being made."*
+2. **Explicit permission to be blunt.** *"Do not be agreeable. Do not soften findings."*
+3. **A structure that forces disagreement.** Argue one side, then the other. Find three ways this fails. Name the weakest assumption.
+
+## Four briefs worth keeping
+
+**Attack the plan:**
+
+<Prompt title="Before committing to an approach">
+Here is my plan. You think it is wrong. Give me the three strongest specific reasons it will fail, ranked by likelihood, each with the observable symptom I would see first. Then tell me which of my assumptions, if false, breaks the most of it. Do not suggest improvements — only attack.
+</Prompt>
+
+**Both sides:**
+
+<Prompt title="For a genuine fork in the road">
+Argue forcefully for option A, as its strongest advocate. Then argue forcefully for option B the same way. Then, separately, tell me what someone would need to believe to pick each. Do not conclude.
+</Prompt>
+
+**The premortem:**
+
+<Prompt title="After the decision, before the work">
+It is six months from now and this decision was a disaster. Write the postmortem: what went wrong, in what order, and what the early warning signs were that we ignored at the time.
+</Prompt>
+
+**Find the unasked question:**
+
+<Prompt title="When something feels unresolved">
+What question should I be asking about this that I have not asked? What is the most important thing I seem to be assuming without checking?
+</Prompt>
+
+The premortem is the most reliably useful of the four. Framing the failure as having already happened produces far more specific answers than "what might go wrong".
+
+## Where sparring does not help
+
+Be honest about the limits:
+
+- **It does not know your context** beyond what you tell it — your team, your users, your history.
+- **It will invent plausible risks.** Not every finding is real; weigh them.
+- **It cannot decide.** Sparring produces arguments, not a choice. The choice remains yours, which is the whole point of this part.
+- **A second opinion from the same model** is not independent. For decisions that matter, spar with a different model.
+
+<Callout type="tip" label="One rule that changes the output">
+  <p>Never include your preferred answer in the brief. The moment you write <i>"I think we should use X, what do you think?"</i>, you have anchored it. Describe the situation and the constraints; let the options come back without your thumb on the scale.</p>
+</Callout>
+
+<Exercise id="sp-1" title="Spar with a decision you have already made" time="45 min" predict="Will the premortem find something you have not considered?">
+
+1. Take a significant decision you made in the last month and are confident about.
+2. Run the attack brief. Write down every finding.
+3. Run the premortem.
+4. Run it again with a different model.
+5. Sort every finding: **real and unaddressed**, **real and accepted**, or **invented**.
+6. For each in the first pile, decide what you will do.
+
+</Exercise>
+
+<Expect>
+
+Two or three findings land in "real and unaddressed", and typically one of them is something you would have discovered in production. The invented ones are useful too — learning to spot a plausible-sounding risk that is not real is a skill, and it is the same skill that stops you accepting a plausible-sounding answer.
+
+</Expect>
+
+<Quiz
+  id="sp-q1"
+  q="Which brief most reliably produces specific, useful criticism?"
+  options={[
+    "What do you think of this plan?",
+    "What are the risks of this plan?",
+    "It is six months later and this failed. Write the postmortem.",
+    "How would you improve this plan?"
+  ]}
+  answer={2}
+/>

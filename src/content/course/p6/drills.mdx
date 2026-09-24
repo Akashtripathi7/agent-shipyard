@@ -1,0 +1,82 @@
+---
+title: Part 6 decision drills
+summary: Judgment under realistic constraints, with no code to hide behind. Commit first, then compare.
+order: 6
+kind: drill
+code: 'Drills 6'
+tier: 4
+time: 40 min
+competencies: [decide, architecture, orchestrate]
+---
+
+Commit to an answer before revealing, and write your reasoning in one sentence. These have no clean answers — the reasoning is the whole exercise.
+
+<Drill id="p6-d1" scenario="Your agent, mid-/develop, says: 'I need to store the recurrence rule for repeating appointments. I can store an RRULE string, or expand every occurrence into rows for the next two years. I have gone with expanding, since queries are simpler.' It has already written the migration and 200 lines of code. You are three days from a demo." fields={[
+  { label: "Your move", options: ["Let it continue; ship the demo, revisit after", "Stop, revert, decide properly, then resume", "Keep the code but add an ADR documenting the choice", "Ask it to support both and decide later"] },
+  { label: "Why?" }
+]}>
+
+**Expert answer: stop, revert, decide properly — even three days from a demo.**
+
+This is the exact case lesson 6.1 exists for. Expanding occurrences into rows is a **stored data format decision**: once real appointments exist as expanded rows, changing to RRULE means migrating live data and reconciling edits made to individual occurrences. The 200 lines of code are the cheap part; the rows are the expensive part.
+
+The demo pressure is real and does not change the category. What it *does* change is the acceptable amount of deliberation — an hour, not a day. Write the ten-minute trade-off, pick, record it.
+
+Documenting the existing choice without re-examining it is the tempting middle path and the worst answer: it makes an unconsidered decision permanent while creating the feeling that it was considered.
+
+Supporting both is the classic flinch. Two representations of the same truth is the "silent corruption" failure from 4.11, in data form.
+
+The deeper lesson: the agent did exactly what it was asked and flagged nothing, because nothing told it this class of decision needed you. That is the AGENTS.md line from 6.1, and its absence is your bug rather than the agent's.
+
+</Drill>
+
+<Drill id="p6-d2" scenario="A teammate proposes moving your three-service product onto a shared event bus with a saga orchestrator, citing a talk about a company with 400 services. Your product has 3 services, 6 engineers and 4,000 users. You think it is over-engineering but cannot articulate why without sounding conservative." fields={[
+  { label: "Your move", options: ["Say it is over-engineering for our scale", "Ask which pain, in the past tense, this solves", "Agree to a limited trial on one flow", "Ask for a written trade-off with a falsifier"] },
+  { label: "Why?" }
+]}>
+
+**Expert answer: ask which pain, in the past tense, with an example — then ask for the written trade-off.**
+
+"Over-engineering for our scale" is true and unpersuasive, because it sounds like a preference and invites an argument about ambition. The ladder question from 6.2 is neither: *what happened, recently, that this would have prevented?*
+
+If the answer is a specific incident — a saga that leaked, a coordination failure that cost a day — the proposal may be right, and you have learned something. If the answer is a talk about a company with 400 services, the mismatch is visible to everyone without you having to call it over-engineering.
+
+Then the written trade-off from 6.3, particularly the falsifier. Someone who must write "this is wrong if X" has to think about their own proposal's failure conditions, and that alone resolves a great many of these.
+
+A limited trial sounds reasonable and is usually a trap here: half-migrated infrastructure has the costs of both approaches and the benefits of neither, and it is very hard to reverse once someone has built on it.
+
+</Drill>
+
+<Drill id="p6-d3" scenario="You have shipped four products with agents. Your workflow has nine stages, six skills, four subagents, a gate and a fleet log. A friend starting out asks you to set them up the same way, so they 'start right'." fields={[
+  { label: "Your move", options: ["Share your whole setup; it works", "Give them rung 1 and the loop only", "Give them the setup minus the fleet parts", "Tell them to build their own from scratch"] },
+  { label: "Why?" }
+]}>
+
+**Expert answer: rung 1 and the loop, and nothing else.**
+
+Your setup is the *accumulated answer to pains you felt*. Handed over wholesale it is configuration without comprehension — they will not know which parts matter, they cannot debug it, and when something misbehaves they have no model of why it exists.
+
+Worse, it removes the learning. Every rung on the ladder is understood by feeling the pain that justifies it. Give someone a gate before they have hand-caught the same mistake twice and they will treat it as ceremony.
+
+What does transfer: the loop, the habit of writing decisions down, and the ladder itself — so they know what to add and when. Judgment transfers; configuration does not. This is the same principle as lesson 5.1's fleet rule and 5.2's "process transfers, architecture does not", which is a sign it is a real principle rather than a local one.
+
+"Build your own from scratch" is unhelpfully purist. Rung 1 plus the loop is a real starting point, not a blank page.
+
+</Drill>
+
+<Drill id="p6-d4" scenario="An agent's plan for a feature is good. You ask it to attack its own plan, and it produces three risks — all real, all addressable. You feel reassured and ready to build." fields={[
+  { label: "Your move", options: ["Build; the plan survived scrutiny", "Get a different model to attack it", "Run a premortem before building", "Ask it what question you have not asked"] },
+  { label: "Why?" }
+]}>
+
+**Expert answer: a different model, and a premortem. The reassurance is the warning sign.**
+
+An agent attacking its own plan is not independent review — it is the same model, the same reasoning and the same blind spots, now wearing a critic's hat. It will find the risks it is capable of seeing, which are by definition not the ones that defeated it when planning.
+
+This is lesson 4.8's fresh-context argument applied to thinking rather than code. The whole reason review works is that the reviewer did not write the thing.
+
+The premortem is worth running regardless, because it reframes: "attack this plan" produces risks, while "this already failed, explain how" produces a *sequence*, with early warning signs. Sequences are more actionable than lists.
+
+The feeling of reassurance is the real lesson. Finding three addressable risks is exactly what a plan looks like just before the unaddressed fourth one hits it.
+
+</Drill>

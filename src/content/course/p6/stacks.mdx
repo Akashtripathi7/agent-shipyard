@@ -1,0 +1,83 @@
+---
+title: Choosing a stack you will not resent
+summary: Picking technology is mostly a people decision wearing a technical costume — and agents have quietly changed one part of it.
+order: 4
+kind: decision
+code: '6.4'
+tier: 4
+time: 50 min
+competencies: [decide, architecture]
+---
+
+<Analogy>
+  <p>Choosing the language a house is built in. Every material can hold a roof up. What actually matters is whether you can find someone to fix the plumbing in ten years.</p>
+</Analogy>
+
+## The criteria that actually decide it
+
+Ranked by how much they matter in practice, which is roughly the reverse of how much they get discussed:
+
+1. **Can you and your team work in it well?** A stack you are fluent in beats a better stack you are not, for at least a year.
+2. **Does it have the libraries for your actual problem?** Geospatial, payments, ML, real-time — some ecosystems are simply further ahead in each.
+3. **Can you hire or ask for help?** A vibrant community is a permanent support contract.
+4. **Is it boring enough?** Mature technology has known failure modes and answered questions. Novel technology has surprises you will discover in production.
+5. **Operational fit.** What you can deploy, monitor and debug with what you have.
+6. **Raw performance.** Genuinely last, for the overwhelming majority of products.
+
+## What agents changed, and what they did not
+
+**Changed:** the cost of unfamiliar *syntax* has dropped a great deal. Writing Go when you know Python is no longer the barrier it was — the agent knows the syntax and the standard library.
+
+**Not changed:** the cost of unfamiliar *judgment*. You still have to review the code, and reviewing a language you do not think in is slow and unreliable. You will not notice the idiom that is wrong, the concurrency mistake, or the library that is subtly the wrong choice.
+
+<Callout type="warn" label="The trap this creates">
+  <p>Agents make it easy to <b>start</b> in an unfamiliar stack and just as hard to <b>own</b> one. The failure is six months in, with a production issue in a language you cannot debug under pressure. Choose a stack you could maintain if every agent vanished tomorrow — or accept, explicitly and in writing, that you are taking that risk.</p>
+</Callout>
+
+## Where a different stack genuinely earns its place
+
+The same test as A4.1's service split: a measured, specific reason.
+
+- **The library exists only there.** Geospatial, scientific computing, a vendor SDK.
+- **The performance requirement is real and measured**, not anticipated.
+- **The platform demands it.** iOS wants Swift; the browser wants JavaScript.
+
+"It is more modern" and "it is faster in benchmarks" are not on that list. Neither is "the agent is good at it".
+
+## The parts you should not re-decide
+
+Some choices are so well-served by the boring default that deliberating is waste:
+
+- **A relational database** unless you can name why not. Postgres is the right answer astonishingly often.
+- **The language your team already uses**, unless a criterion above overrides it.
+- **A managed service** over self-hosting, until cost or control genuinely forces it.
+
+Spending your deliberation budget here leaves none for the decisions that are actually load-bearing — which, per lesson 6.1, are the irreversible ones.
+
+<Exercise id="st-1" title="Re-decide a stack you inherited" time="45 min" predict="Would you choose the same thing again? For the same reasons?">
+
+1. Take a stack choice on a current project.
+2. Write the trade-off format from 6.3 for it, as if deciding today.
+3. Rank the six criteria for your situation, then honestly score your current choice.
+4. Ask an agent for the options, not a recommendation, plus which constraint is doing the most work.
+5. **Decide whether to keep it, and write the ADR either way** — including the one thing that would make you reconsider.
+
+</Exercise>
+
+<Expect>
+
+Usually you keep it, and now you know why, which is worth more than the decision. Occasionally you find a choice made for a reason that no longer applies — a performance fear that never materialised, or a library that has since arrived elsewhere.
+
+</Expect>
+
+<Quiz
+  id="st-q1"
+  q="An agent writes excellent Go, and your team writes Python. What is the honest reason not to switch a service to Go?"
+  options={[
+    "Go's ecosystem is less mature for web services",
+    "The team cannot review or debug Go well under pressure",
+    "Migration would take too long",
+    "Python performs adequately"
+  ]}
+  answer={1}
+/>

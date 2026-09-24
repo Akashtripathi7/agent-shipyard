@@ -1,0 +1,74 @@
+---
+title: Earn every bit of complexity
+summary: A ladder of setups, and the specific pain that justifies climbing each rung.
+order: 2
+kind: decision
+code: '6.2'
+tier: 4
+time: 45 min
+competencies: [decide, orchestrate, fleet]
+---
+
+<Analogy>
+  <p>You do not hire a construction crew to hang a picture, and you do not build a tower with one carpenter. You start with the smallest team that can do the job safely, and grow it when the job proves it needs more.</p>
+</Analogy>
+
+## Start simple, and make complexity prove itself
+
+The central advice for agent systems, from the people who build them: **start with the simplest thing that works, and add complexity only when it clearly improves results.** Every extra agent, pattern and tool adds cost, new ways to fail, and more for you to watch.
+
+Think of your setup as a ladder. Each rung solves one specific pain. **Climb only when you feel that pain.**
+
+| Rung | Setup | Climb to it only when |
+|---|---|---|
+| **1** | One session, one task | *This is your default. Start here.* |
+| **2** | Add subagents for side tasks | Searches and logs you will not reuse keep filling your context |
+| **3** | Parallel sessions in worktrees, coordinated by you | You have two genuinely independent tasks, and time to review both |
+| **4** | A gate pipeline | You keep catching the same kinds of mistakes by hand |
+| **5** | Structured specs | Your hand-written plans keep missing the same things |
+| **6** | An orchestrator | Coordinating sessions yourself has become the bottleneck |
+| **7** | Fleet automation | More than one product is live and needs looking after |
+
+## The rule for climbing
+
+**Name the pain, in the past tense, with an example.** "I spent forty minutes last Tuesday reviewing a diff that a gate would have caught" is a reason to climb to rung 4. "A gate would probably help" is not.
+
+And climbing is not permanent. If a rung stops paying — you added an orchestrator and now spend more time debugging coordination than you saved — **climb back down.** Descending is a legitimate move that almost nobody makes, because it feels like regression. It is not; it is the same judgment applied in the other direction.
+
+<Callout type="warn" label="Complexity has a maintenance cost that arrives later">
+  <p>The cost of a rung is not the day you set it up. It is every future change that has to account for it, every new project that inherits it, and every debugging session that now includes it as a suspect. That bill arrives quietly, months later.</p>
+</Callout>
+
+## Where this course sits on the ladder
+
+Honestly: Tiers 1 and 2 are rungs 1 and 2. Tier 3 teaches rungs 3 and 4. Tier 4 teaches 6 and 7.
+
+But **teaching the ladder is not recommending the top of it.** Most professional work, by most people, most of the time, is rungs 1 to 4. The higher rungs exist for when the work genuinely demands them — and knowing when it does *not* is the more valuable half of the skill.
+
+<Exercise id="cx-1" title="Place your real work on the ladder" time="35 min" predict="Are you above or below the rung your work justifies?">
+
+1. Pick one project you are working on now.
+2. Which rung is your setup actually on? Be honest — count what you have configured, not what you use.
+3. Which rung does the work justify? Name the pain, in the past tense, with a date.
+4. If your setup is above the work, list what you could remove.
+5. If below, climb exactly one rung, and write down what would tell you it did not help.
+
+</Exercise>
+
+<Expect>
+
+Most people are one rung above what their work justifies, usually because a setup built for a busy project stayed after the project quietened. Removing a rung is faster than you expect and makes everything else easier to reason about.
+
+</Expect>
+
+<Quiz
+  id="cx-q1"
+  q="What is a sufficient reason to add a gate pipeline?"
+  options={[
+    "Gates are considered best practice for agent workflows",
+    "I have twice this month hand-caught a mistake a gate would have caught",
+    "The project is about to get more complex",
+    "A colleague recommended it"
+  ]}
+  answer={1}
+/>

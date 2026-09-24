@@ -1,0 +1,91 @@
+---
+title: Reversible and irreversible decisions
+summary: The single most useful question for deciding how much care a decision deserves, and how much of it to delegate.
+order: 1
+kind: decision
+code: '6.1'
+tier: 4
+time: 50 min
+competencies: [decide]
+---
+
+<Analogy>
+  <p>A door you can walk back through, and a door that locks behind you. Most doors are the first kind, and people treat them like the second — standing in the corridor deliberating about a room they could simply step into and leave.</p>
+</Analogy>
+
+## One question, applied everywhere
+
+**If this turns out to be wrong, what does it cost to undo?**
+
+That question decides how much thought a decision deserves, how much evidence it needs, and how safely it can be delegated to an agent. It is the most portable piece of judgment in this course.
+
+| | Reversible | Irreversible |
+|---|---|---|
+| **Examples** | A library choice, a function name, a UI layout, a caching strategy | Your data model, a public API, a stored data format, deleting data, a vendor with your data |
+| **Cost to undo** | Hours | Weeks, or impossible |
+| **Deserves** | A quick decision, tried in practice | An ADR, an adversarial review, a night's sleep |
+| **Delegation** | Let the agent decide and tell you | You decide; the agent implements |
+
+## The two failures, and one is much more common
+
+**Over-deliberating a reversible decision** is the everyday one: two days comparing libraries you could have swapped in an afternoon. The cost is invisible because it looks like diligence.
+
+**Under-deliberating an irreversible one** is rarer and far more expensive: a data model chosen in ten minutes that shapes three years of work.
+
+Agents amplify both. They will happily produce a detailed comparison matrix for a trivial choice, and they will also make a load-bearing schema decision inside a `/develop` run without flagging it — because nothing told them which was which.
+
+<Callout type="tip" label="Put it in AGENTS.md">
+  <p>One line, and it changes how every agent works on your project:</p>
+  <p><i>"Decisions that change stored data, a public interface or anything a user can see the history of are irreversible. Stop and ask before making one, even mid-task."</i></p>
+</Callout>
+
+## What makes something irreversible, in practice
+
+It is rarely the code. Four things:
+
+1. **Data written in a format.** Once a million rows use it, the format is a contract with the past.
+2. **An interface someone else depends on.** Published API, event schema, a URL people bookmarked.
+3. **Anything users have seen.** Removing a feature people rely on is technically easy and socially expensive.
+4. **Deletion.** Data you did not keep cannot be recovered by any amount of later cleverness.
+
+Notice that none of these is "we wrote a lot of code". Volume of code feels like commitment and is usually the cheapest thing to throw away.
+
+## Make irreversible things reversible, when you can
+
+The best move is often to change the category:
+
+- **Expand, migrate, contract** (A3.5) turns a destructive migration into a reversible sequence.
+- **Feature flags** turn a release into a switch.
+- **Soft deletes** turn deletion into a state change, at least for a while.
+- **Versioned APIs** let an old shape live alongside a new one.
+- **Keeping the raw data** lets you recompute derived data when you learn you derived it wrongly.
+
+That last one is underrated. Storing raw events and computing summaries from them means a mistake in your summary logic is an afternoon, not an archaeology project.
+
+<Exercise id="rev-1" title="Sort your last twenty decisions" time="40 min" predict="What share of your deliberation went to reversible choices?">
+
+1. List the last twenty technical decisions on your current project.
+2. Mark each reversible or irreversible, and write the cost to undo.
+3. Now mark how long you actually spent on each.
+4. Find the mismatches — reversible decisions that took hours, irreversible ones that took minutes.
+5. For every irreversible one with no ADR, write one now, including what would make you change it.
+
+</Exercise>
+
+<Expect>
+
+Most people find the ratio inverted: hours on library choices, minutes on the schema. The exercise is uncomfortable in a useful way, and the ADRs you write in step 5 are usually the most valuable documents on the project.
+
+</Expect>
+
+<Quiz
+  id="rev-q1"
+  q="Which of these is most irreversible?"
+  options={[
+    "Choosing a web framework for a new service",
+    "The format you store timestamps in, across a million rows",
+    "Writing ten thousand lines of application code",
+    "Picking a cloud provider for hosting"
+  ]}
+  answer={1}
+/>

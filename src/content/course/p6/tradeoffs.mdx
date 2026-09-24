@@ -1,0 +1,101 @@
+---
+title: Making a trade-off explicit
+summary: Most technical arguments are two people optimising different things without saying so. Here is how to end them in ten minutes.
+order: 3
+kind: decision
+code: '6.3'
+tier: 4
+time: 50 min
+competencies: [decide, architecture]
+---
+
+<Analogy>
+  <p>Two people arguing about the best car. One drives to a farm every day; the other parks in a city. They are not disagreeing about cars — they are disagreeing about roads, and neither has mentioned the road.</p>
+</Analogy>
+
+## Name what you are optimising
+
+Almost every unresolvable technical argument dissolves the moment both sides state what they are optimising for. The usual candidates pull against one another:
+
+- **Speed to ship** against **cost to change later**
+- **Simplicity** against **flexibility**
+- **Performance** against **readability**
+- **Consistency** against **local fit**
+- **Safety** against **convenience**
+
+There is no universal ranking. The ranking comes from the situation — and stating it turns an argument about taste into a comparison of circumstances, which is a thing evidence can settle.
+
+## The ten-minute format
+
+For any decision worth more than a shrug:
+
+1. **The decision**, in one sentence.
+2. **What I am optimising for**, here, ranked.
+3. **Two or three real options**, each with its honest cost.
+4. **What would change my mind** — the observation that would make this wrong.
+5. **The consequence I am accepting**, stated plainly.
+
+The fourth item is the one that makes the difference. A decision with no falsifier is a preference, and it will be relitigated every few months by whoever feels differently that week.
+
+<CodeFile title="docs/adr/0007-session-storage.md">
+
+```markdown
+# Store sessions in Postgres, not Redis
+
+Optimising for: operational simplicity > read latency.
+We run one database well. A second stateful system is a second thing
+to back up, monitor, patch and be woken by.
+
+Options
+- Postgres        ~2ms slower per request; nothing new to operate
+- Redis           faster; a new stateful dependency
+- Signed cookies  nothing to operate; cannot revoke a session
+
+Accepting: ~2ms of extra latency per authenticated request.
+Changes if: session reads exceed 15% of database load, or p99 auth
+latency exceeds 50ms.
+```
+
+</CodeFile>
+
+Ten lines. Anyone who disagrees now has to argue with the ranking or the numbers, both of which are checkable.
+
+## Using an agent well here
+
+An agent is a poor decider and an excellent **broadener**. It knows options you have not met and costs you have not hit.
+
+The prompt that works:
+
+<Prompt title="Options, not a recommendation">
+I am deciding X, optimising for A over B, in this context. Give me the three or four real options, including any I have not mentioned. For each: what it costs, what it makes easy, what it makes hard, and what would have to be true for it to be the right choice. Do not recommend one. At the end, tell me which of my stated constraints is doing the most work in this decision.
+</Prompt>
+
+That final sentence is worth keeping. It frequently reveals that your whole decision rests on one assumption you have never tested.
+
+<Exercise id="to-1" title="Write three, and find the one you had backwards" time="45 min" predict="Which decision will turn out to rest on an untested assumption?">
+
+1. Pick three decisions from your current project that you have not documented.
+2. Write each in the ten-minute format.
+3. For each, ask the agent the "which constraint is doing the most work" question.
+4. For every answer, ask yourself: **have I actually verified that constraint?**
+5. Where the answer is no, verify it — or downgrade the decision to a reversible one and move on.
+
+</Exercise>
+
+<Expect>
+
+At least one decision rests on an assumption you inherited rather than tested — typically a performance requirement nobody measured, or a scale expectation from an optimistic plan. Those assumptions quietly drive real architecture, and finding them is the point of the exercise.
+
+</Expect>
+
+<Quiz
+  id="to-q1"
+  q="What makes a documented decision durable rather than relitigated every few months?"
+  options={[
+    "A thorough comparison of every available option",
+    "A stated falsifier: what would make this the wrong choice",
+    "Agreement from everyone on the team",
+    "Benchmarks for each option"
+  ]}
+  answer={1}
+/>
