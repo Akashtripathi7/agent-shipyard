@@ -1,0 +1,74 @@
+---
+title: M3 · Ingestion under sustained load
+summary: A thousand couriers at 1Hz is not a spike, it is the normal day — and the system has to degrade on purpose rather than collapse.
+order: 4
+kind: milestone
+code: 'L4 · M3'
+tier: 3
+time: 5 hours
+competencies: [architecture, build, operate]
+---
+
+## Goal
+
+Location ingestion that holds your target write rate, sheds load deliberately past it, and recovers the moment load drops.
+
+## Step 1: decide the budget first
+
+Numbers before code, or you will optimise by feel:
+
+- **Target rate** — couriers × updates per second. A thousand couriers at 1Hz is 1000 writes/second, sustained.
+- **Latency budget** — p99 from device to "visible on the customer map". Two seconds is a reasonable promise.
+- **Acceptable loss** — positions are a stream, not a ledger. Losing one update of a moving courier is invisible. **Say so explicitly**, because it unlocks much simpler design than pretending each one is precious.
+
+That last decision is the most valuable one in this milestone.
+
+## Step 2: build for the write pattern
+
+Position data is write-heavy, read-recent, and ages into worthlessness. That shape suggests:
+
+- **Batch writes.** Accept updates into a buffer and write in batches. Enormously cheaper than a transaction per point.
+- **Separate hot from cold.** The current position of each courier belongs in a fast store keyed by courier; the history goes to a time-series or partitioned table.
+- **Partition by time and drop old partitions.** Deleting yesterday's rows one by one at this volume is its own outage.
+
+## Step 3: backpressure, from A4.4
+
+Add these in order, measuring after each:
+
+1. **Timeouts on every external call**, including read timeouts.
+2. **A bounded buffer** — so overload surfaces while you can still act.
+3. **A per-courier rate limit** — one device with a runaway loop must not consume everyone's capacity.
+4. **Load shedding** above a threshold, rejecting fast and cheaply.
+5. **Degradation**: past a level, drop to one update per courier per 10 seconds instead of failing. Decide this now, write it in the runbook.
+
+## Step 4: the load test
+
+<Prompt title="Find the cliff">
+Write a load test that simulates N couriers each sending a position every second for ten minutes, ramping N until something breaks. Report: throughput, p50/p95/p99 latency, error rate and queue depth at each level, and what broke first. Then run the same ramp with a normal booking request mixed in, and report whether the booking stayed fast.
+</Prompt>
+
+<Expect>
+
+The mixed test is the revealing one. Before backpressure, the unrelated booking request gets slow and then fails, because ingestion consumed the shared pools — A4.4's bulkhead failure. After, ingestion plateaus and sheds while bookings stay fast. Same capacity, completely different product behaviour.
+
+</Expect>
+
+<IfNot>
+
+If throughput kept climbing with no cliff, your test is probably not applying real concurrency, or the ingestion path is being batched by the client. Verify with the server's own metrics rather than the load tool's numbers.
+
+</IfNot>
+
+<Checklist
+  id="l4m3-check"
+  title="M3 done"
+  items={[
+    "Target rate, latency budget and acceptable loss are written down",
+    "Writes are batched; current position and history are stored differently",
+    "Old data ages out by dropping partitions, not by row deletes",
+    "Every external call has a read timeout",
+    "Under overload, unrelated requests stay fast",
+    "Degraded behaviour is implemented and in the runbook",
+    "A load test report exists with p99 at each level"
+  ]}
+/>

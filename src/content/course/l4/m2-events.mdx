@@ -1,0 +1,69 @@
+---
+title: M2 · Events, contracts and the hierarchy
+summary: Two interfaces now — the API and the event schemas — and a crew deep enough that you will measure what each level costs.
+order: 3
+kind: milestone
+code: 'L4 · M2'
+tier: 3
+time: 4 hours
+competencies: [architecture, orchestrate, build]
+---
+
+## Goal
+
+An event catalogue with versioned schemas, an OpenAPI contract for the clients, and a hierarchical crew whose cost you are tracking from the first day.
+
+## Step 1: two contracts, not one
+
+Splitting services gives you a second published interface. Both need owning:
+
+- **The API contract** (OpenAPI) — what the three clients call.
+- **The event catalogue** — what services publish to each other.
+
+Write the events down in one place: name, version, when it is published, the fields, and **who consumes it**. That last column is the one people skip and then regret, because an event has no compiler to tell you who depends on it (A4.2's Breaks box).
+
+<Prompt title="Architect, fresh session">
+/architect the event catalogue for Courier Live. Events between ingestion, assignment and notifications. For each: name in past tense, version, trigger, payload fields with types, and consumers. Every event must carry enough for a consumer to act without calling back. Include an id, occurred_at and version on all of them. Write to docs/events/CATALOGUE.md and a schema file per event. Do not design storage.
+</Prompt>
+
+Then put schema compatibility checking in CI. An event schema change should be as hard to make carelessly as a database migration.
+
+## Step 2: the hierarchy, and its price
+
+The crew for this project:
+
+```
+lead
+├── services-lead
+│   ├── ingestion-builder   (worktree)
+│   └── assignment-builder  (worktree)
+└── clients-lead
+    ├── courier-app-builder (worktree)
+    └── tracking-builder    (worktree)
+```
+
+Lesson 4.3 said each level retells the brief and loses detail. Do not take that on trust — **measure it**. For the first feature, have every level write down the brief it received and the brief it passed on, then compare the top and the bottom.
+
+<Expect>
+
+Something is always lost or added between the top brief and the bottom one — usually a constraint drops out, or an implementation detail appears that nobody at the top asked for. Two levels is usually tolerable. This is the evidence for lesson 4.3's advice to flatten wherever you can.
+
+</Expect>
+
+## Step 3: flatten what you can
+
+After measuring, ask the real question: **what does each sub-lead decide that the lead could not?** If the answer is "nothing, it just passes work along", remove the level. A hierarchy is justified by decisions, not by tidiness.
+
+Most people finish this milestone with one lead and four builders reading the same written contracts, which is the orchestrator pattern — and that is the correct outcome of having tried the hierarchy and measured it.
+
+<Checklist
+  id="l4m2-check"
+  title="M2 done"
+  items={[
+    "Every event has a name, version, trigger, payload and a list of consumers",
+    "Events carry id, occurred_at and version",
+    "Schema compatibility is checked in CI",
+    "The brief-drift measurement has been done and written down",
+    "Every remaining level of hierarchy has a decision it owns"
+  ]}
+/>

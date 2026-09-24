@@ -1,0 +1,69 @@
+---
+title: M4 · A moving dot on three screens
+summary: Getting live position to a courier app, a customer map and a dispatcher board — and staying honest through a tunnel.
+order: 5
+kind: milestone
+code: 'L4 · M4'
+tier: 3
+time: 5 hours
+competencies: [architecture, ui, build]
+---
+
+## Goal
+
+Three clients showing live position, each reconnecting cleanly, none of them ever quietly showing a stale courier as live.
+
+## Step 1: pick the transport per client, not per product
+
+A4.5's table, applied three times — and the answers differ:
+
+| Client | Needs | Transport |
+|---|---|---|
+| **Customer tracking** | One courier, one direction, seconds matter | **SSE** |
+| **Dispatcher board** | Many couriers, one direction, dense | **SSE**, one stream, server-filtered |
+| **Courier app** | Sends constantly, receives assignments | **Polling for assignments**, plain HTTP posts for position |
+
+The courier app is the interesting one. It is tempting to give it a WebSocket because it is "the most real-time" client, but it mostly *sends*, and sending is what plain HTTP is for. Assignments arrive rarely, so polling every 10 seconds is simpler, survives network changes, and costs almost nothing.
+
+## Step 2: the honesty rules
+
+A stale map that looks live is worse than a map that says it is stale. Three rules, all visible in the interface:
+
+1. **Every position carries its own timestamp**, and the client shows age once it exceeds a threshold — "last seen 3 minutes ago" rather than a confident dot.
+2. **The client ignores anything older than what it has already applied.** Out-of-order arrival is normal (A4.2).
+3. **Disconnection is visible.** Not an error banner, but the map must not imply liveness it does not have.
+
+## Step 3: survive the tunnel
+
+The test that matters, from A4.5:
+
+1. Stream position to the customer map.
+2. Kill the network for two minutes.
+3. Restore it.
+
+The client must reconnect with backoff, catch up via `Last-Event-ID`, and — because two minutes may exceed the replay buffer — be corrected by the **periodic full snapshot**. During the outage it must show the position as ageing, not as current.
+
+<Expect>
+
+The first attempt reconnects and shows a two-minute-old position as though it were live, with no error anywhere. That is the failure worth internalising: everything worked, nothing errored, and the product lied to a customer waiting for a delivery.
+
+</Expect>
+
+## Step 4: a rolling restart under load
+
+The failure from A4.5's Breaks box, tested deliberately: with all three clients connected and ingestion at load, restart the streaming service one instance at a time.
+
+Watch for the thundering herd — every dropped client reconnecting at once. Jittered backoff on the client is the fix, and this is the only way to find out whether yours works.
+
+<Checklist
+  id="l4m4-check"
+  title="M4 done"
+  items={[
+    "Each client's transport is chosen for its own needs, not the product's label",
+    "Positions carry timestamps and the UI shows age past a threshold",
+    "Clients ignore out-of-order updates",
+    "A two-minute outage recovers correctly, including past the replay buffer",
+    "During an outage nothing is shown as live that is not",
+    "A rolling restart under load does not produce a reconnection storm"
+  ]}
+/>

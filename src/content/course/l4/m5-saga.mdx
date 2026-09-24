@@ -1,0 +1,70 @@
+---
+title: M5 · Assignment, the saga that can fail halfway
+summary: One business operation across two services, with no transaction to fall back on — and the durable record that makes a crash survivable.
+order: 6
+kind: milestone
+code: 'L4 · M5'
+tier: 3
+time: 5 hours
+competencies: [architecture, build, verify]
+---
+
+## Goal
+
+Assigning a courier works, fails cleanly, and survives a crash in the middle without leaking reserved capacity.
+
+## Step 1: find the true invariant
+
+Assignment spans services: reserve the courier, create the delivery, notify. A4.3 said the cheapest correct thing is not to span at all — so first ask whether it has to.
+
+**One courier cannot hold two active deliveries.** That invariant must be strongly consistent, which means it needs one owner and one transaction. If courier state lives in the assignment service, that part is a local transaction and only the *notification* is distributed — which is a saga with a trivial compensation.
+
+Most of the difficulty in distributed systems is removed by putting the seam somewhere else. Try that before building machinery.
+
+## Step 2: the saga, where it is genuinely needed
+
+Where a real multi-step operation remains — reserve capacity, charge the customer, assign — build it properly:
+
+- **Every step has an idempotent compensation.**
+- **A durable saga record** stores which step succeeded and which is pending, written *before* attempting the next step.
+- **Compensations that fail** raise an alert for a human. They do not retry forever.
+
+## Step 3: crash it in the middle
+
+The exercise from A4.3, at project scale:
+
+1. Run the assignment saga successfully.
+2. Make step three fail; confirm compensations run and nothing is left reserved.
+3. **Kill the process between step two and step three.** Restart it.
+4. Does anything resume or clean up? If not, add the durable record and repeat.
+5. Run the compensation twice deliberately and confirm the effect happens once.
+
+<Expect>
+
+Step 3 is the one that teaches. Without a durable record, the restarted service has no idea a saga was in flight: capacity stays reserved forever, no error is logged, and the only symptom is a courier who can never be assigned again. Reserved-forever is the classic distributed leak, and it is invisible until someone complains.
+
+</Expect>
+
+<IfNot>
+
+If the crash recovered by itself, check your steps are genuinely in separate transactions — an ORM session spanning all three is one transaction wearing a saga costume. It will pass this test and fail in production.
+
+</IfNot>
+
+## Step 4: make the in-between state honest
+
+Between "capacity reserved" and "delivery created" the system is visibly inconsistent. Decide what each client shows — a "assigning…" state is honest; an error is not; silently showing the old state is worst, because a dispatcher will assign someone else.
+
+<Checklist
+  id="l4m5-check"
+  title="M5 done"
+  items={[
+    "The one-active-delivery invariant is enforced by a single transaction with one owner",
+    "Any remaining cross-service operation has a compensation per step",
+    "A durable saga record is written before each step is attempted",
+    "A crash mid-saga is detected and resolved on restart",
+    "Compensations are idempotent and tested by running them twice",
+    "Failed compensations alert a human rather than retrying forever",
+    "The in-between state is shown honestly in every client"
+  ]}
+/>

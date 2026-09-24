@@ -1,0 +1,77 @@
+---
+title: M6 · Seeing it, then shipping it
+summary: Tracing across two services, alerts that mean something, and the Tier 3 gate answered with evidence rather than feeling.
+order: 7
+kind: milestone
+code: 'L4 · M6'
+tier: 3
+time: 5 hours
+competencies: [operate, verify, decide]
+---
+
+## Goal
+
+A trace that finds a slow span across services in under a minute, alerts a person would act on, and an honest answer to whether you have cleared Tier 3.
+
+## Step 1: tracing, and proving propagation
+
+Add tracing across both services with the request id propagated. Then run A4.6's exercise on your own system: add 400ms of artificial latency deep inside one service, and find it **using the trace alone**.
+
+The failure to watch for is a trace showing one span with no children — that means context is not being forwarded on outbound calls, which makes the whole thing decorative. Verify propagation before you trust it.
+
+## Step 2: alerts a person would act on
+
+For Courier Live, alert on symptoms a user would notice:
+
+| Alert | Why it is a symptom, not a cause |
+|---|---|
+| Ingestion error rate above 1% for 5 minutes | Positions are being lost |
+| p99 device-to-map latency above the budget | The map is visibly behind |
+| Consumer lag growing without recovery | Events are backing up; the board is stale |
+| Dead-letter queue non-empty | Something failed permanently and nobody knows |
+| Saga records pending beyond a timeout | The leak from M5, caught early |
+
+Not on that list: CPU at 80%. That is a cause, it is often fine, and it wakes someone for a number.
+
+Every alert gets a **runbook line**: what it means, what to check first, what to do.
+
+## Step 3: ship, then break it on purpose
+
+Deploy through staging. Then, on staging under load, run the failures you have designed for:
+
+1. Kill one ingestion instance. Does the system stay up and rebalance?
+2. Stop the event bus for 60 seconds. Do consumers catch up without losing events?
+3. Take the notification service down entirely. **Do deliveries still work?** This is the "fails alone" claim from M1 — if bookings break, your split did not buy what the ADR said it did.
+4. Fill the dead-letter queue. Does the alert fire?
+
+<Expect>
+
+Number three is the honest test of the whole architecture. Many splits that look right on a diagram turn out to be synchronously coupled in one forgotten call, and the blast radius the ADR promised does not exist.
+
+</Expect>
+
+## Step 4: the Tier 3 gate, answered
+
+> *A crew run finished without you reading every diff, because the gates caught what you would have caught.*
+
+Across L2, L3 and L4 you have `docs/crew-log.md`, gate findings, CI history and post-release issues. Answer with numbers:
+
+<Prompt title="The honest gate check">
+Using only my crew logs, gate findings, CI history and post-release issues across Vault, Book-a-Slot and Courier Live: is my intervention rate per feature falling? Which failure mode from lesson 4.11 still dominates? What reached production that neither my gates nor I caught, and which single gate would have caught the most of it? Do not be encouraging — I want the pattern, not a summary.
+</Prompt>
+
+If the answer is that you are still reading every diff, that is useful information and not a failure. It usually means one specific gate is missing, and the question names it.
+
+<Checklist
+  id="l4m6-check"
+  title="Courier Live, shipped — and Tier 3 assessed"
+  items={[
+    "A trace finds an injected slow span in under a minute",
+    "Trace context propagates across both services, verified",
+    "Every alert is a user-visible symptom and has a runbook line",
+    "Killing one instance does not take the system down",
+    "The notification service can be down without stopping deliveries",
+    "Pending sagas past a timeout raise an alert",
+    "The Tier 3 gate is answered from evidence, with the missing gate named"
+  ]}
+/>

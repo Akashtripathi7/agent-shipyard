@@ -1,0 +1,47 @@
+---
+title: Courier Live, project overview
+summary: Real-time delivery tracking across three apps and two services, built by a hierarchical crew — the first product where the hard problems are distributed ones.
+order: 1
+kind: overview
+code: 'L4'
+tier: 3
+time: 24–30 hours over 4 weeks
+competencies: [architecture, orchestrate, operate, verify]
+---
+
+## What you're building
+
+A small delivery operation. **Couriers** run an app that reports their position. **Customers** watch their delivery move on a map. **Dispatchers** assign work from a dashboard. Positions arrive every few seconds from every active courier, and the map has to stay honest through tunnels, dead batteries and app restarts.
+
+## Why this project, at this point
+
+Book-a-Slot was complex but **not distributed**. Everything lived in one service and one database, so a transaction still meant something. Courier Live is where that stops being true, and where every Architecture A4 lesson has to be applied for real:
+
+| A4 lesson | Where it bites here |
+|---|---|
+| When to split | Location ingestion genuinely scales and fails differently. Almost nothing else does |
+| Events and messaging | Position updates, assignment changes, delivery completion |
+| Consistency without transactions | Assigning a courier spans services and can fail halfway |
+| Load and backpressure | A thousand couriers at 1Hz is a sustained write load, not a spike |
+| Real-time transports | Getting a moving dot onto three different screens |
+| Observability | A slow request across two services is unanswerable without tracing |
+
+## The stack and why
+
+A **high-throughput service** for location ingestion — Go is a good fit, and the point is that this is the one place a different technology is genuinely justified. **The existing Python service** for bookings and assignment. **PostgreSQL with PostGIS** for geospatial queries, **an event bus** between services, and **three clients**: courier app, customer tracking view, dispatcher dashboard.
+
+<Callout type="warn" label="You are meant to argue with this stack">
+  <p>M1 asks you to attack the split before you build it. If your honest conclusion is that this should be one service with a queue, <b>that is a correct answer</b> and you should write the ADR saying so. The lesson is the reasoning, not the architecture diagram.</p>
+</Callout>
+
+## How you work
+
+This is the first project big enough to justify a **hierarchy** — and the first where you will feel its cost. One lead, two sub-leads (services and clients), builders under each. Lesson 4.3 warned that each level retells the brief and loses detail; here you will measure exactly how much.
+
+## Done when
+
+- A courier's movement appears on the customer's map within two seconds, and survives a two-minute tunnel without lying.
+- A load test at your target courier count runs with p99 latency inside your stated budget, and the system degrades rather than collapses beyond it.
+- An assignment that fails halfway leaves no reserved capacity and no assigned courier.
+- A trace shows where a slow request spent its time, across both services.
+- You can state the Tier 3 gate answer with evidence.

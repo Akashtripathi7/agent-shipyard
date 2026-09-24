@@ -1,0 +1,66 @@
+---
+title: M1 · The split, argued
+summary: Decide what becomes a separate service by trying to kill each one, and write the ADR including the best argument against yourself.
+order: 2
+kind: milestone
+code: 'L4 · M1'
+tier: 3
+time: 3 hours
+competencies: [architecture, decide]
+kit: [adr-template]
+---
+
+## Goal
+
+An ADR naming exactly which services exist, which test each one passes, and the strongest argument against the split — written before anything is built.
+
+## Step 1: apply the test honestly
+
+From A4.1, a service earns separation when at least one is true, with evidence rather than intuition:
+
+- It **scales differently** — a measured load profile the rest does not share.
+- It **fails differently and must fail alone.**
+- It **needs different technology**, defensibly.
+- A **separate team owns it** and coordination is the bottleneck.
+
+Go through each candidate — ingestion, bookings, assignment, notifications, dashboard API — and write the sentence. Most will not survive.
+
+## Step 2: have it attacked, twice
+
+<Prompt title="Argue it down">
+Argue that Courier Live should be a single service with a background queue. Attack each proposed split specifically, using the costs in A4.1. Where is the team paying the distributed-systems tax without collecting a benefit? Do not be agreeable.
+</Prompt>
+
+<Prompt title="Then argue it up">
+Now argue the opposite: which parts of this system will hurt most in a year if they are not separated now? What becomes expensive to split later that is cheap to split today?
+</Prompt>
+
+Two opposed briefs, read together, are worth far more than one balanced one. The balanced version tends to produce a list of considerations; the opposed pair produces arguments you have to actually decide between.
+
+## Step 3: the seam, and the data
+
+If you do split, the seam goes through **business capability** and the service **owns its data**. Ingestion owning the position table means nothing else reads it directly — other services get told through events, or ask.
+
+Two services sharing a table is a distributed monolith: every coupling of a monolith, plus network calls.
+
+## Step 4: write the ADR
+
+Include the decision, the test it passes, the strongest argument against, and — importantly — **what would make you merge it back**. Merging services back is a legitimate move, and an ADR that never contemplates it tends to produce architectures nobody is willing to simplify.
+
+<Expect>
+
+Usually only location ingestion survives the attack. It has a genuinely different write profile, must fail alone, and has a defensible technology argument. That is what a passing test looks like — and everything else staying in one service is the right outcome, not a lack of ambition.
+
+</Expect>
+
+<Checklist
+  id="l4m1-check"
+  title="M1 done"
+  items={[
+    "Every proposed service has a written sentence naming which test it passes",
+    "Both adversarial briefs have been run and read together",
+    "No two services share a database table",
+    "The ADR records the strongest argument against the split",
+    "The ADR says what would make me merge services back"
+  ]}
+/>
