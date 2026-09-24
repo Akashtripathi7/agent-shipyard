@@ -1,0 +1,108 @@
+---
+title: Tenants and data isolation
+summary: The moment your product serves more than one organisation, every query gains a second job — proving it only ever touches one customer's data.
+order: 1
+kind: arch
+code: 'A3.1'
+tier: 3
+time: 70 min
+competencies: [architecture, security]
+---
+
+<Analogy>
+  <p>An office building. Every company has its own floor, its own lock and its own post. The lifts are shared. Nobody thinks that is unsafe — until one lift opens on the wrong floor and the doors do not close.</p>
+</Analogy>
+
+## The moment this becomes your problem
+
+Pocket Ledger had one user per account, so "your data" and "the data" were the same thing. Book-a-Slot serves **clinics**: a receptionist at Clinic A must never see a booking from Clinic B. That is **multi-tenancy**, and a tenant is whatever your product sells to — an organisation, a workspace, a team.
+
+Almost every serious data breach in this class of product is the same bug: a query that forgot which tenant it was for.
+
+## Three ways to separate tenants
+
+| Approach | What it means | Isolation | Cost and pain |
+|---|---|---|---|
+| **Shared tables, tenant column** | One database, every row carries `tenant_id` | Weakest — one forgotten `WHERE` leaks | Cheapest to run, easiest to query across tenants |
+| **Schema per tenant** | One database, a schema per customer | Middle | Migrations run N times; hundreds of schemas get slow |
+| **Database per tenant** | A whole database each | Strongest — a bug cannot cross | Expensive; painful above a few dozen tenants |
+
+For almost every product starting out, the answer is **shared tables with a tenant column** — and then the whole job becomes making the forgotten `WHERE` impossible.
+
+## Making the forgotten WHERE impossible
+
+The mistake is treating tenant filtering as something each query remembers. Remembering does not scale, and agents write a lot of queries.
+
+1. **Push it below the query.** Row-level security in Postgres applies the filter in the database itself, so a query that forgets it returns nothing rather than everything.
+2. **Or put it in one place in code** — a repository layer that every query goes through, which cannot build a query without a tenant.
+3. **Never take the tenant from the request body.** Derive it from the authenticated session. A `tenant_id` the caller supplies is a caller who can choose whose data to read.
+4. **Test it adversarially.** One test per endpoint that authenticates as Tenant A and asks for a Tenant B resource by id, asserting 404.
+
+<Callout type="warn" label="This is the IDOR bug from lesson 4.11, one level up">
+  <p>Insecure direct object reference and cross-tenant leakage are the same mistake in different clothes: <b>trusting an identifier from the request without checking who is allowed to use it</b>. Whatever else you skip, do not skip the adversarial test.</p>
+</Callout>
+
+<CodeFile title="Row-level security, so the database enforces what code might forget">
+
+```sql
+ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_isolation ON bookings
+  USING (tenant_id = current_setting('app.tenant_id')::uuid);
+
+-- The application sets this once per request, from the session — never
+-- from anything the caller sent.
+SET LOCAL app.tenant_id = '…';
+```
+
+</CodeFile>
+
+## What to write down
+
+This is an ADR-worthy decision. Record: which approach, why, what would make you change, and — importantly — **where the enforcement lives**, so the next person (or agent) does not add a second, weaker path to the data.
+
+<Exercise id="ten-1" title="Break your own isolation on purpose" time="45 min" predict="Will the leak be in a query you wrote, or in one an agent wrote?">
+
+1. In a two-tenant schema — Book-a-Slot's `bookings` is ideal — create two clinics with one booking each.
+2. Write the adversarial test: authenticate as Clinic A, request Clinic B's booking by its id. Expect 404.
+3. Now ask an agent to add a new "recent bookings" endpoint, with no mention of tenants in the brief.
+4. Run your adversarial test against the new endpoint.
+5. Then add row-level security and run it again without changing the endpoint.
+
+</Exercise>
+
+<Expect>
+
+Step 4 leaks — the agent wrote a perfectly reasonable query that selects recent bookings, because nothing told it otherwise and nothing stopped it. Step 5 returns nothing, with the endpoint code unchanged. That difference is the entire argument for pushing the rule below the query.
+
+</Expect>
+
+<IfNot>
+
+If step 4 did not leak, check that your seed data actually has two tenants with overlapping ids, and that the agent's query did not inherit a filtered view by accident. A test that cannot fail proves nothing.
+
+</IfNot>
+
+<Quiz
+  id="ten-q1"
+  q="Where should the tenant id for a request come from?"
+  options={[
+    "A header the client sends, validated for format",
+    "The request body, so the client can switch workspaces",
+    "The authenticated session on the server",
+    "A query parameter, so it is visible in logs"
+  ]}
+  answer={2}
+/>
+
+<Checklist
+  id="ten-check"
+  title="Before a multi-tenant product takes real customers"
+  items={[
+    "The tenant is derived from the session, never from client input",
+    "Isolation is enforced below the query, or in one repository layer everything goes through",
+    "Every endpoint has an adversarial cross-tenant test",
+    "An ADR records the approach and where enforcement lives",
+    "Background jobs and admin tools go through the same enforcement as requests"
+  ]}
+/>

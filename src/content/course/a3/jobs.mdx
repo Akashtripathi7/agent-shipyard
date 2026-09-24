@@ -1,0 +1,110 @@
+---
+title: Background jobs and queues
+summary: Work that must happen but not right now, done so that a retry cannot send the same email twice.
+order: 3
+kind: arch
+code: 'A3.3'
+tier: 3
+time: 70 min
+competencies: [architecture, build]
+---
+
+<Analogy>
+  <p>A restaurant kitchen's ticket rail. The waiter does not stand at the pass while your steak cooks — they hang the ticket and go serve someone else. The ticket is the promise that it will happen, and it stays up until the dish is out.</p>
+</Analogy>
+
+## Anything slow or unreliable belongs off the request
+
+A booking confirmation email takes two seconds and sometimes fails. Doing it inside the HTTP request means the customer waits two seconds, and a mail outage becomes a booking outage. Move it to a **queue**: the request writes a job and returns; a **worker** picks it up and does the work.
+
+Candidates: sending email and SMS, generating reports and PDFs, calling a third-party API, image processing, anything nightly, anything that touches a system you do not control.
+
+## The three properties that make queues safe
+
+### 1. Idempotent
+
+**A job may run more than once.** Not might — will. Workers crash after doing the work and before recording it; queues redeliver; a deploy restarts mid-job. If running a job twice sends two emails, you will eventually send two emails.
+
+Make the *effect* idempotent, not the job: give each job a natural key and record that the effect happened.
+
+```python
+# Not "did I run?" but "did this effect already happen?"
+if not db.mark_sent(booking_id=b.id, kind="confirmation"):
+    return                     # another attempt got there first
+send_email(...)
+```
+
+### 2. Retryable, with a limit
+
+Transient failures deserve a retry with **exponential backoff** — wait 1s, 2s, 4s, 8s. Permanent failures do not: retrying a malformed address forever just burns the queue. After N attempts a job goes to a **dead-letter queue**, which is a list a human reads.
+
+<Callout type="warn" label="A dead-letter queue nobody reads is a silent failure">
+  <p>The point of the dead-letter queue is that failures become <b>visible</b> rather than infinite. If nothing alerts when it grows, you have moved the failure somewhere quieter, not fixed it.</p>
+</Callout>
+
+### 3. Observable
+
+For each job type you want to know: how many are waiting, how long they wait, how long they take, and how many failed. Queue depth climbing steadily is the single most useful early warning a backend has — it means you are taking work in faster than you finish it.
+
+## Scheduled work is the same thing with a clock
+
+Nightly reports and reminder emails are jobs with a schedule. Two extra hazards: **overlap** (last night's run is still going when tonight's starts — use a lock) and **missed runs** (the machine was down at 2am — decide whether a missed run should catch up or skip, and write it down).
+
+<Exercise id="job-1" title="Make a job run twice and prove it only counts once" time="45 min" predict="What will the second run do before you add the idempotency key?">
+
+1. In Book-a-Slot, add a `send_confirmation` job triggered when a booking is created.
+2. Deliberately kill the worker **after** the email sends but **before** it acknowledges the job. A `sys.exit()` in the right place is fine.
+3. Restart the worker. Watch the job redeliver and send a second email.
+4. Now add the idempotency key: a unique constraint on `(booking_id, kind)` in a `notifications_sent` table, checked before sending.
+5. Repeat the crash. Confirm exactly one email.
+
+</Exercise>
+
+<Expect>
+
+Step 3 sends two emails from one booking — the failure your customers would have reported. Step 5 sends one, and the second attempt exits quietly. Note that the fix is a **database constraint**, not a flag in the worker: the constraint holds even if two workers run the job simultaneously, and a flag does not.
+
+</Expect>
+
+<IfNot>
+
+If step 3 only sent one email, your queue is probably acknowledging jobs *before* running them (at-most-once delivery). That is a different trade: you will never duplicate, and you will silently lose work when a worker dies. Check which your queue does — it is a decision, and most defaults are at-least-once.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    A retry storm. A third-party API goes down, every job fails, every job retries immediately, and your workers spend the outage hammering a dead service instead of doing other work.
+  </BreakPart>
+  <BreakPart label="Why">
+    Retries without backoff turn one outage into two: theirs, and yours. The queue fills with work that cannot succeed.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Exponential backoff with jitter, a retry limit, and a circuit breaker that stops calling a service that is clearly down. Separate queues per job type stop one failing integration from starving everything else.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="job-q1"
+  q="Why is a unique database constraint a better idempotency guard than a boolean flag set by the worker?"
+  options={[
+    "It is faster to check",
+    "It holds even when two workers run the same job at the same time",
+    "It avoids an extra table",
+    "It makes the job retryable"
+  ]}
+  answer={1}
+/>
+
+<Checklist
+  id="job-check"
+  title="Before a job type goes to production"
+  items={[
+    "Running it twice has the same effect as running it once",
+    "Idempotency is enforced by a constraint, not a flag",
+    "Retries use exponential backoff and have a limit",
+    "Exhausted jobs land in a dead-letter queue that alerts someone",
+    "Queue depth and job duration are on a dashboard",
+    "Scheduled jobs take a lock, and missed-run behaviour is written down"
+  ]}
+/>

@@ -1,0 +1,123 @@
+---
+title: Environments and the delivery pipeline
+summary: Where code runs before it reaches customers, how it gets there, and how it comes back when it is wrong.
+order: 5
+kind: arch
+code: 'A3.5'
+tier: 3
+time: 70 min
+competencies: [architecture, operate, verify]
+kit: [ci-workflow]
+---
+
+<Analogy>
+  <p>A theatre. Rehearsal, dress rehearsal, opening night. The dress rehearsal exists because the first time you use the real lights and the real costumes should not be in front of an audience.</p>
+</Analogy>
+
+## Three environments, and what each is for
+
+| Environment | Data | Who uses it | What it proves |
+|---|---|---|---|
+| **Local** | Fake, in Docker | You and your agents | The code runs at all |
+| **Staging** | Realistic, not real | You, testers, end-to-end flows | It works with real infrastructure |
+| **Production** | Real customers | Everyone | — |
+
+Staging earns its keep by being **as close to production as you can afford** — same database engine and version, same queue, same deployment method. A staging environment that differs in an important way tests a product you are not shipping.
+
+<Callout type="warn" label="Never copy production data into staging">
+  <p>It feels convenient and it is a breach waiting to happen: real names, real emails, real payment details on a box with weaker access control, which every agent and contractor can reach. Generate realistic fake data instead, or anonymise irreversibly at export.</p>
+</Callout>
+
+## Configuration belongs to the environment
+
+The same build should be able to run in any environment. That means nothing environment-specific is compiled in: database URLs, API keys and feature flags all come from the environment at runtime.
+
+Two rules worth enforcing mechanically:
+
+- **Secrets never enter the repository.** Not in code, not in a committed `.env`, not in CI logs. Your pre-commit gate from lesson 4.7 already checks this.
+- **Fail loudly on a missing variable at startup.** A service that boots with `DATABASE_URL` unset and fails on the first request is much harder to diagnose than one that refuses to start.
+
+## The pipeline
+
+What runs, in order, on every push:
+
+1. **Lint and type-check** — seconds, catches the cheapest mistakes
+2. **Unit and integration tests** — against a real database in a container
+3. **Contract tests** — the app's generated client against the server's schema
+4. **Security scanning** — secrets, dependencies, known-bad patterns
+5. **Build** — one artefact, used in every environment from here on
+6. **Deploy to staging**, run end-to-end flows against it
+7. **Deploy to production**, on approval
+
+This is the same "layers of proof" idea as the review gate, applied to the whole change. And it is the **law** version of the rules you have been asking agents to follow: CI is what a branch cannot get around.
+
+<KitPiece id="ci-workflow" />
+
+## Getting it back
+
+Every deployment needs an answer to "what happens when this is wrong", decided before you need it:
+
+- **Roll back** — redeploy the previous artefact. Fast, and the reason you keep builds immutable.
+- **Roll forward** — fix and deploy again. Necessary when a migration made rollback impossible.
+- **Feature flag** — ship the code dark, turn it on separately, turn it off instantly. The only one that does not require a deploy to undo.
+
+**Migrations are the asymmetry that bites.** A deploy can roll back in a minute; a migration that dropped a column cannot. So: deploy schema changes *before* the code that needs them, make them additive first, and delete the old column in a later release once nothing reads it. Expand, migrate, contract.
+
+<Exercise id="env-1" title="Break production on purpose, then get it back" time="60 min" predict="How long will a rollback take? Time it and compare with your guess.">
+
+1. Give Book-a-Slot a staging environment and the pipeline above, using the `ci-workflow` file from your kit as a starting point.
+2. Deploy a deliberately broken change to staging — an endpoint that returns 500.
+3. Roll back. **Time it**, from noticing to recovered.
+4. Now try the harder case: deploy a change that drops a column, then try to roll back.
+5. Write an ADR recording your rollback strategy and the expand-migrate-contract rule.
+
+</Exercise>
+
+<Expect>
+
+Step 3 takes a minute or two. Step 4 does not work — the old code expects a column that no longer exists, so rolling back the code does not roll back the schema. That asymmetry is exactly why migrations are additive first and destructive only after the old code is gone.
+
+</Expect>
+
+<IfNot>
+
+If the rollback in step 3 took much longer than a couple of minutes, find out which step was slow — usually it is rebuilding rather than redeploying a stored artefact. Fixing that is the highest-value thing you can do for your recovery time.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    Staging has been green for a month. A deploy to production fails immediately with a database error nobody has seen.
+  </BreakPart>
+  <BreakPart label="Why">
+    Staging drifted — a different Postgres minor version, a missing extension, an environment variable someone set by hand months ago and never wrote down.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Define both environments in code, from the same template, with only the values differing. If you cannot recreate staging from scratch in an afternoon, it has already drifted and you do not yet know how.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="env-q1"
+  q="Why must a migration that drops a column be split across two releases?"
+  options={[
+    "To keep migration files small and reviewable",
+    "Because code can roll back in a minute and a dropped column cannot",
+    "Because databases lock the table during a drop",
+    "To let contract tests run between the two"
+  ]}
+  answer={1}
+/>
+
+<Checklist
+  id="env-check"
+  title="Before real customers use it"
+  items={[
+    "Staging matches production in engine, version and deployment method",
+    "No production data has ever been copied into staging",
+    "Configuration comes from the environment; missing values fail at startup",
+    "One build artefact is promoted through environments, never rebuilt",
+    "Rollback has been practised and timed",
+    "Destructive migrations are split: expand, migrate, contract"
+  ]}
+/>

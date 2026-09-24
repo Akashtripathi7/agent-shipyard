@@ -1,0 +1,103 @@
+---
+title: Caches, and the two hard problems
+summary: Caching is easy to add and hard to be correct about. When it earns its place, where to put it, and how to invalidate without lying to your users.
+order: 4
+kind: arch
+code: 'A3.4'
+tier: 3
+time: 65 min
+competencies: [architecture, decide]
+---
+
+<Analogy>
+  <p>A noticeboard outside the surgery listing today's appointments. It saves everyone asking at the desk — until an appointment moves and nobody updates the board. Now the board is worse than no board, because people trust it.</p>
+</Analogy>
+
+## Do not cache yet
+
+A cache is a second copy of the truth, and every second copy can disagree with the first. That is a permanent cost in correctness for a temporary gain in speed, so it should be paid deliberately.
+
+**Measure first.** "The clinic's day view takes 1.8s and 70% of that is one query that runs on every request" is a reason to cache. "It feels slow" is not — and it might be an index you are missing, which costs nothing in correctness.
+
+<Callout type="tip" label="Cheaper things to try first">
+  <p>An index on the column you filter by. Fixing an N+1 query. Returning less data. Paginating. Each of these makes the real thing faster, rather than keeping a copy of a slow thing. Reach for a cache when the query is already as good as it gets and still too slow.</p>
+</Callout>
+
+## Where a cache can live
+
+| Layer | Example | Good for | The risk |
+|---|---|---|---|
+| **Client** | The app holds today's bookings | Instant re-renders, offline | Stale on someone else's change |
+| **CDN** | Public pages, images | Global reach, huge volume | Purging is slow and coarse |
+| **Application** | Redis holding a computed day view | Shared across servers, precise control | Invalidation is yours to get right |
+| **Database** | Materialised view | Complex aggregates | Refresh cost, staleness window |
+
+For a product at Book-a-Slot's scale, **Redis at the application layer** is the usual answer, because you control exactly what goes in and exactly when it leaves.
+
+## The two hard problems
+
+### Invalidation
+
+Three strategies, in increasing order of correctness and effort:
+
+1. **Time to live.** Entries expire after N seconds. Simple, and always a little wrong — you are choosing how stale you are willing to be. Fine for a dashboard, not for a booking.
+2. **Write-through / explicit invalidation.** Whoever changes the data deletes the cache entry. Correct, and it depends on *every* writer remembering — including a background job, an admin tool, and next year's agent.
+3. **Versioned keys.** The key contains a version that changes when the data does: `clinic:42:day:2026-09-24:v7`. Nothing to delete, old entries expire on their own, and two writers cannot race.
+
+Versioned keys are the one to reach for when correctness matters, because they turn "remember to invalidate" into "you physically cannot read the old value".
+
+### Deciding what is safe to be stale
+
+This is a product question, not a technical one, and it deserves a written answer per cached thing:
+
+- The clinic's **list of services**: stale by five minutes is fine.
+- The **day's bookings**: stale by five seconds is confusing but survivable.
+- **Whether this slot is free, at the moment of booking**: never cached. Check the database, inside a transaction.
+
+Write it in the ADR. "Cached for 60s; acceptable because a service name changing late affects nobody's money."
+
+<Exercise id="cache-1" title="Cause a stale read, then make it impossible" time="45 min" predict="With a 60-second TTL, how long until the receptionist sees the reschedule?">
+
+1. Add a Redis cache to Book-a-Slot's clinic day view, with a 60-second TTL.
+2. Load the day view. Reschedule a booking through a different route — the admin dashboard, or a direct API call.
+3. Reload the day view and watch it show the old time. Time how long the lie lasts.
+4. Replace the TTL with a versioned key: store `clinic:42:version`, bump it on every write, include it in the cache key.
+5. Repeat step 2. The new read misses the cache and gets the truth.
+
+</Exercise>
+
+<Expect>
+
+Up to 60 seconds of a receptionist looking at an appointment that has moved. With versioned keys the stale window is gone, and you did not have to find and update every writer — the version bump lives with the write, in one place.
+
+</Expect>
+
+<IfNot>
+
+If the versioned key still returned stale data, the version is probably being read from its own cache, or bumped after the read rather than inside the write transaction. Bump the version in the same transaction as the data change.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    A cache stampede. The cached day view expires at a busy moment, two hundred requests all miss at once, and all two hundred run the expensive query simultaneously. The database falls over — caused by the cache that was meant to protect it.
+  </BreakPart>
+  <BreakPart label="Why">
+    Expiry is a synchronised event. Everything that was being served from one entry now needs the real thing at the same instant.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Add jitter to TTLs so entries do not expire together, and take a short lock so only the first miss recomputes while the others wait briefly or serve the slightly stale value.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="cache-q1"
+  q="Which of these should never be served from a cache?"
+  options={[
+    "The clinic's list of services on a public page",
+    "Whether a specific slot is free, at the moment of booking",
+    "A monthly revenue summary on a dashboard",
+    "The staff member's profile photo"
+  ]}
+  answer={1}
+/>

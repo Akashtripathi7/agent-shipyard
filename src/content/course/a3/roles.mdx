@@ -1,0 +1,107 @@
+---
+title: Roles and permissions
+summary: Who may do what, expressed so that a new feature cannot quietly forget to ask.
+order: 2
+kind: arch
+code: 'A3.2'
+tier: 3
+time: 70 min
+competencies: [architecture, security]
+---
+
+<Analogy>
+  <p>A hotel keycard. It does not know who you are; it knows which doors open. Housekeeping opens every room but not the safe. The manager opens the office. Nobody argues at the door, because the card decides.</p>
+</Analogy>
+
+## Authentication is not authorisation
+
+**Authentication** answers *who are you*. **Authorisation** answers *what may you do*. A2 covered the first. This is the second, and it is where most real products get messy, because permissions start simple and then grow one exception at a time.
+
+Book-a-Slot has three roles: a **customer** books and cancels their own appointments; a **staff member** sees and reschedules their clinic's bookings; an **owner** does that plus managing staff and hours.
+
+## Two shapes, and when each stops working
+
+**Role-based (RBAC)** — a user has a role, a role has permissions. Simple, readable, and almost always the right start.
+
+It stops working when permissions depend on the *relationship* between the user and the thing: "staff may edit bookings **at their own clinic**". That is not a property of the role, it is a property of the pair. At that point you need **attribute- or relationship-based** rules, where the check takes both the user and the resource.
+
+Almost every product needs the second kind eventually, which is why the check should take both from the start:
+
+<CodeFile title="A permission check that takes the actor and the resource">
+
+```python
+def can(actor: User, action: str, resource: Booking) -> bool:
+    if actor.tenant_id != resource.tenant_id:
+        return False                      # cross-tenant, always no
+    match action:
+        case "view" | "reschedule":
+            return actor.role in {"owner", "staff"} or resource.customer_id == actor.id
+        case "cancel":
+            return actor.role == "owner" or resource.customer_id == actor.id
+        case "manage_staff":
+            return actor.role == "owner"
+    return False                          # unknown action: deny
+```
+
+</CodeFile>
+
+Three properties worth copying: the tenant check comes first and cannot be skipped, an unknown action **denies** rather than allows, and the function needs the resource — so you cannot call it before you have loaded what you are protecting.
+
+## Making a new feature unable to forget
+
+The failure is never the permission model. It is the endpoint added six months later that never calls it.
+
+- **One place to ask.** Every handler calls the same `can(...)`. A second way to reach the data is a second way to get it wrong.
+- **Default deny.** New actions are forbidden until named. The opposite — allow unless listed — means every new feature ships open.
+- **A test per role per endpoint.** Boring, mechanical, and exactly what an agent is good at generating. Ask for the matrix: for each endpoint, each role, expect allow or deny.
+- **Never enforce only in the UI.** Hiding a button is a courtesy to the user, not a security control. The API is the boundary.
+
+<Callout type="tip" label="A good brief for this">
+  <p>"Generate the permission matrix as a test: every endpoint × every role, asserting allow or deny, derived from <code>docs/PERMISSIONS.md</code>. Where the document is ambiguous, list the ambiguity instead of guessing." The ambiguities it finds are the real value — they are the decisions you have not made yet.</p>
+</Callout>
+
+<Exercise id="role-1" title="Write the matrix, then let it find your gaps" time="50 min" predict="How many ambiguities will the matrix expose? Guess a number.">
+
+1. Write `docs/PERMISSIONS.md` for Book-a-Slot's three roles: for each action, who may do it and under what relationship.
+2. Ask an agent to generate the full endpoint × role test matrix from that document, listing any ambiguity rather than guessing.
+3. Read the ambiguity list before you read the tests.
+4. Resolve each one in the document, then regenerate.
+5. Run the suite.
+
+</Exercise>
+
+<Expect>
+
+The ambiguity list is longer than you expected — typically five to ten. Things like "may staff cancel a booking a customer made?" and "may a customer see who their staff member is?" These were never decided; they were about to be decided accidentally, by whoever wrote the endpoint first.
+
+</Expect>
+
+<IfNot>
+
+If the agent reported no ambiguities, your document is probably written as roles rather than actions. Rewrite it action by action — "cancel a booking" — and the gaps appear immediately.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    The admin dashboard hides the "manage staff" button for staff users. Six months later someone finds the endpoint and calls it directly.
+  </BreakPart>
+  <BreakPart label="Why">
+    The permission was implemented in the interface, not at the boundary. The UI is a rendering of permissions, never a source of them.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Enforce at the API, always. Let the UI ask the API what this user may do and render accordingly — one source of truth, two consumers.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="role-q1"
+  q="Why should a permission check take both the actor and the resource, rather than just the role?"
+  options={[
+    "It is faster, because the resource is already loaded",
+    "Because most real rules depend on the relationship between the two",
+    "To keep the function signature consistent across services",
+    "So the check can be cached per role"
+  ]}
+  answer={1}
+/>
