@@ -1,0 +1,68 @@
+---
+title: M4 · Two frontends, in parallel
+summary: One design system, two very different surfaces, built at the same time by two builders who never speak to each other.
+order: 5
+kind: milestone
+code: 'L3 · M4'
+tier: 3
+time: 5 hours
+competencies: [ui, orchestrate, build]
+kit: [ui-tokens, maestro-flow]
+---
+
+## Goal
+
+A customer app that books in three taps and an owner dashboard that works on a tablet, sharing one design language, built in parallel from one contract.
+
+## Step 1: one design system, two platforms
+
+Tokens come first, and they are defined **once** — colours, type scale, spacing, radii, motion durations — then expressed natively on each platform. The token *values* are shared; the implementations are not.
+
+Put it in `AGENTS.md` for both builders:
+
+> Colour, spacing, radius, type size and animation duration come from the shared token set. Raw values are a blocking review finding, in the app and in the dashboard.
+
+Without this, lesson 4.10's Breaks box happens at double scale: two builders, four greys, three radii, and a product that looks like two products.
+
+## Step 2: brief for the surface, not the screen
+
+The two frontends have genuinely different jobs, and the briefs should say so:
+
+- **The app** is used standing up, one-handed, occasionally on a bad connection. Optimise for taps and forgiveness. Three taps to book is the target.
+- **The dashboard** is used sitting down, on a tablet at a front desk, for hours. Optimise for density, keyboard, and not needing to scroll to see today.
+
+Same product, same tokens, opposite priorities. An agent told only "build the bookings screen" will build the same thing twice.
+
+## Step 3: run them in parallel, and integrate deliberately
+
+Both builders start from the generated client. Neither is told about the other's internals. When both finish, integrate and check the pair:
+
+| Check | Why |
+|---|---|
+| Book in the app, see it on the dashboard within its refresh window | The contract works both ways |
+| Cancel on the dashboard, see it in the app | Cache invalidation is right (A3.4) |
+| Both show the same wording for a conflict | They read the same documented response |
+| Screenshots side by side | One product, not two |
+
+## Step 4: evidence, on both
+
+Lesson 4.10's four artefacts, for each frontend — plus a Maestro flow for the app and a Playwright flow for the dashboard, both run against staging.
+
+<Expect>
+
+The side-by-side screenshot comparison is the one that finds problems. Each frontend looks fine alone; together, the empty states and error wording are usually written in two different voices. That is a product inconsistency, not a styling one, and it needs the same fix: decide it once, write it down.
+
+</Expect>
+
+<Checklist
+  id="l3m4-check"
+  title="M4 done"
+  items={[
+    "Token values are defined once and used by both frontends",
+    "Booking takes three taps in the app",
+    "The dashboard shows today without scrolling on a tablet",
+    "A change made on one surface appears correctly on the other",
+    "Conflict and empty-state wording matches across both",
+    "End-to-end flows pass on both, against staging"
+  ]}
+/>

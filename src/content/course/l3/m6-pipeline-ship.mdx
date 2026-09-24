@@ -1,0 +1,76 @@
+---
+title: M6 · Pipeline, staging and ship
+summary: Three deployable things, one pipeline, and the Tier 3 gate checked honestly.
+order: 7
+kind: milestone
+code: 'L3 · M6'
+tier: 3
+time: 4 hours
+competencies: [operate, verify, decide]
+kit: [ci-workflow]
+---
+
+## Goal
+
+Merges to main deploy to staging on their own, end-to-end flows pass on both frontends, and you can answer the Tier 3 gate with evidence.
+
+## Step 1: the pipeline, for three artefacts
+
+A3.5's pipeline, complicated by having an API, an app and a dashboard that version together:
+
+1. Lint and type-check all three.
+2. Unit and integration tests, against a real Postgres in a container.
+3. **Contract tests for both clients** — the step that stops the two frontends drifting.
+4. Security scanning: secrets, dependencies, the permission matrix from M1.
+5. Build all three as immutable artefacts.
+6. Deploy API and dashboard to staging; run Playwright against the dashboard and Maestro against the app.
+7. Production, on approval.
+
+The permission matrix in step 4 is worth calling out. Those tests are the law version of `docs/PERMISSIONS.md`, and running them on every push is what stops a new endpoint quietly shipping without a check.
+
+## Step 2: the release question nobody asks in time
+
+Mobile apps do not deploy like servers. Users run old versions for months, and an app in review cannot be rolled back in a minute.
+
+So decide, and write it in an ADR:
+
+- **The API supports the last N app versions.** Pick N. That is now a constraint on every contract change.
+- **Contract changes are additive** for as long as an old app might call them — the expand-migrate-contract rule from A3.5, applied to an API rather than a schema.
+- **There is a way to tell users to update**, and a way to force it when a version is genuinely broken.
+
+## Step 3: ship, then check the gate
+
+Deploy. Then verify on production: book from the app, see it on the dashboard, receive the reminder, take a payment in test mode, and confirm a second clinic sees none of it.
+
+Now the **Tier 3 gate**, from the route on the home page:
+
+> *A crew run finished without you reading every diff, because the gates caught what you would have caught.*
+
+Check it with evidence, not feeling. From `docs/crew-log.md` and your gate's findings:
+
+- How many features shipped where you read only the handoffs and the findings?
+- What did the gate catch that you would have caught yourself?
+- What reached production that **neither** of you caught? That answer names the gate you are still missing.
+
+<Prompt title="Gate check, with evidence">
+Here is my crew log, my gate findings, my CI history and the issues found after release for this project. Answer three questions using only that evidence: which failure mode from lesson 4.11 do I hit most, which gate would have caught the most of what escaped, and am I reading fewer diffs than I was at the start of the project?
+</Prompt>
+
+<Expect>
+
+Most people are not fully through the gate after L3, and that is the honest outcome — it names one specific missing gate rather than a vague sense of not trusting the crew. L4 is where it is meant to hold.
+
+</Expect>
+
+<Checklist
+  id="l3m6-check"
+  title="Book-a-Slot, shipped"
+  items={[
+    "Merges to main deploy to staging without anyone doing anything",
+    "Contract tests for both clients run on every push",
+    "The permission matrix runs in CI",
+    "An ADR records how many app versions the API supports",
+    "Production verified end to end, including cross-tenant isolation",
+    "The Tier 3 gate is answered from evidence, and the missing gate is named"
+  ]}
+/>

@@ -1,0 +1,62 @@
+---
+title: M5 · Reminders, payments and the audit log
+summary: The parts that touch money and other people's time, where running something twice is a real-world apology rather than a log line.
+order: 6
+kind: milestone
+code: 'L3 · M5'
+tier: 3
+time: 5 hours
+competencies: [build, security, architecture]
+---
+
+## Goal
+
+Reminders that never send twice, payments that survive a duplicated webhook, and a record of who changed what.
+
+## Step 1: reminders, idempotent by constraint
+
+A3.3, applied where the consequence is visible: a reminder sent twice at 8pm is a customer annoyed by your product.
+
+- Schedule the job when the booking is created, not by scanning the whole table nightly.
+- The idempotency key is `(booking_id, kind)`, enforced by a **unique constraint**, checked before sending.
+- Cancelled bookings cancel their reminders — and the job must re-check state at send time, because a booking can be cancelled after the job is queued.
+- Exhausted jobs land in a dead-letter queue that alerts.
+
+Then run the exercise from A3.3 against this project: kill the worker after the send and before the acknowledgement, restart, and confirm exactly one message.
+
+## Step 2: payments, where webhooks lie
+
+Payment providers send webhooks **at least once**, sometimes out of order, occasionally from someone pretending to be them. Three non-negotiables:
+
+1. **Verify the signature** on every webhook, before parsing the body. An unverified webhook endpoint is an open API for setting your bookings to paid.
+2. **Be idempotent on the provider's event id.** The same `payment.captured` will arrive twice.
+3. **Never trust the amount from the client.** The server decides the price; the client is told.
+
+<Prompt title="Adversarial review of the payment path">
+Review the payment integration. You did not write it. Can I mark a booking paid without paying, by replaying a webhook, forging one, or manipulating the amount? Can a webhook arriving out of order leave a booking in the wrong state? Cite file and line for each finding and describe what an attacker does with it.
+</Prompt>
+
+## Step 3: the audit log
+
+Three roles acting on shared data means someone will eventually ask "who cancelled this?". Log the actor, the action, the resource, the before and after, and the time — append-only, and written in the **same transaction** as the change, or it will drift from reality.
+
+Audit entries are not general logs: they are a product feature, they contain personal data, and they need a retention policy. Decide it now.
+
+<Expect>
+
+The adversarial review usually finds either a webhook path that trusts an unverified body, or an amount taken from the request. Both are among the most common real payment vulnerabilities, and both look completely reasonable in a diff.
+
+</Expect>
+
+<Checklist
+  id="l3m5-check"
+  title="M5 done"
+  items={[
+    "Reminders are idempotent by database constraint and re-check state at send time",
+    "A worker crash between send and acknowledge produces exactly one message",
+    "Webhook signatures are verified before the body is parsed",
+    "Payment handling is idempotent on the provider's event id",
+    "Prices are decided by the server, never accepted from the client",
+    "Audit entries are written in the same transaction as the change, with a retention policy"
+  ]}
+/>

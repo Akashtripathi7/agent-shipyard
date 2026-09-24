@@ -1,0 +1,59 @@
+---
+title: M1 · Roles, tenancy and the permission matrix
+summary: Decide who may do what, and make a forgotten check impossible, before a single endpoint exists.
+order: 2
+kind: milestone
+code: 'L3 · M1'
+tier: 3
+time: 4 hours
+competencies: [security, architecture, decide]
+---
+
+## Goal
+
+A written permission model, a tenancy decision enforced below the query, and a generated test matrix that fails loudly when either is violated.
+
+## Step 1: the actions, not the roles
+
+Write `docs/PERMISSIONS.md` as a list of **actions**, each with who may perform it and under what relationship. A3.2's exercise showed why: a document organised by role hides the ambiguities, and a document organised by action exposes them.
+
+Then generate the matrix:
+
+<Prompt title="Let it find your gaps">
+Generate the endpoint x role permission test matrix from docs/PERMISSIONS.md. For each combination, assert allow or deny. Where the document does not clearly say, list it as an ambiguity instead of guessing. Do not write endpoint code.
+</Prompt>
+
+Read the ambiguity list before the tests. Typical finds: may staff cancel a booking a customer made? May a customer see which staff member they are booked with? May an owner act as staff? Each is a product decision that was about to be made accidentally.
+
+## Step 2: tenancy, enforced below the query
+
+Choose the approach from A3.1 — shared tables with a `tenant_id` is almost certainly right here — and then make the forgotten `WHERE` impossible. Row-level security in Postgres, with `app.tenant_id` set once per request from the **session**, never from anything the caller sent.
+
+Write the ADR: the approach, why, what would change it, and **where enforcement lives**.
+
+## Step 3: prove it against an agent who was not told
+
+The test from A3.1, at project scale:
+
+1. Seed two clinics with overlapping data.
+2. Ask an agent to add a "recent bookings" endpoint, with no mention of tenants in the brief.
+3. Run the cross-tenant test against the new endpoint.
+
+<Expect>
+
+Without row-level security it leaks, and the agent did nothing wrong — nothing told it, and nothing stopped it. With RLS in place the same endpoint returns nothing for the other clinic, unchanged. That is what "enforced below the query" buys you: it protects code that has not been written yet.
+
+</Expect>
+
+<Checklist
+  id="l3m1-check"
+  title="M1 done"
+  items={[
+    "docs/PERMISSIONS.md lists actions, not roles, and every ambiguity is resolved",
+    "A generated matrix tests every endpoint against every role",
+    "Tenancy is enforced in the database, not only in application code",
+    "The tenant id comes from the session and never from client input",
+    "An untold agent's new endpoint was tested and did not leak",
+    "An ADR records the tenancy approach and where enforcement lives"
+  ]}
+/>

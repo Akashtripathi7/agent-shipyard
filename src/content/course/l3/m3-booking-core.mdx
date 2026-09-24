@@ -1,0 +1,81 @@
+---
+title: M3 · The booking core, and never double-booking
+summary: The one invariant this whole product exists to protect, proven under real concurrency rather than asserted.
+order: 4
+kind: milestone
+code: 'L3 · M3'
+tier: 3
+time: 4 hours
+competencies: [build, architecture, verify]
+---
+
+## Goal
+
+Booking, cancelling and rescheduling, with a test that runs two simultaneous bookings for the same slot and proves exactly one wins.
+
+## The invariant
+
+**One slot, one booking.** Everything else in this product is a convenience; this is the thing that must never be wrong. A clinic that double-books has two patients in a waiting room and a receptionist apologising.
+
+It is also the classic example of something that *looks* fine in every manual test and fails under concurrency, because two requests can both read "slot free" before either writes.
+
+## Step 1: make the database enforce it
+
+Checking availability in application code and then inserting is a race, always. The check and the write must be atomic.
+
+Two ways, and you should know both:
+
+- **A unique constraint** on `(staff_id, starts_at)` — the database refuses the second insert. Simple, fast, and the one to reach for.
+- **A transaction with appropriate locking** — needed when "free" is more complicated than one row, such as overlapping durations.
+
+For overlapping appointments of varying lengths, a plain unique constraint is not enough. Postgres exclusion constraints over a time range handle it properly:
+
+<CodeFile title="An exclusion constraint: the database refuses overlapping bookings">
+
+```sql
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+ALTER TABLE bookings ADD CONSTRAINT no_overlap
+  EXCLUDE USING gist (
+    staff_id WITH =,
+    tstzrange(starts_at, ends_at) WITH &&
+  ) WHERE (status <> 'cancelled');
+```
+
+</CodeFile>
+
+## Step 2: prove it under concurrency
+
+<Prompt title="The test that matters">
+Write a test that fires N simultaneous booking requests for the same slot from N connections, and asserts exactly one succeeds and the rest receive the documented conflict response. Run it with N=2 and N=50. Do not serialise the requests in the test — if they do not actually overlap, the test proves nothing.
+</Prompt>
+
+That last sentence matters. The most common failure here is a "concurrency test" that awaits each request in turn, passes forever, and proves nothing.
+
+<Expect>
+
+Without the constraint, N=50 produces several successful bookings for one slot. With it, exactly one succeeds and 49 get a clean conflict. Run it a few times — race conditions are probabilistic, and a single green run is weak evidence.
+
+</Expect>
+
+<IfNot>
+
+If every request succeeded even with the constraint, check the status filter in the `WHERE` clause — a cancelled booking must not block the slot, and getting that predicate wrong silently disables the whole constraint.
+
+</IfNot>
+
+## Step 3: cancellation and the no-show policy
+
+Cancellation is where product decisions hide. Decide and write down: how late may a customer cancel, what happens to their payment, and what a no-show costs. Then implement the rule in **one** place — this is exactly the kind of rule that otherwise ends up duplicated in the app, the dashboard and the API, drifting apart.
+
+<Checklist
+  id="l3m3-check"
+  title="M3 done"
+  items={[
+    "Double-booking is prevented by a database constraint, not by an application check",
+    "A genuinely concurrent test with N=50 passes repeatedly",
+    "Cancelled bookings free the slot, and the constraint's predicate is tested",
+    "The cancellation and no-show policy is decided, written down and implemented once",
+    "Conflict responses match the shape the contract documents"
+  ]}
+/>

@@ -1,0 +1,51 @@
+---
+title: Book-a-Slot, project overview
+summary: Appointment booking for a small business — three roles, two frontends, a parallel crew and a real delivery pipeline.
+order: 1
+kind: overview
+code: 'L3'
+tier: 3
+time: 20–26 hours over 3–4 weeks
+competencies: [architecture, orchestrate, security, ui, verify]
+---
+
+## What you're building
+
+A clinic or salon books appointments. **Customers** book and cancel in a phone app. **Staff** see and reschedule their own day. **Owners** manage staff, hours and pricing from a web dashboard. Reminders go out the night before, payments are taken on booking, and none of it may leak between clinics.
+
+## Why this project, at this point
+
+Vault had one user and one trust boundary. Book-a-Slot is the first product with **genuine organisational complexity**, and it is where every Architecture A3 lesson stops being abstract:
+
+| A3 lesson | Where it lands here |
+|---|---|
+| Tenants and isolation | Clinic A must never see Clinic B, enforced below the query |
+| Roles and permissions | Three roles whose rules depend on the relationship, not just the role |
+| Background jobs | Reminders, which must not send twice |
+| Caches | The day view, which must never show a slot as free when it is not |
+| Environments | Two frontends and an API, promoted through staging by a pipeline |
+
+It is also the first project with **enough independent surfaces to justify a real parallel crew** — backend, app and dashboard, from one contract.
+
+## The stack and why
+
+**Flutter** for the customer app, as before. **A web framework** for the admin dashboard, because dense tables, filters and forms are where web libraries and component registries are strongest — and because building one product across two frontends from one contract is the actual lesson. **FastAPI and PostgreSQL**, **Redis** for jobs and rate limits, **payments in test mode**, and a CI pipeline that deploys.
+
+## Complexity, by strand
+
+- **Architecture** — three roles, background jobs, two clients generated from one OpenAPI file.
+- **Security** — an authorisation test for every endpoint and role, webhook signature verification, rate limits, and an audit log of who changed what.
+- **UI & UX** — one design system shared by app and dashboard. Booking in three taps; a dashboard that works on a tablet at the front desk.
+- **Product** — onboarding, reminders, cancellations, and a no-show policy that someone has to decide.
+- **Motion** — calendar transitions and slot selection, where animation carries meaning rather than decoration.
+
+## How you work
+
+Orchestrator and workers, with a pipeline gate. The architect owns the contract. Backend, app and dashboard builders work in three worktrees; the gate then runs code review, security review and QA across both frontends.
+
+## Done when
+
+- The crew run from lesson 4.11 works for a real feature, at this size.
+- Merges to main deploy to staging automatically, and end-to-end flows pass on both frontends.
+- A cross-tenant test exists for every endpoint and all of them pass.
+- Double-booking the same slot is impossible, and you have a test that proves it under concurrency.

@@ -1,0 +1,67 @@
+---
+title: M2 · One contract, two frontends
+summary: The interface that keeps an app and a dashboard honest with each other, and the crew that will build all three surfaces at once.
+order: 3
+kind: milestone
+code: 'L3 · M2'
+tier: 3
+time: 4 hours
+competencies: [orchestrate, architecture, brief]
+---
+
+## Goal
+
+An approved OpenAPI contract, two generated clients, and a crew of three builders who cannot drift from it.
+
+## Why the contract matters more with two frontends
+
+With one client, drift shows up as a bug. With two, it shows up as *the app and the dashboard disagreeing about the same booking* — which is far harder to diagnose, because each looks correct on its own.
+
+Generate both clients from the one file. The app and the dashboard then physically cannot describe a booking differently, and a contract change becomes a compile error in two places rather than a surprise in production.
+
+## Step 1: design the contract around the roles
+
+<Prompt title="Architect, fresh session">
+/architect the Book-a-Slot API against docs/PERMISSIONS.md and the tenancy ADR. Cover: browse availability, book, cancel, reschedule, staff day view, and owner management of staff and hours. Every response must be shaped by what the caller is allowed to see. Define how availability is represented so that two clients cannot disagree about whether a slot is free. Write to docs/api/openapi.yaml. Do not design storage or either frontend.
+</Prompt>
+
+The hard part is **availability**. A list of free slots is a snapshot that starts going stale the moment it is sent. Decide now, and write it in the contract:
+
+- Availability responses carry a `generated_at` and are explicitly advisory.
+- Booking is the only operation that decides truth, inside a transaction.
+- A booking attempt on a taken slot returns a specific, documented conflict response — not a generic 400 — so both clients can show the right thing.
+
+## Step 2: the crew
+
+Five roles: `architect` (owns the contract), `api-builder`, `app-builder`, `dashboard-builder` (each `isolation: worktree`), and `reviewer` (read-only, different model). Three builders is the most you should run at once at this stage — lesson 4.2's coordination cost is real, and it climbs fast.
+
+Add to `AGENTS.md`:
+
+> Both clients are generated from `docs/api/openapi.yaml`. Hand-written request or response types are a blocking review finding.
+
+## Step 3: the drift test
+
+Before building features, prove the contract holds:
+
+1. Change one field name in the OpenAPI file.
+2. Regenerate both clients.
+3. Confirm **both** frontends fail to compile.
+
+<Expect>
+
+Both break, immediately and loudly. If one compiles, it has a hand-written type somewhere — find it now, because that is the exact place your two frontends will silently disagree in three weeks.
+
+</Expect>
+
+<Checklist
+  id="l3m2-check"
+  title="M2 done"
+  items={[
+    "One OpenAPI file, owned by the architect, protected by CODEOWNERS",
+    "Both clients are generated; no hand-written request or response types",
+    "Availability is explicitly advisory, with booking as the only source of truth",
+    "Conflicts have a documented, specific response shape",
+    "A field rename breaks both frontends at compile time",
+    "Five roles defined, at most three builders running at once"
+  ]}
+/>
