@@ -1,0 +1,120 @@
+---
+title: Package your workflow
+summary: Turn a folder of files you copy between projects into one installable bundle, so a new project starts with your standards instead of acquiring them.
+order: 4
+kind: lesson
+code: '7.4'
+tier: 4
+time: 60 min
+competencies: [build, operate, orchestrate]
+kit: [workflow-md, agents-md, check-sh, guardrails]
+---
+
+<Analogy>
+  <p>A chef's knife roll. Everything in its place, carried to whichever kitchen you are working in tonight, rather than hoping the kitchen has what you need.</p>
+</Analogy>
+
+## The problem this solves
+
+By now you have accumulated a real workflow: instruction files, skills, subagents, hooks, a check script, guardrail settings and a CI template. Every new project means copying them from the last one — which means each project has a slightly different, slightly stale version, and a fix you make in one never reaches the others.
+
+Packaging turns that into **one bundle, installed by name, updated in one place**.
+
+## What belongs in the package
+
+| Include | Leave out |
+|---|---|
+| Skills you use across projects | Anything naming a specific project |
+| Generic reviewer and auditor subagents | Product-specific roles |
+| Guardrail permission rules | Your personal API keys or paths |
+| Hook scripts | Machine-specific paths |
+| A `check.sh` template | A project's actual commands |
+| Instruction *templates*, with placeholders | A filled-in AGENTS.md |
+
+The distinction is exactly lesson 5.1's: **package what encodes judgment, leave out what encodes a specific project or machine.**
+
+## Structure
+
+<CodeFile title="A workflow package">
+
+```
+my-workflow/
+├── .claude-plugin/
+│   └── plugin.json          name, version, description
+├── skills/
+│   ├── scope/SKILL.md
+│   ├── review/SKILL.md
+│   └── debug/SKILL.md
+├── agents/
+│   ├── code-reviewer.md
+│   └── security-reviewer.md
+├── hooks/
+│   └── require-green.sh
+├── templates/
+│   ├── AGENTS.md.template   placeholders, not content
+│   ├── check.sh.template
+│   └── ci.yml.template
+└── README.md                what each piece is for, and when to remove it
+```
+
+</CodeFile>
+
+## The README is the important file
+
+A bundle without explanation is the failure from Part 6's third drill: configuration without comprehension. Someone installs it, does not know which parts matter, and cannot debug it when it misbehaves.
+
+So the README says, for each piece: **what it does, which pain it solves, and when to remove it.** That last clause is unusual and valuable — it gives permission to descend the ladder, and it stops your workflow becoming ceremony in someone else's project.
+
+## Versioning, because it is now a dependency
+
+Once it is installed in three projects it is an interface, and A4.2's rules apply:
+
+- **Version it.** Projects can stay on an older version deliberately.
+- **Additive changes are safe; removals are not.** Deleting a skill breaks the project still using it.
+- **Write a changelog.** Six months from now you will not remember why a rule changed.
+
+<Callout type="tip" label="Extract at three, not at one">
+  <p>Extract a piece into the package the <b>third</b> time you copy it. Once is an instance; twice is a coincidence; three times is a pattern with evidence. Packaging on the first copy is how you end up maintaining a personal platform for a workflow that has not settled yet.</p>
+</Callout>
+
+<Exercise id="p7p-1" title="Package it, then start a project with it" time="55 min" predict="How long will a fully guarded new project take once it is packaged?">
+
+1. List everything you currently copy between projects.
+2. Sort into judgment (package) and project-specific (leave out).
+3. Build the structure above, with placeholders in templates rather than content.
+4. Write the README, including "when to remove it" for each piece.
+5. Install it into a brand-new throwaway project and **time** getting to a first guarded commit.
+6. Now install it into your oldest project and note every conflict — those are where that project drifted.
+
+</Exercise>
+
+<Expect>
+
+A properly guarded new project goes from about an hour to a few minutes. Step 6 is the more interesting half: the conflicts show where your older projects have quietly diverged, and often which of your rules you stopped believing in without noticing.
+
+</Expect>
+
+<Quiz
+  id="p7p-q1"
+  q="When should a piece be extracted into your workflow package?"
+  options={[
+    "As soon as you write it, so it is never lost",
+    "The third time you copy it between projects",
+    "When a second person asks for it",
+    "At the end of each project"
+  ]}
+  answer={1}
+/>
+
+<Checklist
+  id="p7p-check"
+  title="A package worth installing"
+  items={[
+    "Nothing in it names a specific project or machine path",
+    "Templates contain placeholders, not filled-in content",
+    "The README says what each piece does, which pain it solves, and when to remove it",
+    "It is versioned, with a changelog",
+    "It has been installed into a new project and an old one",
+    "A first guarded commit in a new project takes minutes"
+  ]}
+/>

@@ -1,0 +1,90 @@
+---
+title: Improving from evidence
+summary: Changing a workflow is easy and usually pointless. Changing the right thing, and knowing whether it worked, is the skill.
+order: 3
+kind: lesson
+code: '7.3'
+tier: 4
+time: 55 min
+competencies: [decide, verify, operate]
+---
+
+<Analogy>
+  <p>Adjusting a recipe. Change five things and it tastes different — and you have learned nothing about which change did it, so next time you change five things again.</p>
+</Analogy>
+
+## The loop
+
+1. **Find the pattern.** Sort last month's interventions and escapes by cause. One or two causes usually explain over half.
+2. **Change one thing**, aimed at the biggest cause.
+3. **Wait a month.** Fewer than ten features and you are reading noise.
+4. **Read both numbers together.**
+5. **Keep, revert, or try something else.** Reverting is a normal outcome, not a failure.
+
+One change at a time is the part people skip, and it is the part that makes the loop work at all.
+
+## Matching the cause to the fix
+
+| Pattern in your log | What it is really telling you | The fix |
+|---|---|---|
+| Agent misunderstood the goal | Briefs are underspecified | Better brief template; add the missing section |
+| Agent broke an existing convention | It cannot see the convention | Put it in AGENTS.md, with an example |
+| Same class of bug escaping | The gate has a hole | One targeted check, not a bigger gate |
+| Scope creep in diffs | Boundaries missing from briefs | Explicit "do not touch" in the brief |
+| Long sessions going in circles | Context exhaustion | Smaller tasks, earlier handoffs |
+| Coordination overhead | You climbed a rung too early | Climb back down |
+
+The most common pattern by far is the first, and the most common *misdiagnosis* is treating it as the third — adding gates to catch the consequences of briefs that were never clear.
+
+<Callout type="warn" label="The fix is usually upstream of where the pain is">
+  <p>Pain shows up at review, so it is tempting to fix review. But a bad diff at review time is usually a bad brief at the start. <b>Fix the earliest stage that could have prevented it</b> — it is cheaper there, and it prevents the whole class rather than catching each instance.</p>
+</Callout>
+
+## When to stop improving
+
+A workflow can be over-tuned. Signs you have gone too far:
+
+- You spend more time on the workflow than on the products.
+- New projects inherit configuration nobody remembers the reason for.
+- You are reluctant to do a small task because of the ceremony around it.
+
+Then apply lesson 6.2 in reverse: **remove things and see if anything breaks.** Most people have never deleted a rule from their workflow, which means it has only ever accumulated.
+
+## Reviewing the workflow itself
+
+Once a quarter, with the evidence:
+
+<Prompt title="Quarterly workflow review">
+Here are my metrics file, my crew log and my gate findings for the last three months. Answer using only this evidence: which single change would most reduce my interventions, which of my current rules has never caught anything, and what am I spending effort on that the numbers say does not matter? Do not be encouraging.
+</Prompt>
+
+The middle question is the valuable one. **A rule that has never fired is either preventing problems invisibly or costing you friction for nothing**, and the only way to tell is to remove it for a month and watch the escapes number.
+
+<Exercise id="p7i-1" title="One change, one month, one verdict" time="45 min setup, one month running" predict="Which cause do you expect to dominate your log?">
+
+1. Sort your interventions and escapes from the last month by cause.
+2. Find the largest bucket. It is probably briefs.
+3. Make exactly **one** change aimed at it. Write down what you expect to happen, as a number.
+4. Run for a month, changing nothing else.
+5. Compare against your prediction and decide: keep, revert, or try a different fix.
+6. Separately, pick one existing rule that has never caught anything and remove it for the same month.
+
+</Exercise>
+
+<Expect>
+
+The change helps less than you predicted — that is the normal result, and it is why predicting first matters. The removed rule usually costs nothing, which tells you your workflow has accumulated ceremony you can afford to lose.
+
+</Expect>
+
+<Quiz
+  id="p7i-q1"
+  q="The same class of bug keeps escaping to production. What is the best first response?"
+  options={[
+    "Add a broader review stage before merge",
+    "Add one targeted check for that specific class",
+    "Review every diff yourself again for a month",
+    "Switch to a more capable model for building"
+  ]}
+  answer={1}
+/>

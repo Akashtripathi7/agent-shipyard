@@ -1,0 +1,106 @@
+---
+title: Bringing it to a team
+summary: A workflow that works for one person is a proposal, not a standard. How it spreads without being imposed.
+order: 5
+kind: lesson
+code: '7.5'
+tier: 4
+time: 55 min
+competencies: [decide, operate]
+---
+
+<Analogy>
+  <p>A new filing system in a shared office. Yours is better and you can prove it. Announce it on Monday and by Friday half the office has quietly gone back to piles on the desk, and now they resent the filing cabinet too.</p>
+</Analogy>
+
+## What actually transfers
+
+Lesson 4.12 covered etiquette in a shared repo. This is the larger question: how does a workflow become *the team's* rather than yours?
+
+**Transfers well:** gates, contract discipline, the check script, written decisions, the review habit.
+
+**Transfers badly:** your personal skills, your preferred session structure, your tolerance for agent autonomy, your complexity rung.
+
+The line is roughly the same as before: **things that protect the repository transfer; things that reflect how you personally think do not.** A colleague who works differently and produces good, reviewable, verified changes is not doing it wrong.
+
+## The order that works
+
+1. **Solve a problem they have.** Not "here is my workflow" — "the thing where we keep breaking the API for the app: here is a contract test that catches it." One gate, one felt pain.
+2. **Let it prove itself.** Give it a month. The gate catches something real, in public.
+3. **Then offer the next piece**, when someone asks how you caught it.
+4. **Write it down** once two people use it, so it is the team's rather than yours.
+
+This is slow. It is also the only way that survives you going on holiday.
+
+## Rules imposed versus rules agreed
+
+From lesson 4.7: a hook is a law. From lesson 4.12: do not add laws unilaterally. Together:
+
+- **Propose it**, with the specific thing it catches.
+- **Start it as a warning**, in CI, not blocking. Let people see it fire on real changes.
+- **Make it blocking** once it has demonstrably caught something and nobody is arguing.
+- **Document what to do when it fires**, in the same change.
+
+A gate that blocks on its first day, for a problem nobody has felt, gets deleted — and takes your credibility with it.
+
+## The colleague who does not want to use agents
+
+They may be right for their work, and they are certainly entitled to the position. What matters is that **your shared standards are about the code, not the tooling**: tests pass, changes are reviewable, decisions are written down, conventions hold.
+
+A team where some people use agents and some do not works fine when the standards are output-based. It works badly when the standards are process-based — "everyone must use the review skill" is a rule about tools, and it will be resented by exactly the people whose work does not need it.
+
+<Callout type="warn" label="The throughput trap">
+  <p>Producing far more pull requests than your team can review is not a contribution; it is a queue you built for other people. If your output has outrun your team's review capacity, the bottleneck has moved and your job is now to help with the bottleneck — not to produce more.</p>
+</Callout>
+
+## What to write down first
+
+When it is time to make it the team's, three documents, in this order:
+
+1. **The conventions** — in `AGENTS.md`, at the repo root, so humans and agents read the same rules.
+2. **The gates** — what runs, what blocks, and what to do when each fires.
+3. **The decisions** — the ADR habit, which pays off most in teams, because it stops the same argument recurring every few months with different people.
+
+Your personal `WORKFLOW.md` stays yours. That is the right outcome.
+
+<Exercise id="p7a-1" title="Introduce exactly one gate" time="45 min, then a month" predict="Will anyone notice it before it catches something?">
+
+1. From your escapes log, find the class of problem that has hurt the team most.
+2. Build the narrowest possible check for it.
+3. Propose it: what it catches, one real example from your history, and what to do when it fires.
+4. Ship it as a **warning** for a month.
+5. When it catches something real, share that — then propose making it blocking.
+6. Write the runbook line in the same change.
+
+</Exercise>
+
+<Expect>
+
+The warning month is what makes this work. People see the gate fire on real changes without being blocked by it, and by the time you propose blocking, the argument has already been made by the evidence rather than by you.
+
+</Expect>
+
+<Quiz
+  id="p7a-q1"
+  q="What is the strongest way to introduce a new gate to a team?"
+  options={[
+    "Add it blocking, with a clear error message",
+    "Ship it as a warning for a month, then propose blocking once it has caught something real",
+    "Demonstrate it on your own branch first",
+    "Document it thoroughly before enabling it"
+  ]}
+  answer={1}
+/>
+
+<Checklist
+  id="p7a-check"
+  title="Before your workflow becomes the team's"
+  items={[
+    "Each gate was introduced to solve a pain the team had felt",
+    "Every new law ran as a warning before it blocked",
+    "Standards are about output, not about which tools someone uses",
+    "Every blocking rule has a documented what-to-do-when-it-fires",
+    "Conventions live in the repo, not in my home folder",
+    "My output is not outrunning the team's review capacity"
+  ]}
+/>

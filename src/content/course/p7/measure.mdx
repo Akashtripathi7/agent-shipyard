@@ -1,0 +1,83 @@
+---
+title: Two numbers, from week one
+summary: Almost nobody measures their own workflow, which is why almost everybody argues about it. Two numbers, collected cheaply, end most of those arguments.
+order: 2
+kind: lesson
+code: '7.2'
+tier: 4
+time: 50 min
+competencies: [verify, decide, operate]
+---
+
+<Analogy>
+  <p>A runner who never times a run. They will tell you, sincerely, that they are getting faster. They might be. Nobody can tell, including them.</p>
+</Analogy>
+
+## Why this lesson exists earlier than it feels like it should
+
+You have been collecting `docs/crew-log.md` since L2 for exactly this reason. Opinions about workflows are cheap and abundant; measurements are rare and decisive.
+
+You need **two numbers**, not a dashboard. Anything more and you will stop collecting them by week three.
+
+## Number one: interventions per feature
+
+**How many times did you have to step in?** Count every time you corrected, clarified, reverted or took over.
+
+It measures the thing that actually matters: how much of *you* a unit of work costs. It falls as your briefs improve, your gates catch more, and your instruction files get better. It rises when you climb a complexity rung too early.
+
+Record one line per intervention: what happened, and which failure mode it was. The categories from lesson 4.11 are a good starting taxonomy.
+
+## Number two: escapes
+
+**What reached main, or production, that should not have?** Count bugs found after merge, incidents, and anything a reviewer caught that your gates should have.
+
+It measures whether your workflow is actually protecting you. It is the counterweight to the first number — because you can always drive interventions to zero by not looking, and escapes is the number that notices.
+
+<Callout type="tip" label="Read them together, always">
+  <p><b>Interventions falling and escapes flat or falling</b> means the workflow is genuinely improving. <b>Interventions falling and escapes rising</b> means you have stopped paying attention and called it progress. That second pattern is common and invisible without both numbers.</p>
+</Callout>
+
+## Optional third: cost per feature
+
+Once spend stops being trivial. Useful mainly for catching the runaway — a flaky test that a builder loops on for ninety minutes shows up here before it shows up anywhere else.
+
+## What not to measure
+
+- **Lines of code.** Agents produce lots. It measures nothing.
+- **Number of commits or pull requests.** Easily gamed, and gamed unconsciously.
+- **Time saved.** Unknowable — you cannot run the counterfactual. People who quote it are estimating and rounding towards their hopes.
+- **Velocity.** It will punish you for doing the careful work on the things that need it.
+
+<Exercise id="p7m-1" title="Four weeks of two numbers" time="10 minutes a week" predict="Do you expect interventions to fall, and by how much?">
+
+1. Create `docs/metrics.md` with two columns: week, interventions per feature, escapes.
+2. Fill it in every Friday for four weeks. Ten minutes, no more.
+3. In week two, change **one** thing in your workflow deliberately, and note what.
+4. In week four, read the four rows together.
+5. Ask: did the change move either number, or did it just feel better?
+
+</Exercise>
+
+<Expect>
+
+Most people find their intervention rate is dominated by one recurring cause — nearly always an underspecified brief rather than a failing agent. And most find at least one workflow change they were confident about that moved neither number.
+
+</Expect>
+
+<IfNot>
+
+If both numbers are flat and low, your work may be too uniform to learn from — try the measurement on a genuinely unfamiliar kind of task, where your briefs are not already tuned.
+
+</IfNot>
+
+<Quiz
+  id="p7m-q1"
+  q="Interventions per feature have halved and escapes have doubled. What happened?"
+  options={[
+    "The workflow improved substantially",
+    "You are intervening less because you are checking less, not because the work got better",
+    "The features were simpler this month",
+    "The gates are catching more"
+  ]}
+  answer={1}
+/>

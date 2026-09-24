@@ -1,0 +1,116 @@
+---
+title: Design the workflow that fits you
+summary: Stop running someone else's system. Keep what you actually used, cut what was someone else's problem, and write it down in one page.
+order: 1
+kind: lesson
+code: '7.1'
+tier: 4
+time: 70 min
+competencies: [decide, build, orchestrate]
+kit: [workflow-md]
+---
+
+<Analogy>
+  <p>A cook who has worked in three kitchens and now writes the service manual for their own. Not by inventing everything, and not by copying one kitchen wholesale, but by keeping what worked and cutting what was someone else's problem.</p>
+</Analogy>
+
+## Neither workflow was designed for you
+
+You have now run two published workflows — the feature loop and the crew model. Neither was built for your projects, your review speed, your risk tolerance, or the fact that you work alone on some things and with people on others.
+
+This part turns them into yours. Four steps, one page of output.
+
+## Step 1: keep what you actually used
+
+Go through the stages honestly. Which did you run every time? Which did you skip and never regret?
+
+**A stage you always skip is either wrong for your work or badly automated**, and the answer is different for each:
+
+- *Wrong for your work* — you never write ADRs on throwaway projects, and that is correct. Cut it for that project type.
+- *Badly automated* — you skip verification because it takes twenty minutes of manual work. Do not cut it; fix it.
+
+Telling these apart is the whole exercise. The test: **would you be upset to discover it had been skipped on something that mattered?** If yes, it is badly automated. If no, cut it.
+
+## Step 2: turn repeated instructions into skills
+
+Anything you have typed more than twice is a skill. Most people end up with four to six: one to start a feature, one to review, one to ship, one to debug, and one that encodes their own product's rules.
+
+The test of a good skill is that you stop thinking about its wording. If you still edit it every time you use it, it is not finished — it is a template, and the parts you keep editing belong as parameters rather than prose.
+
+## Step 3: decide what is law
+
+For each rule, decide: a **request** in an instruction file, or a **law** in a hook, a gate or branch protection?
+
+> Anything you would be upset to discover was skipped should be a law.
+
+That sentence resolves almost every case. You would be upset to find secrets committed, tests skipped, or the contract edited without approval — laws. You would not be upset to find a commit message in the wrong format — request.
+
+Beware of making everything a law. Every law is friction you pay on every change, including the changes where it was unnecessary.
+
+## Step 4: write the one page
+
+The document you re-read before every new project:
+
+<CodeFile title="WORKFLOW.md — one page, four sections">
+
+```markdown
+# How I work
+
+## Rung
+Start at rung 2 (one session + subagents for search).
+Climb to 3 when two genuinely independent surfaces exist.
+Climb to 4 when I hand-catch the same class of mistake twice.
+
+## Crew
+Default: me + one agent. Add a read-only reviewer for anything
+touching auth, money or stored data formats.
+
+## Pipeline
+check.sh on every commit (lint, types, tests)
+gitleaks + semgrep in pre-commit and CI
+contract tests when there is more than one client
+review by a different model before merge, on Beta and above
+
+## Depths
+Prototype: build only            — spikes I will delete
+Alpha:     + verify it runs      — internal tools
+Beta:      + tests               — anything others depend on
+GA:        + second-model review — money, auth, personal data
+
+## Always a law
+No secrets committed · no --no-verify · contract changes need approval
+Irreversible decisions stop and ask me
+```
+
+</CodeFile>
+
+<KitFile id="workflow-md" />
+
+<Exercise id="p7c-1" title="Write your first honest WORKFLOW.md" time="60 min" predict="Which stage will you find you have been skipping for the wrong reason?">
+
+1. List every stage you have run in this course. Mark each: always, sometimes, never.
+2. For every "never", apply the upset test. Cut or fix — write which.
+3. List every instruction you have typed more than twice. Turn the top four into skills.
+4. Sort every rule into request or law. Move at least one thing you thought was a request.
+5. Write `WORKFLOW.md` using the shape above.
+6. Use it on your next task without changing it, and note every point of friction.
+
+</Exercise>
+
+<Expect>
+
+Step 2 usually finds one stage you have been skipping because it is tedious rather than because it is unnecessary — most often verification. That is the highest-value automation target you have, and it was invisible until you wrote the list down.
+
+</Expect>
+
+<Quiz
+  id="p7c-q1"
+  q="You always skip writing ADRs on small personal projects. What does that mean?"
+  options={[
+    "The stage is badly automated and needs tooling",
+    "It is correctly cut for that project type — apply the upset test",
+    "You lack discipline and should force yourself",
+    "ADRs should be removed from the workflow entirely"
+  ]}
+  answer={1}
+/>
