@@ -1,0 +1,99 @@
+---
+title: When to split into services
+summary: Distributed systems trade one hard problem for a different, harder one. The test for whether that trade is worth making yet.
+order: 1
+kind: arch
+code: 'A4.1'
+tier: 3
+time: 70 min
+competencies: [architecture, decide]
+---
+
+<Analogy>
+  <p>Splitting one shop into three branches. Each can be staffed and refurbished on its own — and now a customer's order has to travel between buildings, and any van can break down.</p>
+</Analogy>
+
+## The honest trade
+
+A1 said start with a monolith. That advice still holds. What changes at this tier is that you will meet products where it stops holding, and you need to know the difference.
+
+Splitting into services buys you:
+
+- **Independent deployment.** The tracking service ships without redeploying bookings.
+- **Independent scaling.** Location updates need ten machines; the admin dashboard needs one.
+- **A technology choice per service.** Go for the high-throughput path, Python where the libraries are.
+- **A blast radius.** One service falling over need not take everything with it.
+
+And it costs you:
+
+- **Every call can now fail** — or worse, time out, which is failure you cannot distinguish from slowness.
+- **No transactions across services.** The single most underestimated cost, and the subject of A4.3.
+- **Debugging spans machines.** A bug is no longer in one log.
+- **Operational weight** — deployments, monitoring and on-call, multiplied.
+
+<Callout type="warn" label="The cost lands on day one; the benefit arrives later">
+  <p>You pay the distributed-systems tax from the first day, and collect the independence benefit only once the team and traffic are large enough to need it. Most products that split early pay for years and collect nothing.</p>
+</Callout>
+
+## The test
+
+Split a service off when you can answer **yes** to at least one, honestly:
+
+- **It scales differently.** Not "might one day" — it has a measured load profile the rest of the system does not share.
+- **It fails differently, and must fail alone.** Location ingestion going down must not stop bookings.
+- **It genuinely needs different technology**, for a reason you could defend to someone sceptical.
+- **A separate team owns it**, and coordination cost is the actual bottleneck.
+
+"It feels cleaner", "microservices are best practice" and "we might need to scale" are not on that list.
+
+## Where the seam goes
+
+If you do split, split along **business capability**, not technical layer. "Tracking" is a service; "the database layer" is not. The test is whether the service owns its data: two services sharing one database table are one service with extra network calls, and you have taken the costs without the benefits.
+
+**A service owns its data and exposes it only through its interface.** If another service needs that data, it asks — or it gets told through an event, which is A4.2.
+
+<Exercise id="svc-1" title="Argue the other side" time="45 min" predict="Which of your proposed services survives a serious attempt to kill it?">
+
+1. Take Courier Live, the project you will build in L4: bookings, live location tracking, notifications, an admin dashboard.
+2. Sketch the split you think is right, and write one sentence per service saying which test it passes.
+3. Now brief an agent adversarially: *"Argue that this should be one service. Attack each split specifically. Do not be agreeable."*
+4. Then brief it the other way: *"Argue for splitting further."*
+5. Write the ADR with the split you actually believe, including the strongest argument against it.
+
+</Exercise>
+
+<Expect>
+
+Usually one or two of your proposed services do not survive — they were technical layers wearing a service costume. The one that survives is almost always location ingestion, because it genuinely has a different load profile and must fail alone. That is what the test looks like when it passes.
+
+</Expect>
+
+<IfNot>
+
+If the agent agreed with everything in step 3, your brief was not adversarial enough. Say "you are reviewing this to stop a bad decision" and give it permission to be blunt. An agreeable critic is worth nothing.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    Eight services, one database. Every change touches three of them, deployments have to be ordered, and nothing can be released independently.
+  </BreakPart>
+  <BreakPart label="Why">
+    The seams were drawn through the code but not through the data. Shared tables recreate every coupling the split was meant to remove, plus network calls.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Own the data or do not split. Merging back is a legitimate and underused move — a distributed monolith is strictly worse than a monolith.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="svc-q1"
+  q="Two services read and write the same database table. What do you actually have?"
+  options={[
+    "Two services sharing a resource, which is normal",
+    "One service split in two, with the costs of distribution and none of the benefits",
+    "A caching problem",
+    "A service that needs a third service in front of the table"
+  ]}
+  answer={1}
+/>

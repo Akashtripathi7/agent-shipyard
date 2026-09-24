@@ -1,0 +1,109 @@
+---
+title: Load, backpressure and failure
+summary: What happens when more arrives than you can handle, and why the answer must be a decision rather than a collapse.
+order: 4
+kind: arch
+code: 'A4.4'
+tier: 3
+time: 75 min
+competencies: [architecture, operate]
+---
+
+<Analogy>
+  <p>A restaurant on a Friday night. A good one turns people away at the door with an honest wait time. A bad one seats everybody, and then nobody gets fed — including the people who were already eating.</p>
+</Analogy>
+
+## Overload is not an error, it is a state
+
+Every system has a capacity. Past it you get a choice, whether you make it or not: **shed load deliberately, or fail indiscriminately**. Systems that do not choose always pick the second — queues grow, memory fills, timeouts cascade, and the failure reaches customers who were being served perfectly well a moment ago.
+
+## Scale the cheap way first
+
+| Move | What it buys | Where it stops |
+|---|---|---|
+| **Fix the query** — index, N+1, pagination | Often 10× for a day's work | Nothing; always do this first |
+| **Cache** (A3.4) | Removes repeated work | Correctness cost; not for writes |
+| **Scale horizontally** | More machines behind a balancer | Needs stateless services |
+| **Scale the database** — read replicas | Read-heavy relief | Replica lag; writes still single |
+| **Partition / shard** | Near-unlimited | Large complexity; cross-shard queries hurt |
+
+Work down that list in order. Most products never need the last row, and reaching for it early is how you get a system that is slow *and* complicated.
+
+**Horizontal scaling requires statelessness.** A server that keeps session data in memory cannot be one of five. Push state to the database, the cache or the client.
+
+## Backpressure: saying no on purpose
+
+When the queue is growing faster than you drain it, something must give. The mechanisms, in the order you should add them:
+
+1. **Timeouts on every external call.** No timeout means a hung dependency holds your worker forever. *Every* call: database, HTTP, queue, cache.
+2. **Bounded queues.** An unbounded queue converts overload into memory exhaustion plus enormous latency. Bounded means you find out you are overloaded while you can still act.
+3. **Rate limits**, per tenant. One customer's runaway script must not consume everyone's capacity.
+4. **Load shedding.** Past a threshold, reject cheaply and fast with a clear status, before doing expensive work. A fast 503 is far kinder than a slow timeout.
+5. **Circuit breakers.** After N consecutive failures, stop calling a dependency for a while. Gives it room to recover instead of hammering it.
+
+<Callout type="warn" label="Retries make overload worse">
+  <p>Naive retries are an amplifier: a struggling service gets three times the traffic at exactly the wrong moment. Always <b>exponential backoff with jitter</b>, always a retry budget, and never retry a request the server told you not to.</p>
+</Callout>
+
+## Degrade rather than die
+
+The best behaviour under load is a smaller product, not a broken one. In Courier Live: if the tracking service is struggling, drop map updates from 1/second to 1/10 seconds; if the recommendation service is down, show the plain list. Decide these degradations up front and write them down — nobody invents them well at 2am.
+
+<Exercise id="scale-1" title="Push it past capacity and watch how it dies" time="60 min" predict="What fails first — the database, the queue, or memory?">
+
+1. Load-test Courier Live's location ingestion with a tool like k6, ramping until it breaks.
+2. Record what breaks first and what a normal booking request looks like during the overload.
+3. Add, one at a time, measuring after each: a timeout on every external call; a bounded queue; a rate limit per tenant; load shedding above a threshold.
+4. Re-run the same ramp.
+5. Write the degradation plan into the runbook.
+
+</Exercise>
+
+<Expect>
+
+Before: latency climbs until everything times out, including unrelated requests, and recovery takes minutes after the load stops. After: throughput plateaus, excess requests get a fast rejection, unrelated requests stay fast, and the system recovers the moment load drops. **Same capacity, completely different failure.** That difference is the entire lesson.
+
+</Expect>
+
+<IfNot>
+
+If adding limits did not change the shape, check that the timeouts are actually applied — many HTTP clients default to no timeout, and a connect timeout is not a read timeout. Verify by pointing one call at a deliberately hanging endpoint.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    One slow dependency takes down the whole product. The notification service gets slow, every worker ends up waiting on it, and bookings — which do not need notifications at all — stop working.
+  </BreakPart>
+  <BreakPart label="Why">
+    Shared thread or connection pools mean one slow dependency can consume every worker. This is resource exhaustion by coupling.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Bulkheads: separate pools per dependency, so a slow one can only exhaust its own share. Plus timeouts and a circuit breaker so it stops being called at all.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="scale-q1"
+  q="Why is an unbounded queue dangerous under sustained overload?"
+  options={[
+    "It loses messages once memory fills",
+    "It hides the overload until memory is exhausted, while latency becomes enormous",
+    "It cannot be monitored",
+    "It forces synchronous processing"
+  ]}
+  answer={1}
+/>
+
+<Checklist
+  id="scale-check"
+  title="Before real traffic"
+  items={[
+    "Every external call has a timeout, including read timeouts",
+    "Queues are bounded and their depth is on a dashboard",
+    "Rate limits are per tenant, not global",
+    "Overload sheds load fast rather than queueing indefinitely",
+    "Retries use backoff with jitter and a budget",
+    "Degraded behaviour is decided and written in the runbook"
+  ]}
+/>

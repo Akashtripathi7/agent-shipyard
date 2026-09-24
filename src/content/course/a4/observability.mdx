@@ -1,0 +1,115 @@
+---
+title: Knowing what your system is doing
+summary: Logs, metrics and traces, what each answers, and the difference between a dashboard and knowing something is wrong.
+order: 6
+kind: arch
+code: 'A4.6'
+tier: 3
+time: 70 min
+competencies: [architecture, operate, verify]
+---
+
+<Analogy>
+  <p>A hospital monitor. The trace tells you what this patient's heart did in the last minute. The chart tells you the trend over days. The alarm is what actually gets someone out of a chair — and an alarm that goes off constantly gets muted.</p>
+</Analogy>
+
+## Three kinds of signal
+
+| Signal | Answers | Shape | Cost |
+|---|---|---|---|
+| **Logs** | What happened in this specific case? | Events with detail | Grows with traffic; expensive at volume |
+| **Metrics** | How is the system behaving overall? | Numbers over time | Cheap; cardinality is the trap |
+| **Traces** | Where did this request spend its time, across services? | A tree of spans | Usually sampled |
+
+You need all three, and they answer genuinely different questions. Debugging one customer's failed booking is a **log** question. "Are we slower than last week" is a **metrics** question. "Which of our six services is the slow one" is a **trace** question — and in a distributed system it is unanswerable without tracing.
+
+## Make logs machine-readable
+
+Structured logs — one JSON object per event — cost nothing extra and are the difference between grepping and querying.
+
+```python
+log.info("booking.created", extra={
+    "booking_id": b.id, "tenant_id": b.tenant_id,
+    "duration_ms": elapsed, "request_id": ctx.request_id,
+})
+```
+
+Two rules:
+
+- **A request id on every line**, propagated across service calls. Without it you cannot reconstruct one customer's journey through four services.
+- **Never log secrets or personal data.** Tokens, passwords, card numbers, full addresses. Logs are widely readable, retained for months, and shipped to third parties. An agent adding `extra={"user": user.__dict__}` will log everything; make that a review finding.
+
+## The four numbers worth watching
+
+For every service, from the user's side inwards: **rate** (requests per second), **errors** (proportion failing), **duration** (latency — p50, p95, p99), and **saturation** (how full the queues, pools and CPU are).
+
+<Callout type="warn" label="Averages hide the problem">
+  <p>Mean latency is the least useful number on your dashboard. If 95% of requests take 50ms and 5% take 8 seconds, the mean looks fine and one user in twenty is having a terrible time. <b>Watch p95 and p99.</b> Those are your actual users.</p>
+</Callout>
+
+## Alert on symptoms, not causes
+
+The dashboard nobody is looking at has told you nothing. But alerting on everything is worse than alerting on nothing, because it trains people to ignore alerts.
+
+Alert on what a **user would notice**: error rate above X for Y minutes, p99 latency above the promise, queue depth growing without recovery, a job failing repeatedly. Do not alert on CPU at 80% — that is a cause, it may be entirely fine, and it wakes someone for a number rather than a problem.
+
+Every alert needs a **runbook line**: what it means, what to check first, and what to do. An alert without one is a notification that something is wrong and you are on your own.
+
+<Exercise id="obs-1" title="Debug a slow request you cannot see" time="60 min" predict="Which service will be the slow one? Write your guess before you look.">
+
+1. Add distributed tracing across Courier Live's services, with the request id propagated.
+2. Add artificial latency of 400ms deep inside one service — not the one you would suspect.
+3. From the outside, observe only that one endpoint is slow.
+4. Find the cause **using the trace alone**, without reading the code.
+5. Now add structured logs with the request id and find the same slow request in the logs.
+
+</Exercise>
+
+<Expect>
+
+With a trace it takes under a minute — the waterfall shows exactly which span is wide. Without one you would be adding log statements and redeploying services one at a time. That gap is the whole argument for tracing, and it widens with every service you add.
+
+</Expect>
+
+<IfNot>
+
+If the trace showed a single span with no children, propagation is broken — the request id or trace context is not being forwarded on outbound calls. That is the most common tracing bug and it makes the whole thing useless.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    Your logging bill exceeds your hosting bill. Or a metric with a per-user label creates millions of time series and takes the metrics system down.
+  </BreakPart>
+  <BreakPart label="Why">
+    Logs grow with traffic, and high-cardinality labels — user id, request id, email — multiply time series without limit. Metrics are for aggregates; identifiers belong in logs and traces.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Sample successful requests and keep all errors, set retention by signal, and keep metric labels to low-cardinality dimensions such as endpoint, status and tenant tier.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="obs-q1"
+  q="A request through four services is slow. Which signal identifies which service is responsible, fastest?"
+  options={[
+    "Logs, filtered by timestamp",
+    "Metrics showing per-service latency",
+    "A distributed trace of that request",
+    "CPU graphs for each service"
+  ]}
+  answer={2}
+/>
+
+<Checklist
+  id="obs-check"
+  title="Before you are on call for it"
+  items={[
+    "Logs are structured and carry a request id propagated across services",
+    "No secrets or personal data reach the logs",
+    "Rate, errors, duration and saturation exist for every service",
+    "Latency is watched at p95 and p99, not as a mean",
+    "Alerts fire on user-visible symptoms, and each one has a runbook line",
+    "Traces are sampled and propagation has been verified end to end"
+  ]}
+/>

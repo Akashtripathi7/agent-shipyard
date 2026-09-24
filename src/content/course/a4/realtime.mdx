@@ -1,0 +1,90 @@
+---
+title: Real-time transports
+summary: Four ways to get a change onto a screen quickly, and the honest trade behind each one.
+order: 5
+kind: arch
+code: 'A4.5'
+tier: 3
+time: 65 min
+competencies: [architecture, decide, ui]
+---
+
+<Analogy>
+  <p>Checking whether the post has arrived. You can walk to the door every five minutes, wait by the door until it comes, or ask the postman to ring the bell. The bell is best — right up until you have ten thousand doors and one postman.</p>
+</Analogy>
+
+## Four transports
+
+| Transport | How it works | Costs | Fits |
+|---|---|---|---|
+| **Polling** | The client asks every N seconds | Wasteful; latency up to N | Anything tolerating 10s+; the boring right answer more often than people expect |
+| **Long polling** | The request waits until there is news | A held connection per client | A fallback where sockets are blocked |
+| **Server-sent events** | One long-lived HTTP stream, server → client | One connection per client; one direction | Feeds, notifications, live dashboards |
+| **WebSockets** | A persistent two-way connection | Connections are state; scaling needs care | Chat, collaboration, anything the client also sends on |
+
+**Start at the top of that table and move down only when you must.** Polling has no connection state, survives every proxy, recovers from network changes for free, and is trivial to debug. A courier's position updating every 10 seconds is polling; every second is SSE; a two-way chat is WebSockets.
+
+## Why connections are the hard part
+
+A persistent connection is **state held on a specific machine**, which breaks the statelessness that horizontal scaling depends on (A4.4). Three consequences:
+
+1. **Sticky sessions or a shared backplane.** If a client is connected to server 3 and the update arrives at server 7, server 7 needs a way to reach it — usually a pub/sub channel every server subscribes to.
+2. **Reconnection is normal, not exceptional.** Phones change networks constantly. The client must reconnect with backoff, and — critically — **catch up on what it missed**, which means messages need sequence numbers and the server needs a short replay buffer.
+3. **Connection count is a capacity limit of its own**, separate from request rate. Ten thousand idle connections still consume memory and file descriptors.
+
+<Callout type="tip" label="The test for WebSockets">
+  <p>Do you need the <b>client</b> to send frequently too? If not, server-sent events give you most of the benefit for a fraction of the operational weight, and they run over ordinary HTTP — so proxies, load balancers and debugging tools all still work.</p>
+</Callout>
+
+## Real-time still needs a source of truth
+
+The transport delivers a view; it is not the record. Courier Live's position stream can drop messages, arrive late or arrive out of order, and the map should still converge. Two rules:
+
+- **Every message carries a sequence number or timestamp**, and the client ignores anything older than what it has.
+- **A periodic full snapshot**, so a client that has drifted or missed a replay window is corrected without noticing.
+
+<Exercise id="rt-1" title="Kill the network mid-stream" time="50 min" predict="After a 30-second disconnect, will the map be right, or quietly wrong?">
+
+1. Stream courier positions over SSE, one update per second, to a map.
+2. Disconnect the network for 30 seconds, then restore it.
+3. Observe: does it reconnect, and is the position right or stale?
+4. Add reconnection with exponential backoff, a `Last-Event-ID` catch-up, and a full snapshot every 30 seconds.
+5. Repeat, and also try a 10-minute disconnect — longer than your replay buffer.
+
+</Exercise>
+
+<Expect>
+
+The first attempt usually reconnects but shows a position from before the drop, with no indication anything is wrong. The catch-up fixes the short outage; the periodic snapshot is what saves the long one, where the replay buffer no longer holds what was missed. **A stale map with no error is worse than a visible disconnection** — decide what the interface shows while it is catching up.
+
+</Expect>
+
+<IfNot>
+
+If it did not reconnect at all, check whether you are handling the browser's automatic SSE reconnection or fighting it — the native `EventSource` retries on its own, and a manual layer on top can leave you with two streams or none.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    Everything is fine in development and falls over at a few thousand users. Connections pile up on one server while the others sit idle.
+  </BreakPart>
+  <BreakPart label="Why">
+    Persistent connections do not rebalance. A server that restarts sheds all of its connections at once; they reconnect in a thundering herd and land unevenly.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Jittered reconnect backoff on the client, a connection limit per server, and a backplane so any server can reach any client. Test a rolling restart under load before customers do it for you.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="rt-q1"
+  q="A live map must survive a two-minute disconnection and be correct afterwards. What is the minimum you need?"
+  options={[
+    "WebSockets rather than SSE",
+    "Reconnection with catch-up, plus a periodic full snapshot",
+    "A higher update frequency",
+    "A larger server-side replay buffer"
+  ]}
+  answer={1}
+/>

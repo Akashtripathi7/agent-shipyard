@@ -1,0 +1,102 @@
+---
+title: Consistency when there is no transaction
+summary: One database gives you all-or-nothing for free. Across services you have to build it, and the building has a name.
+order: 3
+kind: arch
+code: 'A4.3'
+tier: 3
+time: 75 min
+competencies: [architecture, decide]
+---
+
+<Analogy>
+  <p>Booking a flight and a hotel with two different companies. There is no button that books both or neither. You book the flight, book the hotel, and if the hotel is full you cancel the flight yourself. That cancellation is not a rollback — it is a second action that undoes the first, and for a moment you owned a flight to nowhere.</p>
+</Analogy>
+
+## What you lose the moment you split
+
+Inside one database a transaction is all-or-nothing: charge the customer and create the booking, or neither. Across two services there is no such thing. You can write to the payments service and to the bookings service, and the second can fail.
+
+There is no way to make this go away. There are only ways to be deliberate about it.
+
+## Strong and eventual, in plain terms
+
+- **Strong consistency** — everyone sees the same value immediately after a write. What a single database gives you.
+- **Eventual consistency** — everyone converges on the same value, given a moment. What a distributed system gives you unless you pay dearly.
+
+The design question is never "which is better". It is **which parts of my product can tolerate a moment of disagreement**, and the answers differ within one product:
+
+| In Courier Live | Tolerance | Therefore |
+|---|---|---|
+| A courier's current position on the map | Seconds | Eventual, happily |
+| Whether this delivery is already assigned | None | Strong, one owner, one transaction |
+| The count of deliveries today on a dashboard | Minutes | Eventual |
+| Payment captured for a delivery | None | Strong, and idempotent |
+
+**Money, assignment and anything a person makes an irreversible decision on wants strong consistency.** Displays, counts and positions do not.
+
+## The saga
+
+When a business operation spans services, you model it as a sequence of local transactions, each with a **compensating action** that undoes it.
+
+Assign a courier, reserve capacity, charge the customer. If the charge fails: release the capacity, unassign the courier. Each step commits locally; each has an undo.
+
+Three things a saga needs, and the second is the one people forget:
+
+1. **Every step has a compensation** — and compensations must be idempotent too, because they get retried.
+2. **A record of where you are.** Something durable must know that step two succeeded and step three is pending, or a crash mid-saga leaves the system in a state nobody can reason about.
+3. **A plan for compensations that fail.** Sometimes you cannot undo — the email is sent, the money moved. That case needs a human and an alert, not a retry loop.
+
+<Callout type="warn" label="Sagas leak">
+  <p>Between "charge succeeded" and "booking created" the system is <b>visibly inconsistent</b>. A customer refreshing at that instant sees a charge with no booking. You cannot prevent this; you can only decide what the interface shows — usually a "processing" state, which is honest, rather than an error, which is not.</p>
+</Callout>
+
+## The cheapest correct thing
+
+Before building a saga, ask whether the operation needs to span services at all. **Keeping one transaction inside one service is dramatically simpler than any distributed alternative**, and is often available if you put the seam somewhere else. A4.1's advice applies here in reverse: if two things must be atomic, that is evidence they belong in the same service.
+
+<Exercise id="cons-1" title="Fail a saga in the middle" time="55 min" predict="What does a customer see if they refresh between step two and step three?">
+
+1. In Courier Live, write the assignment saga: assign courier → reserve capacity → charge.
+2. Make the charge fail deliberately.
+3. Watch the compensations run. Confirm the courier is free and the capacity released.
+4. Now crash the process **between** step two and step three. Restart it.
+5. Can the system work out where it was? If not, add a durable saga record and try again.
+
+</Exercise>
+
+<Expect>
+
+Step 3 works and feels tidy. Step 4 is the real lesson: without a durable record of progress, the restarted process has no idea a saga was in flight, the capacity stays reserved forever, and nothing reports an error. Reserved-forever capacity is the classic distributed leak.
+
+</Expect>
+
+<IfNot>
+
+If the crash recovered cleanly without a saga record, check whether your steps are actually in separate transactions — an ORM session spanning all three is a single transaction wearing a saga costume, which works locally and will not survive a real split.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    A compensation runs twice. The customer is refunded twice, or capacity is released twice and the count drifts negative.
+  </BreakPart>
+  <BreakPart label="Why">
+    Compensations are ordinary operations and inherit every distributed-systems property, including at-least-once delivery. They get retried like anything else.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Make compensations idempotent with the same rigour as the forward path: a natural key, a uniqueness constraint, and a test that runs the compensation twice and asserts the effect happened once.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="cons-q1"
+  q="A crash leaves a saga half-complete and nothing records that it was in flight. What is the most likely visible symptom?"
+  options={[
+    "An error in the logs pointing at the failed step",
+    "Capacity reserved forever, with no error anywhere",
+    "The saga automatically restarting from the beginning",
+    "A duplicate charge on the customer"
+  ]}
+  answer={1}
+/>

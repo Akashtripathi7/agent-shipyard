@@ -1,0 +1,113 @@
+---
+title: Events and messaging
+summary: Telling other parts of the system what happened, instead of telling them what to do — and what you give up in exchange.
+order: 2
+kind: arch
+code: 'A4.2'
+tier: 3
+time: 70 min
+competencies: [architecture, build]
+---
+
+<Analogy>
+  <p>A noticeboard versus a phone call. On the phone you wait while the other person acts, and you know immediately if they are out. Pin it to the board and you carry on — and you no longer know when, or whether, anyone read it.</p>
+</Analogy>
+
+## Two ways for services to talk
+
+**Synchronous** — the caller waits for a reply. Use it when you need the answer to continue: checking whether a slot is free before confirming a booking.
+
+**Asynchronous** — the caller publishes a message and moves on. Use it when you do not: notifying, logging, updating a dashboard, kicking off a report.
+
+The mistake is reaching for messaging because it sounds more advanced. Asynchronous is not better; it is *looser*, and looseness is what you want only where you can tolerate not knowing.
+
+## Events versus commands
+
+The wording matters more than it looks:
+
+- **An event says what happened.** `BookingRescheduled`. Past tense, a fact. Anyone may care; the publisher does not know or mind.
+- **A command says what to do.** `SendConfirmationEmail`. It has exactly one intended handler.
+
+Prefer events between services. A command from A to B is a phone call with extra steps — A still knows about B and still depends on it. An event lets you add a fifth consumer next year without touching the publisher.
+
+<Callout type="tip" label="Events carry facts, not pointers">
+  <p>Include enough in the event for a consumer to act without calling back: ids, the fields that changed, a timestamp and a version. An event that says only "booking 42 changed" forces every consumer to call the booking service, which rebuilds the coupling you were removing — and creates a thundering herd whenever something popular changes.</p>
+</Callout>
+
+<CodeFile title="An event worth publishing">
+
+```json
+{
+  "type": "booking.rescheduled",
+  "version": 1,
+  "id": "evt_01J9…",
+  "occurred_at": "2026-09-24T09:15:03Z",
+  "tenant_id": "clinic_42",
+  "data": {
+    "booking_id": "bk_8891",
+    "previous_start": "2026-09-25T10:00:00Z",
+    "new_start": "2026-09-26T14:30:00Z",
+    "rescheduled_by": "staff_17"
+  }
+}
+```
+
+</CodeFile>
+
+## What you must handle
+
+Three properties of every real message bus, none of them optional:
+
+1. **At-least-once delivery.** Messages arrive more than once. Consumers must be **idempotent** — the same discipline as A3.3, now between services. The event `id` is your natural key.
+2. **Out-of-order arrival.** `BookingCancelled` can arrive before `BookingRescheduled`. Include a version or timestamp and ignore anything older than what you have already applied.
+3. **Consumers that fall behind.** A slow consumer builds a backlog. Monitor **consumer lag** as seriously as you monitor errors; it is the earliest warning that something downstream is unwell.
+
+## Versioning, because events outlive code
+
+Events are a published interface. Once another team consumes `booking.rescheduled`, you cannot change its shape freely. Add fields, never remove or repurpose them; carry a `version`; and when you truly need a new shape, publish `v2` alongside `v1` until the consumers move.
+
+<Exercise id="evt-1" title="Deliver an event twice, and out of order" time="50 min" predict="Which breaks your consumer first — the duplicate or the reordering?">
+
+1. Publish `booking.rescheduled` from your booking service and consume it in a notification service.
+2. Deliver the same event twice. Watch two notifications go out.
+3. Make the consumer idempotent on the event `id` and repeat.
+4. Now deliver a `booking.cancelled` from *before* the reschedule, after it. Watch the booking come back to life.
+5. Fix it with a version or timestamp check: ignore anything not newer than what you have applied.
+
+</Exercise>
+
+<Expect>
+
+The duplicate is obvious and easy to fix. The reordering is the one that surprises people — a cancelled booking reappearing as active, with no error anywhere, because both messages were processed successfully and in good faith.
+
+</Expect>
+
+<IfNot>
+
+If you could not get them out of order, publish them to different partitions or add an artificial delay to the first consumer. Ordering is only guaranteed within a partition on most buses, which is exactly why this bug is common.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    You add a field to an event. A consumer you did not know existed — written by another team, or by an agent six months ago — parses strictly and starts rejecting every message.
+  </BreakPart>
+  <BreakPart label="Why">
+    An event is a public interface with invisible consumers. There is no compiler to tell you who depends on it.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Schema registry with compatibility checks in CI, consumers that ignore unknown fields, and a written list of who consumes what. Treat an event schema change with the same care as a database migration.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="evt-q1"
+  q="Why prefer 'BookingRescheduled' over 'SendRescheduleEmail' as a message between services?"
+  options={[
+    "Past-tense names are a naming convention",
+    "It states a fact any number of consumers may act on, so the publisher stays independent",
+    "Events are delivered faster than commands",
+    "Commands cannot be made idempotent"
+  ]}
+  answer={1}
+/>
