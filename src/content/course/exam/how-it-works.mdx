@@ -1,0 +1,61 @@
+---
+title: The mastery exam
+summary: Three unseen scenarios. Design the workflow and the architecture, then defend every choice against someone trying to take it apart.
+order: 1
+kind: exam
+code: 'Exam'
+tier: 4
+time: 30 min to read, 2–3 hours per scenario
+competencies: [decide, architecture, orchestrate]
+---
+
+<Analogy>
+  <p>A driving test, not a written one. Nobody asks you to recite the rules. They put you on an unfamiliar road and watch what you do at the junction.</p>
+</Analogy>
+
+## What is being tested
+
+Not recall. Every fact in this course is on the reference pages, and looking things up is what professionals do.
+
+What is being tested is the Tier 4 gate:
+
+> **You can defend a workflow and an architecture choice to someone who disagrees with you.**
+
+Three things have to be true at once. You must **choose** deliberately, **know why** in terms of what you are optimising for, and **know what would make you wrong**.
+
+## How each scenario works
+
+Each gives you a product, a team, constraints and a deadline. For each, produce:
+
+1. **The architecture** — components, data, boundaries. Which architecture parts apply, and which you are explicitly ruling out.
+2. **The workflow** — your rung, your crew, your gates, your depths per area.
+3. **The three decisions you would lose sleep over**, each with a falsifier.
+4. **What you would build in week one**, specifically.
+5. **The strongest argument against your own design.**
+
+Item five is not a formality. A design you cannot argue against is one you have not understood.
+
+## How to grade yourself
+
+Write your answer first. Then, for each scenario, run this:
+
+<Prompt title="Adversarial examination, fresh session, different model if possible">
+Here is a scenario and my proposed architecture and workflow. You are examining this work and you are not inclined to be kind. For each of my decisions: what am I assuming without evidence, what breaks first, and what would a more experienced engineer have done differently? Name any place I applied a pattern that this situation does not justify, and any place I under-engineered something that will hurt. Then give me the three questions I should have asked about this scenario and did not. Do not be agreeable and do not give me a score.
+</Prompt>
+
+Then judge yourself against four marks:
+
+| | You are there when |
+|---|---|
+| **Choosing** | Every significant decision was made on purpose, not by default or by habit |
+| **Reasoning** | You can state what you optimised for, and in what order |
+| **Falsifiability** | Each load-bearing decision has an observation that would prove it wrong |
+| **Restraint** | You ruled things out. A design that applies every part of this course has failed |
+
+**Restraint is the one most people miss.** Reaching for services, queues, crews and caches because you have been taught them is the failure mode this exam is built to catch. A scenario with eleven users and a two-week deadline should produce a small, dull, correct design.
+
+## A note on the answers
+
+There are no answer keys, and that is deliberate. Each scenario is written so that at least two defensible designs exist, and the difference between a strong answer and a weak one is never the diagram — it is whether the reasoning survives the examination.
+
+If you want a second opinion, take a scenario to someone who has built this kind of product and argue about it. That is what the gate actually describes.

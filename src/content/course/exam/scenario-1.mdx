@@ -1,0 +1,64 @@
+---
+title: 'Scenario 1 · The inherited codebase'
+summary: A five-year-old product, one departing engineer, a regulatory deadline, and a team that does not use agents.
+order: 2
+kind: exam
+code: 'Exam 1'
+tier: 4
+time: 2–3 hours
+competencies: [decide, architecture, orchestrate, security]
+---
+
+## The situation
+
+You have joined a company with a five-year-old appointment and records product used by 40 clinics. Roughly 60,000 patient records exist.
+
+**The codebase:** one monolith, 180,000 lines, framework two major versions behind. Test coverage around 20%, concentrated in code nobody changes. Deployments are manual, on Thursdays, by one person. There is no staging environment that matches production.
+
+**The team:** four engineers. One has been here four years and knows everything; they leave in six weeks. Two joined in the last year. One is openly sceptical about AI-assisted development and writes the most reliable code on the team.
+
+**The pressure:** a regulatory requirement lands in **four months**. Patient data must be exportable on request and deletable on request, with an audit trail. Nobody knows everywhere patient data currently lives.
+
+**Constraints:** the product cannot stop shipping features during this. Clinics pay monthly and two have threatened to leave over a slow booking screen.
+
+## What to produce
+
+1. **Your first two weeks**, day by day for the first five days.
+2. **The architecture work** the regulation actually requires — and what it does not require, however tempting.
+3. **Your workflow**, including how you work with a sceptical colleague and a departing expert.
+4. **The three decisions you would lose sleep over**, with falsifiers.
+5. **What you would deliberately not do**, and why.
+
+## Questions worth answering in your response
+
+- The departing engineer is a resource with an expiry date. What do you spend them on, and what do you deliberately not ask them?
+- The regulation needs a data inventory. Who builds it, how, and how do you know it is complete?
+- The slow booking screen is a commercial threat and an engineering distraction. Where does it sit against the deadline?
+- Twenty per cent coverage on a 180,000-line codebase: do you raise it, and if so where and by how much?
+- How does a team of four, one of whom does not use agents, share standards without anyone being made to work in a way they did not agree to?
+
+<Callout type="warn" label="The trap in this one">
+  <p>The obvious plan is a big modernisation: upgrade the framework, add a staging environment, raise coverage, then do the regulation. That plan is defensible right up until you notice it spends the departing engineer's six weeks on infrastructure instead of on the knowledge that is about to walk out of the door — and that the regulatory deadline does not move.</p>
+</Callout>
+
+<Drill id="exam-1" scenario="Commit to your headline decision before writing the full answer: what dominates your first two weeks?" fields={[
+  { label: "First two weeks", options: ["Audit the codebase and build the data inventory", "Upgrade the framework and build staging", "Extract everything the departing engineer knows", "Fix the booking performance to protect revenue"] },
+  { label: "What you are optimising for" },
+  { label: "What would make this the wrong call" }
+]}>
+
+**There is no single right answer here, and two of these four are defensible.**
+
+The examination question is not which you picked but whether your reasoning survives. Two things a strong answer almost always contains:
+
+**The departing engineer is the only resource with a hard expiry.** The codebase will still be there in six weeks; the person who knows why the billing table has two date columns will not. Any plan that does not front-load extracting their knowledge — as written documentation, as an audited codebase, as recorded walkthroughs of the parts nobody else has touched — is spending a non-renewable resource on renewable work.
+
+**The data inventory is on the critical path and nothing else is.** You cannot export or delete what you cannot find, and finding it in a 180,000-line codebase with 20% coverage takes longer than anyone estimates. Four months is not generous for that.
+
+A strong answer usually pairs those: the audit *is* how you extract the departing engineer's knowledge, and the data inventory is its first deliverable. That turns two problems into one piece of work, which is the kind of move this exam is looking for.
+
+The framework upgrade and staging are real needs that are not on the critical path. The booking performance is a commercial problem that may justify a narrow fix — measure first, per A4.4, because it is very often one query.
+
+Where answers fail: treating the regulation as a feature to build in month four, raising coverage as a goal rather than as a by-product of the changes you must make anyway, and any plan that requires the sceptical colleague to change how they work.
+
+</Drill>

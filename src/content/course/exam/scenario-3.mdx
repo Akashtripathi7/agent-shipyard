@@ -1,0 +1,74 @@
+---
+title: 'Scenario 3 · The AI feature that could hurt someone'
+summary: A capable feature, a vulnerable audience, an enthusiastic stakeholder, and a decision about whether to build it at all.
+order: 4
+kind: exam
+code: 'Exam 3'
+tier: 4
+time: 2–3 hours
+competencies: [decide, architecture, security, verify]
+---
+
+## The situation
+
+You work on a product used by community pharmacies. Customers message their pharmacy through it — refills, opening hours, "is my prescription ready?".
+
+**The request:** the head of product wants an AI assistant to answer customer messages automatically. Pharmacy staff are overwhelmed; 70% of messages are the same handful of questions. There is a board demo in five weeks.
+
+**What you have:** three years of real message history, staff replies included. Opening hours and services per pharmacy, structured and current. A refill status API. No written policies about what staff may or may not say.
+
+**The audience:** the general public, including elderly and unwell people. Some messages are medical. A few, historically, have been urgent.
+
+**The stakeholder's view:** *"the model is good enough now, and we have three years of examples of exactly how our staff answer."*
+
+## What to produce
+
+1. **What you would build**, and what you would refuse to build.
+2. **The architecture** — shape, retrieval, tools, guardrails.
+3. **How you would know it is safe enough to show a real customer**, in numbers.
+4. **The three decisions you would lose sleep over**, with falsifiers.
+5. **What you would say to the head of product**, in the meeting, in three sentences.
+
+## Questions worth answering
+
+- Where exactly is the line between "your prescription is ready" and medical advice, and who decides where it sits?
+- Three years of staff replies is training-shaped data. Is it a good foundation, and what is wrong with it?
+- Someone messages "I have chest pain, should I take my tablets?" What happens, mechanically, in your design?
+- What does the five-week demo actually need to contain, and what must not be in it?
+- Under what circumstances would you say no to this feature entirely, and is this one of them?
+
+<Callout type="warn" label="The trap in this one">
+  <p>This scenario rewards a clear head about scope and a refusal to be rushed, and it punishes two opposite failures equally: building the autonomous responder that was asked for, and refusing the whole thing on the grounds that health is risky. <b>There is a genuinely valuable, genuinely safe product in here.</b> Finding it is the exam.</p>
+</Callout>
+
+<Drill id="exam-3" scenario="Commit before writing: what ships to real customers, and what does the demo show?" fields={[
+  { label: "What ships", options: ["Auto-replies to messages it is confident about", "Drafts for staff to review and send", "Answers only for opening hours and refill status", "Nothing yet; retrieval and evals only"] },
+  { label: "Whose data grounds the answers", options: ["Three years of staff replies", "Structured pharmacy data and the refill API only", "Both, with staff replies reranked", "Published health information"] },
+  { label: "What would make you refuse to ship at all" }
+]}>
+
+**A strong answer ships staff-facing drafts, grounded in structured data, and never auto-replies to an unclassified message.**
+
+**On what ships.** A5.1's do-not-decide list contains anything regulated and anything where a mistake seriously harms someone. Medical advice is both. But "your prescription is ready, collect after 2pm" is not medical advice — it is a status lookup, and it is most of the 70%.
+
+So the answer is not binary. Drafting for staff, as in L5's stage 2, gives most of the time saving with a human between the model and a vulnerable customer, and it produces the edit-rate signal that tells you whether it would ever be safe to go further. A defensible narrower answer ships only opening hours and refill status as auto-replies, with everything else routed to staff, and that is arguably stronger.
+
+**On the three years of staff replies.** This is the part most answers get wrong. That history is tempting and is the wrong foundation for grounding: staff replies contain individual judgment, mistakes, out-of-date information, advice specific to one person's situation, and personal data about identifiable patients. Grounding answers in "what a colleague once said to someone else" is how you launder an individual's off-hand advice into your product's official voice.
+
+The history is **excellent for something else**: finding the actual distribution of questions, and generating eval cases. Use it to learn what people ask; ground answers in structured, current, owned data.
+
+**On the chest-pain message.** The answer must be mechanical, not aspirational. A classifier runs *before* generation; anything with urgency or symptom markers is routed to a human immediately and shows an emergency-services message. This is a law in code, never an instruction in a prompt. If your design handles this case with "the system prompt tells it not to give medical advice", it fails.
+
+**On the five weeks.** The demo shows the drafting flow with real historical messages and the refusal path working — including deliberately showing an urgent message being escalated. It does not show auto-replies to customers, and nobody should leave the room believing it is ready for them.
+
+**On refusing.** You refuse if the answer to "who decides what counts as medical advice" is "the engineer", or if you are told to auto-reply to unclassified messages for the demo. The three sentences to the head of product exist for this: *most of the 70% is status and hours, and we can automate that safely. The rest needs a pharmacist, and the classifier that decides which is which is the actual product. Give me five weeks for the drafting flow and the eval set, and we will know in numbers whether more is ever safe.*
+
+Answers fail by building the autonomous responder, by grounding in staff replies, by handling the urgent case in the prompt, or by refusing entirely and leaving overwhelmed pharmacy staff with the problem they asked you to help with.
+
+</Drill>
+
+## After the exam
+
+Take one scenario to someone who has built that kind of product and argue about it. That conversation — not your written answer, and not an agent's assessment of it — is the Tier 4 gate.
+
+Then go back to your capstone, and see which of these questions you did not ask about your own product.

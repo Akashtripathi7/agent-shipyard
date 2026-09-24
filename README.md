@@ -44,30 +44,38 @@ with agents.
 
 ---
 
-## Current state — read this first
+## Current state
 
-**55 pages are written and playable end to end.** Tiers 1 and 2 are complete — Start here,
-Part 0 (Groundwork), Part 1 (One agent, understood), Architecture A1 and A2, Part 2 (The
-feature loop), Part 3 (When things go wrong) and Project L1 (Pocket Ledger) — and Tier 3 has
-begun with Part 4 (A crew on one product), all seven lessons.
-
-**The rest of Tiers 3 and 4 is planned but not yet written.** All 24 sections and their order
-are decided and shown on the site, but those pages do not exist yet. The site says so
-everywhere it matters: unwritten sections render as dashed, unclickable cards marked *being
-written*, and any glossary term or tool belonging to an unwritten lesson is shown as a label
-rather than a dead link. `npm run verify` enforces this — it fails on a single dead internal
-link.
-
-Nothing here pretends to be finished that is not.
+**The course is complete.** All 24 sections across four tiers are written: 135 pages covering
+every part, every architecture strand, all six guided projects and the mastery exam.
 
 | | |
 | --- | --- |
-| Pages written | 55 (30 lessons, 7 architecture, 8 project milestones, 3 drills, 3 reviews, 3 setup, 1 overview) |
-| Sections planned | 24 across 4 tiers |
-| Guided projects | 6 |
+| Pages | 135 (46 lessons, 26 architecture, 37 project milestones, 5 decision lessons, 5 drill sets, 4 exam, 6 overviews, 3 reviews, 3 setup) |
+| Sections | 24 across 4 tiers |
+| Guided projects | 6, from a solo expense tracker to a self-designed capstone |
 | Glossary | 98 precise definitions, plus 73 terms explained in plain language with an everyday analogy |
 | Workflow kit | 33 downloadable files |
 | Tool index | 31 tools, each with the point at which it earns a place in your setup |
+
+Every internal link resolves, every page has one `<h1>` and no skipped heading levels, and
+axe-core reports zero WCAG 2.1 AA violations in both themes. `npm run verify` enforces all of
+that on every build.
+
+### What each tier contains
+
+**Tier 1 · Foundation** (18 pages) — Start here, Part 0 Groundwork, Part 1 One agent understood.
+
+**Tier 2 · Practitioner** (30 pages) — Architecture A1, Part 2 The feature loop, Project L1
+Pocket Ledger, Part 3 When things go wrong, Architecture A2 Trust boundaries.
+
+**Tier 3 · Advanced** (44 pages) — Part 4 A crew on one product (in three parts), Architecture
+A3 Multi-role systems and A4 Distributed systems, and Projects L2 Vault, L3 Book-a-Slot and
+L4 Courier Live.
+
+**Tier 4 · Expert** (43 pages) — Part 5 Many projects at once, Architecture A5 AI system
+architecture and A6 Platform architecture, Project L5 Support Copilot, Part 6 Making decisions,
+Part 7 Designing and owning your workflow, Project L6 Capstone, and the mastery exam.
 
 ---
 
@@ -111,12 +119,12 @@ The course argues that a change is not done until something other than the agent
 This is that something for this repo. Run it after `npm run build`; it exits non-zero on any
 failure, so it works as a pre-push or CI gate. It checks:
 
-- every internal link and asset reference resolves (currently 4286 links across 62 pages);
+- every internal link and asset reference resolves (currently 20,962 links across 142 pages);
 - every page has exactly one `<h1>`, a `<title>`, and no skipped heading levels;
 - every kit file listed in the data exists in the build, is non-empty, and is not a dotfile
   that static hosts would silently refuse to serve;
-- every lesson referenced by the kit, tool and glossary data either exists or is rendered as a
-  label rather than a link;
+- every lesson referenced by the kit, tool and glossary data exists (currently zero dangling
+  references);
 - the Pagefind search index was built.
 
 ---

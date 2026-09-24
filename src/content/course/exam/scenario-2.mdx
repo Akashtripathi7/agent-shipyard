@@ -1,0 +1,68 @@
+---
+title: 'Scenario 2 · Eleven users and a hard date'
+summary: A real-time product, two people, seven weeks, and every incentive to over-build.
+order: 3
+kind: exam
+code: 'Exam 2'
+tier: 4
+time: 2–3 hours
+competencies: [decide, architecture, orchestrate]
+---
+
+## The situation
+
+A logistics company wants a tool for its dispatchers. **Eleven of them**, in one office, all on desktops, all on the same network.
+
+**What it does:** show the 40–60 active jobs, let a dispatcher claim and assign one, and show each driver's last reported position on a map. Drivers already have a device that posts a location every 30 seconds to an existing endpoint you do not control.
+
+**The team:** you and one other engineer, both comfortable in the same stack.
+
+**The deadline:** seven weeks, immovable. It is tied to a contract with a customer whose current system is being switched off.
+
+**What happens if it is down:** dispatchers phone drivers, as they do today. Annoying, not catastrophic. An hour of downtime during the working day is tolerable once or twice.
+
+**Budget:** modest. Hosting should cost tens of currency units a month, not hundreds.
+
+**One more thing:** the company expects to roughly double dispatchers within two years, to about 25.
+
+## What to produce
+
+1. **The architecture**, in one diagram and one page.
+2. **Which architecture parts you are applying and which you are explicitly ruling out**, with a sentence each.
+3. **Your workflow** for seven weeks with two people.
+4. **The three decisions you would lose sleep over**, with falsifiers.
+5. **The strongest argument against your design.**
+
+## Questions worth answering
+
+- Two assignments arriving at once for the same job: what stops a double assignment, and where does that rule live?
+- Positions arrive every 30 seconds for a few dozen drivers. What transport gets them onto eleven screens, and what did you rule out?
+- The device endpoint is outside your control. What happens when it is slow, or sends nonsense, or stops?
+- Doubling to 25 users in two years: what, if anything, should that change today?
+- Seven weeks with two engineers: which parts of your normal process do you cut, and which would you refuse to cut at any deadline?
+
+<Callout type="warn" label="The trap in this one">
+  <p>Everything about the words <i>real-time</i>, <i>logistics</i> and <i>tracking</i> pulls towards the Courier Live architecture — a separate ingestion service, an event bus, WebSockets, backpressure. Read the numbers again. Eleven users. Sixty jobs. One office. Forty position updates a minute. <b>That is a single small application and a database</b>, and the exam is largely a test of whether you can say so.</p>
+</Callout>
+
+<Drill id="exam-2" scenario="Commit before writing: what is your position transport, and what is your job-assignment safety mechanism?" fields={[
+  { label: "Transport", options: ["Polling every few seconds", "Server-sent events", "WebSockets", "A message bus with a push service"] },
+  { label: "Assignment safety", options: ["A unique constraint in the database", "A distributed lock", "A queue that serialises assignments", "Optimistic UI with conflict resolution"] },
+  { label: "What would make your transport choice wrong" }
+]}>
+
+**The strong answer is almost always polling plus a unique database constraint, and being able to justify that is the point.**
+
+**On the transport.** Eleven clients, updates every 30 seconds, one office network. Polling every five seconds costs 132 requests a minute — nothing. It has no connection state, so a restart is invisible, it survives the office proxy, it needs no backplane, no sticky sessions, no reconnection logic, no replay buffer, and it can be debugged with the browser's network tab. A4.5 said start at the top of the table and move down only when you must. Nothing here forces you down.
+
+Server-sent events would also be defensible, and a good answer that picks SSE says *why* — perhaps sub-second freshness genuinely matters to dispatchers — and acknowledges the reconnection work it adds. WebSockets are hard to defend: nothing needs the client to push.
+
+**On assignment.** Two dispatchers claiming one job is the invariant this product exists to protect, and it is the same shape as L3's double-booking. A unique constraint or conditional update in the database makes it impossible; everything else makes it unlikely. A distributed lock adds a component and a failure mode for a guarantee the database already offers for free.
+
+**On the 25 users.** It changes nothing. Doubling eleven is still a rounding error, and designing today for 25 users in two years is exactly the anticipation A4.1 warns against. Say so explicitly — noticing that a stated fact should *not* change your design is a real answer, not an omission.
+
+**On the external endpoint.** This is where a strong answer spends its remaining effort: a timeout, a sane bound on what you accept, a visible "last seen" age on the map (A4.5's honesty rule), and a decision about what a dispatcher sees when positions stop. That is the genuinely hard part of this scenario, and it is easy to miss while busy choosing a transport.
+
+Answers fail here by building Courier Live. Applying an architecture you know rather than the one the numbers justify is precisely the restraint mark.
+
+</Drill>
