@@ -1,0 +1,89 @@
+---
+title: Automated code review
+summary: Turning the second opinion from Part 2 into something that runs on every change without you asking, and the numbers that keep your expectations honest.
+order: 1
+kind: lesson
+code: '4.8'
+tier: 3
+time: 60 min
+competencies: [verify, orchestrate]
+kit: [agent-gate, ci-workflow]
+---
+
+<Analogy>
+  <p>An editor who did not write the article. The writer reads what they meant to write; the editor reads what is actually on the page.</p>
+</Analogy>
+
+## Fresh context is the whole trick
+
+A reviewer that shares the builder's context shares its blind spots. It has already been persuaded by the same reasoning. So review with **fresh context**, and ideally a **different model family** — a second opinion from the same model that just wrote the code is closer to a first opinion repeated.
+
+Kun Chen's no-mistakes gate does exactly this: a different model re-examines every change, adversarially, before anything reaches the shared repo.
+
+## Build it in layers
+
+1. **The agent's own checks** — `scripts/check.sh` before it claims to be done.
+2. **A fresh AI review on every push** — a `code-reviewer` subagent, a dedicated review command, or a gate remote.
+3. **An optional pull-request bot** for comments in the usual place.
+4. **A human** on sensitive paths: auth, payments, encryption, infrastructure.
+
+Each layer catches what the one before misses, and each costs more than the last. That ordering is the point.
+
+## What to actually expect
+
+Numbers keep expectations honest. Kun measured his gate across about **1,000 agent changes in 59 repositories**: roughly **63% had at least one mistake caught** before a human looked.
+
+Independent tests of pull-request bots show the trade-off between catching and noise. CodeRabbit caught about **46%** of seeded bugs with about **2 false alarms** per run; Greptile catches more — **82%** in its own benchmark — at around **11 false alarms**.
+
+<Callout type="note" label="The first month is noisy">
+  <p>Expect <b>15–30% of comments to be noise</b> at first, falling under 10% once you exclude generated files, fixtures and vendored code. If you do not exclude those, people stop reading the gate, and then the gate is just latency.</p>
+</Callout>
+
+<KitPiece id="agent-gate" />
+
+<Exercise id="gate-1" title="Put a gate in front of your repo and measure it" time="40 min" predict="Out of your next ten changes, how many do you think the gate will find something real in? Write the number down.">
+
+1. If you use an install script for a gate, **read it before running it**. Piping a script from the internet into your shell is exactly the risk you guarded against in Part 1.
+2. Install your gate — the `agent-gate` role from your kit is a good starting point — and wire it so it runs on every push.
+3. Push your next change through it and read what it reports.
+4. For your next **ten** changes, tally each finding as one of three: **real issue**, **noise**, or **a bug it missed** that you found later.
+
+</Exercise>
+
+<Expect>
+
+Real catches on some changes, some noise, and — most valuable — a clear picture of which mistakes *your* agents make most. That list is what you tune the gate and your AGENTS.md against. Most people's tally lands somewhere near Kun's: something real in roughly half to two-thirds of changes.
+
+</Expect>
+
+<IfNot>
+
+If the gate finds nothing across ten changes, it is probably reviewing the wrong thing — check it is diffing against `main` and not against your last commit. If it finds something on every change and none of it matters, your exclusions are missing: start by excluding lockfiles, generated clients and fixtures.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    Review fatigue. The gate comments on everything, people start merging without reading it, and three weeks later a real finding sails through under twenty cosmetic ones.
+  </BreakPart>
+  <BreakPart label="Why">
+    A reviewer with no threshold is indistinguishable from noise. Humans learn to ignore channels that are usually wrong, and they learn it fast.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Give the gate a severity threshold and a scope. "Report correctness, security and contract drift. Do not report style, naming or formatting — the linter owns those." Then measure the noise rate monthly; if it climbs above 10%, tighten again.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="gate-q1"
+  q="Why should the reviewing agent ideally be a different model family from the builder?"
+  options={[
+    "Different models are cheaper to run in sequence",
+    "It shares fewer blind spots and is less persuaded by the same reasoning",
+    "It runs faster on a fresh context window",
+    "Model providers require it for review workloads"
+  ]}
+  answer={1}
+/>
+
+<Terms ids={['branch-protection']} />

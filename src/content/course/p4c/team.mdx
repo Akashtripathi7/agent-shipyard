@@ -1,0 +1,96 @@
+---
+title: Working with a team
+summary: Everything so far assumed you work alone. You do not. How this fits into a shared repo with colleagues who may not use agents at all, and may not want to.
+order: 2
+kind: lesson
+code: '4.12'
+tier: 3
+time: 45 min
+competencies: [decide, operate]
+---
+
+<Analogy>
+  <p>Bringing a nail gun onto a shared building site. Nobody minds that it is faster than a hammer. They mind if you use it without telling anyone where you are firing — and they mind a great deal if you start changing where the walls go.</p>
+</Analogy>
+
+## Conventions belong in the repo, not in your home folder
+
+Everything the *project* needs should be committed: `AGENTS.md` at the root, subagents in `.claude/agents/`, the check script. Then a teammate who tries an agent inherits your rules for free, and reviewers can see what the agent was told.
+
+Your *personal* preferences stay in your global file, where they belong. The test is simple: would a new teammate need this to work on this project? Repo. Is it about how you like to work? Home folder.
+
+## Pull request etiquette
+
+- **Say how it was verified, not who wrote it.** "Tests added, output below, ran against staging" is useful. Hiding that an agent helped is dishonest; announcing it in every description is noise.
+- **Keep diffs small and single-purpose.** Agent-written changes are more likely to include uninvited improvements, and a reviewer's trust drops sharply with diff size.
+- **Never batch-format the codebase.** One reformatting commit can destroy a team's ability to read history, and it will be remembered longer than anything useful you ship.
+
+## The colleague who distrusts agent-written code
+
+Their objection is rarely about the tool. It is **"I cannot tell whether you understood this."**
+
+That is a fair worry, and it has a direct answer: be able to explain every line, attach the evidence, and keep the change small enough to read. A reviewer who sees you catching your own agent's mistakes stops worrying quickly.
+
+What does not work: arguing about productivity, showing them a benchmark, or quietly merging more. Trust here is earned by the quality of what you send them, over a few weeks.
+
+<Callout type="tip" label="Shared gates beat personal gates">
+  <p>Your hooks protect you. <b>CI protects everyone</b>, including the teammate who tries an agent for the first time without reading anything. When you have a rule worth keeping, move it into CI and branch protection so it applies to the whole team by default.</p>
+</Callout>
+
+## Three things not to do unilaterally
+
+1. **Add hooks or settings to shared configuration** without asking. A hook that blocks a commit is a rule you imposed on colleagues who did not agree to it.
+2. **Rewrite conventions** because your agent works better with a different style. That is optimising the team for your tool.
+3. **Turn up the volume.** Ten agent-assisted pull requests a day from one person is a review burden, however good each one is. Throughput that outruns your team's ability to review is not throughput.
+
+<Exercise id="team-1" title="Split your configuration honestly" time="30 min" predict="How much of your current setup is actually project-specific?">
+
+1. Open your global agent configuration and your project's `.claude/` directory side by side.
+2. For each rule, hook and role, ask: **would a new teammate need this to work on this project?**
+3. Move the project-specific ones into the repo. Leave the personal ones where they are.
+4. Now open a pull request that adds just one of them — the check script is a good first one — and write the description as if for a colleague who has never used an agent.
+5. Ask someone to actually read it.
+
+</Exercise>
+
+<Expect>
+
+Less is project-specific than you expect, and the things that are — the check script, the conventions, the contract rules — are the things your teammates benefit from most. The pull request description is the harder half: it forces you to justify the rule rather than just having it.
+
+</Expect>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    You add a pre-commit hook to the shared repo. On Monday two colleagues cannot commit, do not know why, and lose an hour between them. The hook gets deleted and your credibility with it.
+  </BreakPart>
+  <BreakPart label="Why">
+    A gate is a law. Imposing a law on people who did not agree to it, without warning or a documented escape, is a social problem rather than a technical one.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Propose it, explain what it catches, agree it, then land it with a line in the README saying what to do when it fires. Start it as a warning in CI before you make it blocking.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="team-q1"
+  q="A colleague says they do not trust agent-written code in the shared repo. What is the most effective response?"
+  options={[
+    "Share a study showing agent-assisted productivity gains",
+    "Send smaller diffs with evidence, and be able to explain every line",
+    "Offer to disable your agent for shared repositories",
+    "Add more automated review so they do not have to read it"
+  ]}
+  answer={1}
+/>
+
+<Checklist
+  id="team-check"
+  title="Before your agent setup touches a shared repo"
+  items={[
+    "Project rules are committed; personal preferences stay in my home folder",
+    "Any gate I add was proposed and agreed, not imposed",
+    "Every blocking rule has a documented what-to-do-when-it-fires",
+    "My pull requests say how the change was verified",
+    "I am not producing more review load than my team can absorb"
+  ]}
+/>

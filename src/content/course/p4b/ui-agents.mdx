@@ -1,0 +1,135 @@
+---
+title: UI and UX with agents — design, build, verify
+summary: Design tools that talk to agents, tokens that keep screens consistent, and how an agent checks its own interface work instead of claiming it looks fine.
+order: 3
+kind: lesson
+code: '4.10'
+tier: 3
+time: 90 min
+competencies: [ui, build, verify]
+kit: [ui-tokens]
+---
+
+<Analogy>
+  <p>An architect's drawing, the builder, and a walk-through before handover. Skip the walk-through and you discover the door that opens into a wall after you have moved in.</p>
+</Analogy>
+
+## A three-step loop, and agents now have tools for each step
+
+UI is the place where agents most confidently claim success without looking. "The screen now shows the total" is a sentence an agent can write without ever rendering the screen. So the verify step is not optional here — it is the entire point.
+
+### Step 1 · Design
+
+- **Design-to-code tools** that export real widgets, and increasingly speak MCP so designs land straight in your editor.
+- **Figma MCP** — agents read your design system, and can create and edit frames on the canvas.
+- **A design canvas** inside your agent, for mockups and flows you would rather adjust by hand.
+- **Interactive plans** — some proposals are far easier to judge as a clickable page than as a paragraph.
+
+### Step 2 · Build
+
+- **Design tokens first.** Named values for colours, type sizes, spacing, corner radii and animation durations. Agents must use tokens, never raw colour values — this is the single rule that keeps twenty agent-built screens looking like one product.
+- **Components before screens.** Build the button, card and input once, then assemble screens from them.
+- **A component registry** so agents install real components instead of inventing a new button each time.
+
+### Step 3 · Verify
+
+- **A runtime MCP** so the agent can run the app, take screenshots and inspect the widget tree.
+- **Golden tests** for visual regressions; an end-to-end flow for the journey.
+- **On the web**: DevTools MCP for live debugging evidence, Playwright MCP for repeatable cross-browser checks.
+- **Accessibility**: semantic labels, tap targets of at least 48dp, text that survives 200% scaling, readable contrast.
+
+<Callout type="tip" label="Screenshots are evidence; sentences are claims">
+  <p>The rule from "done means evidence" applies hardest to UI. An agent saying the layout is correct is a claim. A screenshot at 320px and at 200% text scale is evidence. Ask for the screenshot every time, and actually look at it.</p>
+</Callout>
+
+<CodeFile title="lib/theme/tokens.dart — tokens as a theme extension, not scattered constants">
+
+```dart
+import 'package:flutter/material.dart';
+
+@immutable
+class LedgerTokens extends ThemeExtension<LedgerTokens> {
+  const LedgerTokens({
+    required this.spaceM,
+    required this.radiusM,
+    required this.motionFast,
+  });
+
+  final double spaceM;        // 16
+  final double radiusM;       // 12
+  final Duration motionFast;  // 150ms
+
+  @override
+  LedgerTokens copyWith({double? spaceM, double? radiusM, Duration? motionFast}) =>
+      LedgerTokens(
+        spaceM: spaceM ?? this.spaceM,
+        radiusM: radiusM ?? this.radiusM,
+        motionFast: motionFast ?? this.motionFast,
+      );
+
+  @override
+  LedgerTokens lerp(ThemeExtension<LedgerTokens>? other, double t) =>
+      other is! LedgerTokens ? this : LedgerTokens(
+        spaceM: lerpDouble(spaceM, other.spaceM, t)!,
+        radiusM: lerpDouble(radiusM, other.radiusM, t)!,
+        motionFast: t < 0.5 ? motionFast : other.motionFast,
+      );
+}
+```
+
+</CodeFile>
+
+Then put one line in AGENTS.md: *"UI code reads spacing, radii, colours and durations from `LedgerTokens`. Raw values are a review finding."* That sentence does more for consistency than any amount of design review.
+
+<KitPiece id="ui-tokens" />
+
+<Exercise id="ui-1" title="Make the agent prove the screen is right" time="60 min" predict="How many of the four checks will pass on the first attempt?">
+
+1. Add the tokens file to Pocket Ledger and the AGENTS.md line above.
+2. Ask the agent to build the "add expense" screen using only tokens.
+3. Now ask it to **prove** it, with four pieces of evidence:
+   - a screenshot at the default size,
+   - a screenshot at 320px width,
+   - a screenshot with text scaled to 200%,
+   - the output of an accessibility check naming every tap target under 48dp.
+4. Look at all four yourself.
+
+</Exercise>
+
+<Expect>
+
+The default screenshot looks fine. One of the other three does not — usually the 200% text scale, where a row that assumed one line becomes two and something clips. That is the failure you would have shipped, and it took one extra sentence in the brief to find.
+
+</Expect>
+
+<IfNot>
+
+If the agent reports all four as passing but shows you no images, it did not run the app. Ask again with "attach the actual screenshot files" — an agent without a runtime MCP will often describe what it expects rather than what it saw.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    Five agent-built screens each look reasonable alone. Put them side by side and there are four different greys, three corner radii and two button heights.
+  </BreakPart>
+  <BreakPart label="Why">
+    Each agent made a locally sensible choice with no shared vocabulary. Nothing was wrong; nothing was consistent either.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Tokens, defined before the first screen, enforced as a review finding. Consistency is a constraint you impose up front, not a thing you tidy up afterwards.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="ui-q1"
+  q="An agent says the new screen 'looks correct and matches the design'. What is the minimum you should ask for?"
+  options={[
+    "A description of the layout in more detail",
+    "A screenshot from the running app, plus one at 200% text scale",
+    "A promise to re-check it after the next change",
+    "The widget code, to read yourself"
+  ]}
+  answer={1}
+/>
+
+<Terms ids={['design-tokens']} />

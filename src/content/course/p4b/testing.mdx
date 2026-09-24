@@ -1,0 +1,118 @@
+---
+title: Testing as a crew member
+summary: Which test layer catches which failure, and how to stop agents writing hundreds of tests that prove nothing.
+order: 2
+kind: lesson
+code: '4.9'
+tier: 3
+time: 75 min
+competencies: [verify, build]
+kit: [agent-qa, maestro-flow]
+---
+
+<Analogy>
+  <p>Crash-test dummies. Nobody trusts a car because the engineer says it is safe. They trust it because it survived the crash test.</p>
+</Analogy>
+
+## The kind matters more than the count
+
+An end-to-end product needs several kinds of test, because each kind catches a different failure. Agents are fast at writing tests, which makes this cheap — and which makes it easy to end up with thousands of tests that prove nothing.
+
+| Layer | What it exercises | Catches | Speed |
+|---|---|---|---|
+| **Unit** | One function or widget | Logic bugs | Seconds |
+| **Integration** | The API against a real database in Docker | Wrong queries, broken migrations | Seconds to minutes |
+| **Contract** | The app's client against the server's OpenAPI file | App and server drifting apart | Seconds |
+| **End-to-end** | The real app on an emulator | Broken user journeys | Minutes |
+| **Visual** | Screens against approved images | Layout regressions | Seconds |
+
+<Callout type="warn" label="The test that proves nothing">
+  <p>The classic agent-written failure is a test that mocks the thing it is meant to check, then asserts the mock was called. It is green forever and catches nothing. When you review agent tests, ask one question of each: <b>what change to the real code would make this fail?</b> If you cannot answer, delete it.</p>
+</Callout>
+
+## Contract tests are the crew-specific one
+
+The other four layers matter whether you run one agent or five. **Contract tests are what a crew adds.** When the API and the app are built by different agents in different worktrees, the contract test is the thing that notices they have drifted apart — before your users do.
+
+Generate the app's client from the OpenAPI file and the drift becomes a compile error instead of a runtime surprise.
+
+## End-to-end, written by the agent
+
+Tools like Maestro are especially agent-friendly: the agent describes a user journey in plain English, writes the flow, runs it on a real device, and fixes it if it fails.
+
+<CodeFile title="flows/add-expense.yaml — a Maestro flow">
+
+```yaml
+appId: com.example.pocketledger
+---
+- launchApp
+- tapOn: "Add expense"
+- inputText: "250"
+- tapOn: "Food"
+- tapOn: "Save"
+- assertVisible: "₹250"
+```
+
+</CodeFile>
+
+<KitPiece id="agent-qa" />
+
+<Exercise id="test-1" title="An end-to-end test written and run by your agent" time="50 min" predict="When you break the total on purpose, will the flow fail for the right reason, or for an unrelated one?">
+
+1. Install the Maestro CLI and connect its MCP server to Claude Code.
+2. Start Pocket Ledger on an emulator.
+3. Ask: *"Using Maestro, write and run a flow: sign up, add an expense of ₹250 for Food, and check the monthly total shows ₹250."*
+4. Now **break the total calculation on purpose** and run the flow again.
+5. Read the failure message. Does it point at the total, or at something incidental like a missing element?
+
+</Exercise>
+
+<Expect>
+
+The flow fails, and the message names the assertion that broke. A test that fails for an unrelated reason — a timeout, a missing button — is a test you cannot trust to tell you *what* broke, only *that* something did.
+
+</Expect>
+
+<IfNot>
+
+If the flow passed even with the calculation broken, the assertion is too loose. `assertVisible: "₹250"` passes if ₹250 appears anywhere on screen, including the expense row you just added. Assert on the total specifically, by its own test id.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    You ask an agent to "improve test coverage". It writes 300 tests, coverage jumps to 94%, and a month later a null check regression ships anyway.
+  </BreakPart>
+  <BreakPart label="Why">
+    Coverage measures which lines ran, not whether anything was checked. Tests that execute code and assert nothing meaningful raise coverage perfectly.
+  </BreakPart>
+  <BreakPart label="The fix">
+    Never brief for coverage. Brief for behaviour: "write tests for the three ways a month boundary can be wrong." Then spot-check by breaking the code and confirming the test goes red.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="test-q1"
+  q="Which layer most directly protects a crew where the API and app are built by different agents?"
+  options={[
+    "Unit tests, because they are fastest",
+    "Contract tests, because they catch the two sides drifting apart",
+    "Visual tests, because screens change most often",
+    "End-to-end tests, because they use the real app"
+  ]}
+  answer={1}
+/>
+
+<Terms ids={['golden-test', 'e2e-test']} />
+
+<Checklist
+  id="test-check"
+  title="Reviewing tests an agent wrote"
+  items={[
+    "For each test I can name a change to the real code that would make it fail",
+    "Nothing asserts only that a mock was called",
+    "The API and the app are checked against one generated contract",
+    "At least one end-to-end flow covers the main journey",
+    "I have broken the code on purpose and watched the suite go red"
+  ]}
+/>

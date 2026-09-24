@@ -1,0 +1,96 @@
+---
+title: A crew run, end to end
+summary: One feature through the whole crew, then the five ways it goes wrong in practice and what catches each one.
+order: 1
+kind: lesson
+code: '4.11'
+tier: 3
+time: 60 min
+competencies: [orchestrate, verify, security]
+---
+
+<Analogy>
+  <p>A flight from gate to gate. Most of it is routine and runs on checklists. The pilot's attention is saved for the few moments that need a decision.</p>
+</Analogy>
+
+## When it goes right
+
+Adding "reschedule appointment" to a booking product, with the crew you built in Part 4:
+
+1. **You write the spec**, about 15 minutes: the outcome, why it matters, acceptance criteria, and what must not change.
+2. **The architect updates the contract** — `PATCH /bookings/{id}` and one schema change. You approve it. *This is your one design decision.*
+3. **Three builders start from the approved contract**, in three worktrees: backend, app, admin dashboard.
+4. Each works test-first and ends with a **handoff note**.
+5. **The gate runs on each branch**: checks, code-reviewer, and security-reviewer — which triggers because an endpoint changed who can modify a booking.
+6. **security-reviewer finds a hole**: staff can reschedule another clinic's bookings by changing the id in the request. It goes back to the backend builder, who fixes it with a test proving the fix.
+7. **qa-tester** runs the end-to-end flows against staging.
+8. **You read three handoffs and one security finding, then merge.**
+
+Total attention: about **40 minutes across half a day**.
+
+<Callout type="warn" label="The bug in step 6 has a name">
+  <p><b>IDOR</b> — insecure direct object reference. The server trusts an id from the request without checking it belongs to the person asking. It is among the most common API security bugs, and exactly the kind a human skimming a diff misses, because the code looks completely normal.</p>
+</Callout>
+
+## When it goes wrong
+
+Five failure modes, and what actually catches each:
+
+| Scenario | What it looks like | How you notice | The fix |
+|---|---|---|---|
+| **Agents disagree** | The architect chose cursor pagination; the app builder already built page numbers | Contract tests fail, or a diff edits the contract | Only the architect edits the contract, and only with your approval |
+| **Silent corruption** | One agent's save overwrites another's. Both report success | A feature from yesterday is gone; a handoff lists a change missing from main | Worktrees or strict ownership; full checks at merge; compare handoffs against the diff |
+| **Cost blowup** | A builder loops on a flaky test for 90 minutes while subagents reread the whole repo | Usage jumps; turns per task spike | `maxTurns` on every subagent; fix flaky tests first; targeted briefs |
+| **Cascading hallucination** | The app builder invents an endpoint. The tester tests the app's fake version. The reviewer checks app code against itself | Contract tests against the real server fail; staging flows fail | Every agent checks against the contract, never against another agent's output |
+| **Quiet scope creep** | Three builders each "improve" something adjacent | The diff is four times the size of the spec | Boundaries in the brief; reject the diff, do not tidy it |
+
+**Cascading hallucination** is the one worth fearing most, because everything agrees with everything else. Three agents produce a coherent, self-consistent, entirely fictional feature. The only thing that breaks the spell is checking against something none of them wrote: the contract, the real server, staging.
+
+<Exercise id="run-1" title="Run one feature through your whole crew" time="2–3 hours" predict="Which of the five failure modes will you hit first?">
+
+1. Pick a small real feature in Pocket Ledger — "edit an expense" is a good size.
+2. Write the spec yourself. Fifteen minutes, no more.
+3. Have the architect update the contract. **Approve it explicitly** before anything else starts.
+4. Run two builders in two worktrees from that contract.
+5. Run the gate on each branch. Read the findings before merging.
+6. Keep a log as you go: every time you intervened, write down *why*.
+
+</Exercise>
+
+<Expect>
+
+Your intervention log is the real output of this exercise. Most people find three or four interventions, and at least one is a failure mode from the table above — usually scope creep or disagreement about the contract. The log tells you which gate to add next, in your project rather than in general.
+
+</Expect>
+
+<IfNot>
+
+If you intervened constantly, the spec was underspecified — a crew amplifies gaps in the brief. If you never intervened at all, check the work actually integrates: silent agreement between agents is the cascading-hallucination signature.
+
+</IfNot>
+
+<Breaks title="How it breaks in real life">
+  <BreakPart label="What happens">
+    Everything passes, everyone reports success, and the feature does not work when you open the app.
+  </BreakPart>
+  <BreakPart label="Why">
+    Every check was performed against something an agent produced. The tests tested the mock, the reviewer read the builder's own code, the contract was edited to match the implementation rather than the other way round.
+  </BreakPart>
+  <BreakPart label="The fix">
+    At least one check in every run must be against something no agent in this run wrote — the real server, staging, or you opening the app. Put that check at the end of the definition of done.
+  </BreakPart>
+</Breaks>
+
+<Quiz
+  id="run-q1"
+  q="Three agents build a feature. Contract tests pass, reviews pass, end-to-end tests pass, and the feature does not work. What happened most likely?"
+  options={[
+    "A flaky test masked the failure",
+    "Cascading hallucination: every check was against another agent's output",
+    "The worktrees were not isolated properly",
+    "The spec was too long"
+  ]}
+  answer={1}
+/>
+
+<Terms ids={['cascading-hallucination']} />
